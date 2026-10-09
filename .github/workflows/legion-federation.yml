@@ -1,0 +1,194 @@
+name: Legion Verification Federation
+
+# Manual only. "gates" runs every verification gate on the exact commit (with a real Postgres for
+# the database journeys) and needs no secrets. "federation" additionally runs the 59-agent Legion
+# federation (requires the ANTHROPIC_API_KEY repository secret). The federation never pushes:
+# proposed changes come back as patches in the uploaded artifact, for a human to review and apply.
+#
+# Security: dispatch inputs reach shell steps only through environment variables, after
+# validation, never via ${{ }} interpolation inside run scripts. The API key is scoped to the one
+# step that calls the model provider, and Legion strips provider/CI credentials from every
+# command it runs (tools/legion/legion/sandbox.py).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "gates = receipts only; federation = gates + full Legion run"
+        type: choice
+        options: [gates, federation]
+        default: gates
+      budget_calls:
+        description: "Hard cap on total model calls for the federation run (retries included)"
+        default: "1770"
+      worker_model:
+        default: "anthropic/claude-sonnet-5-5"
+      reviewer_model:
+        default: "anthropic/claude-sonnet-5-5"
+      judge_model:
+        default: "anthropic/claude-opus-5-5"
+      commander_model:
+        default: "anthropic/claude-opus-5-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legion-federation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DATABASE_URL: postgresql://postgres:postgres@localhost:5432/soulcodex
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: soulcodex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Push database schema
+        run: npx drizzle-kit push --force
+      - name: Ephemeral session secret
+        run: echo "SESSION_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Legion engine tests
+        run: |
+          pip install "./tools/legion[test]"
+          python -m pytest -q -p no:cacheprovider tools/legion/tests
+      - name: Federation task file is current
+        run: python3 federation/legion/build_verification_tasks.py --check
+      - name: Run all verification gates
+        run: node federation/legion/gates.mjs --jobs 4 --json gates-receipt.json
+      - name: Preserve exact candidate SHA
+        if: always()
+        run: printf '%s\n' "$GITHUB_SHA" > GATES-SHA.txt
+      - name: Upload gate receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-gates
+          path: |
+            gates-receipt.json
+            GATES-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
+
+  federation:
+    if: ${{ inputs.mode == 'federation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: soulcodex
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Validate inputs
+        env:
+          BUDGET_CALLS: ${{ inputs.budget_calls }}
+          COMMANDER_MODEL: ${{ inputs.commander_model }}
+          WORKER_MODEL: ${{ inputs.worker_model }}
+          REVIEWER_MODEL: ${{ inputs.reviewer_model }}
+          JUDGE_MODEL: ${{ inputs.judge_model }}
+        run: |
+          [[ "$BUDGET_CALLS" =~ ^[1-9][0-9]{0,6}$ ]] || { echo "::error::budget_calls must be a positive integer"; exit 1; }
+          for spec in "$COMMANDER_MODEL" "$WORKER_MODEL" "$REVIEWER_MODEL" "$JUDGE_MODEL"; do
+            [[ "$spec" =~ ^(anthropic|openai|gemini)/[A-Za-z0-9._:-]{1,80}$ ]] \
+              || { echo "::error::model must look like anthropic/<model>, openai/<model> or gemini/<model>"; exit 1; }
+          done
+      - name: Require API key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Set the ANTHROPIC_API_KEY repository secret to run the federation."
+            exit 1
+          fi
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Push database schema
+        run: npx drizzle-kit push --force
+      - name: Ephemeral session secret
+        run: echo "SESSION_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Install Legion
+        run: pip install ./tools/legion
+      - name: Run the Verification Federation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BUDGET_CALLS: ${{ inputs.budget_calls }}
+          COMMANDER_MODEL: ${{ inputs.commander_model }}
+          WORKER_MODEL: ${{ inputs.worker_model }}
+          REVIEWER_MODEL: ${{ inputs.reviewer_model }}
+          JUDGE_MODEL: ${{ inputs.judge_model }}
+        run: |
+          legion run \
+            --tasks-file federation/legion/soul-codex-verification.json \
+            --workspace . \
+            --commander "$COMMANDER_MODEL" \
+            --worker "$WORKER_MODEL" \
+            --reviewer "$REVIEWER_MODEL" \
+            --judge "$JUDGE_MODEL" \
+            --budget-calls "$BUDGET_CALLS" \
+            --concurrency 8 \
+            --batch 8 \
+            --out legion_runs \
+            --yes
+      - name: Upload federation run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legion-federation-run
+          path: legion_runs/
+          if-no-files-found: error
+          retention-days: 90
