@@ -1,7 +1,7 @@
 name: Legion Verification Federation
 
 # Manual only. "gates" runs every verification gate on the exact commit and needs no secrets.
-# "federation" additionally runs the 55-agent Legion federation (requires the ANTHROPIC_API_KEY
+# "federation" additionally runs the 59-agent Legion federation (requires the ANTHROPIC_API_KEY
 # repository secret). The federation never pushes: proposed changes come back as patches in the
 # uploaded artifact, for a human to review and apply.
 
@@ -15,7 +15,7 @@ on:
         default: gates
       budget_calls:
         description: "Hard cap on total model calls for the federation run"
-        default: "1650"
+        default: "1770"
       worker_model:
         default: "anthropic/claude-sonnet-5-5"
       reviewer_model:

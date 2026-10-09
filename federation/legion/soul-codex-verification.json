@@ -915,7 +915,7 @@
       "depends_on": [],
       "instructions": "You are the CI Surgeon for this scope in the Soul Codex Verification Phase.\nScope: which test files any GitHub workflow actually runs, dead vitest suites, and stale workflow references in AGENTS.md\n\nWork only from the EVIDENCE block (real output produced on a clean checkout of the exact commit)\nand the context files. Git is not truth and neither is a test name: what counts is what the\nevidence shows. A BLOCKED or unavailable result is correct behaviour, not a failure.\n\nDeliver an audit report with these sections:\n1. Gate status - each test file / audit in the evidence with its exact pass and fail counts,\n   copied from the evidence (no rounding, no inference).\n2. Failures - for every failing assertion: the test name, what it asserts, the source location it\n   targets, and a classification with quoted evidence:\n   PRODUCT DEFECT (code violates the contract/doctrine), STALE CONTRACT (the assertion encodes text\n   or behaviour the doctrine no longer requires - prove it), TEST DEFECT (the test itself is\n   broken), or ENVIRONMENT (the runner, not the product - e.g. module loading or missing service).\n   If there are no failures, say so and state what the passing tests actually prove.\n3. Evidence strength - which assertions exercise computed behaviour and which only regex-match\n   source text; name any doctrine guarantee in scope that no test protects.\n4. Doctrine risks - any path in scope where unknown or unverified data could manufacture\n   precision, certainty or a fabricated value. Quote the code.\n5. Remediation spec - for each defect: file, function, the exact change, and the test that will\n   prove it; or \"no remediation required\".\nNever claim anything the evidence does not show. Where the evidence is insufficient to decide,\nwrite BLOCKED and state exactly what evidence is missing.\nRank the uncovered tests by doctrine risk (truth, privacy, billing, evidence first).",
       "acceptance": "Every count and quoted line matches the EVIDENCE block exactly; every failure is classified with quoted evidence; nothing is asserted beyond the evidence; the remediation spec is specific enough to implement without guessing.",
-      "evidence_command": "for f in $(ls tests/*.test.ts; find packages server -name '*.test.ts' -not -path '*/node_modules/*'); do b=$(basename $f); if grep -q \"$b\" .github/workflows/*.yml; then echo \"COVERED $f\"; else echo \"UNCOVERED $f\"; fi; done | sort | awk '{print} /^COVERED/{c++} /^UNCOVERED/{u++} END{print \"covered=\" c \" uncovered=\" u}'; echo '--- vitest imports with no vitest dependency:'; grep -rl --include=*.ts \"from ['\\\"]vitest['\\\"]\" tests server packages | grep -v node_modules; grep -c '\"vitest\"' package.json || true; echo '--- workflow files referenced in AGENTS.md:'; grep -o '\\.github/workflows/[a-z0-9._-]*' AGENTS.md | sort -u | while read w; do [ -f \"$w\" ] && echo \"exists $w\" || echo \"MISSING $w\"; done",
+      "evidence_command": "for f in $(find tests packages server client src \\( -name '*.test.ts' -o -name '*.test.tsx' \\) -not -path '*/node_modules/*' -not -path '*/fixtures/*' | sort); do b=$(basename $f); if grep -q \"$b\" .github/workflows/*.yml; then echo \"COVERED $f\"; else echo \"UNCOVERED $f\"; fi; done | sort | awk '{print} /^COVERED/{c++} /^UNCOVERED/{u++} END{print \"covered=\" c \" uncovered=\" u}'; echo '--- vitest imports with no vitest dependency:'; grep -rl --include=*.ts --include=*.tsx \"from ['\\\"]vitest['\\\"]\" tests server packages client src | grep -v node_modules; grep -c '\"vitest\"' package.json || true; echo '--- workflow files referenced in AGENTS.md:'; grep -o '\\.github/workflows/[a-z0-9._-]*' AGENTS.md | sort -u | while read w; do [ -f \"$w\" ] && echo \"exists $w\" || echo \"MISSING $w\"; done",
       "context_files": [
         "AGENTS.md",
         ".github/workflows/federation-verified-differentiation.yml",
@@ -946,6 +946,8 @@
         "server/services/astronomy-engine-compat.ts",
         "client/src/lib/birthDateExploration.ts",
         "tests/offline-ephemeris-accuracy.test.ts",
+        "tests/foundation-local-astronomy-boundary.test.ts",
+        "packages/core/offline-codex/__tests__/offline-codex.test.ts",
         "tests/birth-date-exploration.test.ts"
       ],
       "allow_patterns": [
@@ -963,7 +965,7 @@
       ],
       "instructions": "You are the Code Agent repairing: tests/clarity-reading-model-evidence.test.ts (midheaven evidence does not reach the clarity inspector)\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\n",
       "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
-      "test_command": "node --import tsx --test tests/clarity-reading-model-evidence.test.ts tests/clarity-reading-route-contract.test.ts",
+      "test_command": "node --import tsx --test tests/clarity-reading-model-evidence.test.ts tests/ultimate-codex-synthesis.test.ts",
       "context_files": [
         "client/src/lib/clarityReadingModel.ts",
         "tests/clarity-reading-model-evidence.test.ts"
@@ -1043,7 +1045,7 @@
       ],
       "instructions": "You are the Code Agent repairing: scripts/audit-profile-differentiation.ts exits non-zero: cross-signature similarity and 'action-lacks-observable-verb' quality errors\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\nFix the generator, not the thresholds. Lowering a threshold is greenwashing (AGENTS.md: CI Surgeon).",
       "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
-      "test_command": "node --import tsx scripts/audit-profile-differentiation.ts profile-differentiation-receipt.json && node --import tsx --test tests/verified-profile-differentiation.test.ts tests/depth-reading-nonrepetition-contract.test.ts",
+      "test_command": "node --import tsx scripts/audit-profile-differentiation.ts profile-differentiation-receipt.json && node --import tsx --test tests/verified-profile-differentiation.test.ts tests/verified-profile-differentiation-corpus.test.ts",
       "context_files": [
         "scripts/audit-profile-differentiation.ts"
       ],
@@ -1198,6 +1200,90 @@
       ]
     },
     {
+      "id": "port-vitest-client-profile",
+      "role": "Code Agent",
+      "title": "Port dead vitest suites (client-profile)",
+      "kind": "code",
+      "weight": 5,
+      "depends_on": [
+        "ci-coverage"
+      ],
+      "instructions": "You are the Code Agent repairing: client/src/lib/__tests__/ActiveProfileRepository.test.ts, client/src/lib/__tests__/placementVerification.test.ts\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\nPort each file from vitest to node:test + node:assert/strict, the repository's standard runner (vitest is not a dependency, so these suites have never run in this tree). Preserve every assertion's meaning one-for-one; replace vi.mock with explicit dependency injection or module-free checks only where the original intent is preserved. If a faithfully ported assertion fails, fix the product defect it exposes inside the same files' scope, or report it.",
+      "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
+      "test_command": "node --import tsx --test client/src/lib/__tests__/ActiveProfileRepository.test.ts client/src/lib/__tests__/placementVerification.test.ts",
+      "context_files": [
+        "client/src/lib/__tests__/ActiveProfileRepository.test.ts",
+        "client/src/lib/__tests__/placementVerification.test.ts"
+      ],
+      "allow_patterns": [
+        "placeholder wording"
+      ]
+    },
+    {
+      "id": "port-vitest-client-clarity",
+      "role": "Code Agent",
+      "title": "Port dead vitest suites (client-clarity)",
+      "kind": "code",
+      "weight": 5,
+      "depends_on": [
+        "ci-coverage"
+      ],
+      "instructions": "You are the Code Agent repairing: client/src/lib/__tests__/clarityNavigation.test.ts, client/src/lib/__tests__/clarityReadingModel.test.ts, client/src/lib/__tests__/v4ReleaseManifest.test.ts\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\nPort each file from vitest to node:test + node:assert/strict, the repository's standard runner (vitest is not a dependency, so these suites have never run in this tree). Preserve every assertion's meaning one-for-one; replace vi.mock with explicit dependency injection or module-free checks only where the original intent is preserved. If a faithfully ported assertion fails, fix the product defect it exposes inside the same files' scope, or report it.",
+      "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
+      "test_command": "node --import tsx --test client/src/lib/__tests__/clarityNavigation.test.ts client/src/lib/__tests__/clarityReadingModel.test.ts client/src/lib/__tests__/v4ReleaseManifest.test.ts",
+      "context_files": [
+        "client/src/lib/__tests__/clarityNavigation.test.ts",
+        "client/src/lib/__tests__/clarityReadingModel.test.ts",
+        "client/src/lib/__tests__/v4ReleaseManifest.test.ts"
+      ],
+      "allow_patterns": [
+        "placeholder wording"
+      ]
+    },
+    {
+      "id": "port-vitest-components",
+      "role": "Code Agent",
+      "title": "Port dead React component suites",
+      "kind": "code",
+      "weight": 7,
+      "depends_on": [
+        "ci-coverage"
+      ],
+      "instructions": "You are the Code Agent repairing: client/src/components/__tests__/ProfileClarityLauncher.test.tsx, client/src/components/soul-codex/__tests__/Phase2EvidenceLayout.test.tsx, client/src/components/soul-codex/__tests__/SoulCodexReadingDisplay.integration.test.tsx\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\nPort each file from vitest to node:test + node:assert/strict, the repository's standard runner (vitest is not a dependency, so these suites have never run in this tree). Preserve every assertion's meaning one-for-one; replace vi.mock with explicit dependency injection or module-free checks only where the original intent is preserved. If a faithfully ported assertion fails, fix the product defect it exposes inside the same files' scope, or report it. These suites also import @testing-library/react and user-event, which are not installed; only react-dom is. Render-and-assert checks can be ported faithfully with react-dom/server renderToStaticMarkup. If an interaction assertion cannot be ported without adding a dependency, do not fake it: state exactly which assertions need a DOM toolchain so the owner can decide - the task should then fail honestly rather than pass with weaker tests.",
+      "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
+      "test_command": "node --import tsx --test client/src/components/__tests__/ProfileClarityLauncher.test.tsx client/src/components/soul-codex/__tests__/Phase2EvidenceLayout.test.tsx client/src/components/soul-codex/__tests__/SoulCodexReadingDisplay.integration.test.tsx",
+      "context_files": [
+        "client/src/components/__tests__/ProfileClarityLauncher.test.tsx",
+        "client/src/components/soul-codex/__tests__/Phase2EvidenceLayout.test.tsx",
+        "client/src/components/soul-codex/__tests__/SoulCodexReadingDisplay.integration.test.tsx",
+        "client/src/components/ProfileClarityLauncher.tsx"
+      ],
+      "allow_patterns": [
+        "placeholder wording"
+      ]
+    },
+    {
+      "id": "remove-tautological-tests",
+      "role": "Code Agent",
+      "title": "Remove tautological CI-trigger tests",
+      "kind": "code",
+      "weight": 1,
+      "depends_on": [
+        "ci-coverage"
+      ],
+      "instructions": "You are the Code Agent repairing: three pr131WorkflowTrigger tests that assert only expect(true).toBe(true) - a test that cannot fail is an illusion of coverage (AGENTS.md: Audit Hunter)\n\nStart from the approved audit(s) you depend on - they classify each failure. Rules:\n- PRODUCT DEFECT: fix the production code path. Keep the fix minimal and on the canonical\n  Foundation architecture (AGENTS.md); never resurrect legacy routes.\n- STALE CONTRACT or TEST DEFECT: change the test only when the audit proved it, and state the\n  proof in your rationale. Never delete, skip or loosen an assertion that exposes a real defect.\n- ENVIRONMENT: make the code work under both the tsx/node:test runner and the production build.\n- Unknown or unverified data must reduce scope, never manufacture precision (doctrine).\nThen explain: root cause, what changed, why it is correct, and residual risk.\nDelete each file with a '### DELETE: path' line only after confirming from its contents and the ci-coverage audit that nothing depends on it. No replacement test is needed for a test that asserted nothing.",
+      "acceptance": "The repository's own tests in test_command pass on the exact commit plus this change; no assertion was weakened without proof from the audit; the change is minimal and consistent with AGENTS.md and the Foundation release doctrine.",
+      "test_command": "test ! -e client/src/lib/__tests__/pr131WorkflowTrigger.test.ts && test ! -e client/src/lib/__tests__/pr131WorkflowTrigger2.test.ts && test ! -e client/src/lib/__tests__/pr131WorkflowTrigger3.test.ts && ! grep -rqs pr131WorkflowTrigger .github package.json",
+      "context_files": [
+        "client/src/lib/__tests__/pr131WorkflowTrigger.test.ts",
+        "client/src/lib/__tests__/pr131WorkflowTrigger2.test.ts",
+        "client/src/lib/__tests__/pr131WorkflowTrigger3.test.ts"
+      ],
+      "allow_patterns": [
+        "placeholder wording"
+      ]
+    },
+    {
       "id": "fix-agents-doc",
       "role": "Code Agent",
       "title": "Correct stale workflow references in AGENTS.md",
@@ -1277,6 +1363,10 @@
         "port-vitest-depth",
         "port-vitest-diamond",
         "port-vitest-surfaces",
+        "port-vitest-client-profile",
+        "port-vitest-client-clarity",
+        "port-vitest-components",
+        "remove-tautological-tests",
         "fix-agents-doc"
       ],
       "instructions": "You are the Final Auditor. Every audit and code change of the Verification Phase is in your dependency outputs; the EVIDENCE block is the full gate run on the base commit. Produce the release record AGENTS.md requires: 1. Summary - what the federation found and changed, per role. 2. Validation - the exact gates and their real results on the base commit; for changes, only what the Master Tester actually executed (the integration gate result is recorded separately by Legion). 3. Risk - what could regress. 4. Rollback - how to revert each change safely. 5. Evidence boundary - what remains unresolved, BLOCKED or deliberately excluded (including the Postgres-only tests and owner-deferred store submission). Do not promote implementation into validation or validation into release.",

@@ -393,10 +393,11 @@ add(audit("pri-store", PRI, "Store disclosures",
 
 # --------------------------------------------------------------- CI Surgeon (from AGENTS.md roles)
 COVERAGE_CMD = (
-    "for f in $(ls tests/*.test.ts; find packages server -name '*.test.ts' -not -path '*/node_modules/*'); do "
+    "for f in $(find tests packages server client src \\( -name '*.test.ts' -o -name '*.test.tsx' \\) "
+    "-not -path '*/node_modules/*' -not -path '*/fixtures/*' | sort); do "
     "b=$(basename $f); if grep -q \"$b\" .github/workflows/*.yml; then echo \"COVERED $f\"; else echo \"UNCOVERED $f\"; fi; "
     "done | sort | awk '{print} /^COVERED/{c++} /^UNCOVERED/{u++} END{print \"covered=\" c \" uncovered=\" u}'; "
-    "echo '--- vitest imports with no vitest dependency:'; grep -rl --include=*.ts \"from ['\\\"]vitest['\\\"]\" tests server packages "
+    "echo '--- vitest imports with no vitest dependency:'; grep -rl --include=*.ts --include=*.tsx \"from ['\\\"]vitest['\\\"]\" tests server packages client src "
     "| grep -v node_modules; grep -c '\"vitest\"' package.json || true; "
     "echo '--- workflow files referenced in AGENTS.md:'; grep -o '\\.github/workflows/[a-z0-9._-]*' AGENTS.md | sort -u | "
     "while read w; do [ -f \"$w\" ] && echo \"exists $w\" || echo \"MISSING $w\"; done"
@@ -418,11 +419,11 @@ add(code("fix-offline-astronomy", "Repair offline/local astronomy",
          T(*OFFLINE_FILES, "tests/astronomy-engine-compat.test.ts", "tests/foundation-local-truth-invariants.test.ts",
            "tests/verified-profile-differentiation.test.ts"),
          ["packages/core/compute/offline-sun.ts", "server/services/astronomy-engine-compat.ts",
-          "client/src/lib/birthDateExploration.ts", "tests/offline-ephemeris-accuracy.test.ts",
-          "tests/birth-date-exploration.test.ts"], weight=8))
+          "client/src/lib/birthDateExploration.ts"] + OFFLINE_FILES, weight=8))
 add(code("fix-clarity-evidence", "Repair clarity evidence admission",
          "tests/clarity-reading-model-evidence.test.ts (midheaven evidence does not reach the clarity inspector)",
-         ["int-clarity-evidence"], T("tests/clarity-reading-model-evidence.test.ts", "tests/clarity-reading-route-contract.test.ts"),
+         ["int-clarity-evidence"],
+         T("tests/clarity-reading-model-evidence.test.ts", "tests/ultimate-codex-synthesis.test.ts"),
          ["client/src/lib/clarityReadingModel.ts", "tests/clarity-reading-model-evidence.test.ts"]))
 add(code("fix-hd-surfaces", "Repair Human Design limits wording",
          "tests/human-depth-specialty-surfaces.test.ts (Human Design output must explain its limits)",
@@ -442,7 +443,7 @@ add(code("fix-profile-differentiation", "Repair profile differentiation audit fa
          "'action-lacks-observable-verb' quality errors",
          ["sim-profile-metrics"],
          "node --import tsx scripts/audit-profile-differentiation.ts profile-differentiation-receipt.json && "
-         + T("tests/verified-profile-differentiation.test.ts", "tests/depth-reading-nonrepetition-contract.test.ts"),
+         + T("tests/verified-profile-differentiation.test.ts", "tests/verified-profile-differentiation-corpus.test.ts"),
          ["scripts/audit-profile-differentiation.ts"], weight=8,
          extra="Fix the generator, not the thresholds. Lowering a threshold is greenwashing (AGENTS.md: CI Surgeon)."))
 add(code("fix-unknown-time", "Repair unknown-time contracts",
@@ -482,10 +483,37 @@ PORT_GROUPS = {
                             "tests/v4-recording-regressions.test.ts", "tests/clarity-reading-route-contract.test.ts"],
     "port-vitest-surfaces": ["tests/human-depth-surfaces.test.ts", "tests/compatibility-claims-contract.test.ts",
                              "server/lib/__tests__/verified-astrology.test.ts"],
+    "port-vitest-client-profile": ["client/src/lib/__tests__/ActiveProfileRepository.test.ts",
+                                   "client/src/lib/__tests__/placementVerification.test.ts"],
+    "port-vitest-client-clarity": ["client/src/lib/__tests__/clarityNavigation.test.ts",
+                                   "client/src/lib/__tests__/clarityReadingModel.test.ts",
+                                   "client/src/lib/__tests__/v4ReleaseManifest.test.ts"],
 }
 for tid, files in PORT_GROUPS.items():
-    add(code(tid, f"Port dead vitest suites ({tid.split('-')[-1]})", ", ".join(files), ["ci-coverage"], T(*files),
+    add(code(tid, f"Port dead vitest suites ({tid.split('-', 2)[-1]})", ", ".join(files), ["ci-coverage"], T(*files),
              files, weight=5, extra=PORT_RULES))
+
+COMPONENT_TESTS = ["client/src/components/__tests__/ProfileClarityLauncher.test.tsx",
+                   "client/src/components/soul-codex/__tests__/Phase2EvidenceLayout.test.tsx",
+                   "client/src/components/soul-codex/__tests__/SoulCodexReadingDisplay.integration.test.tsx"]
+add(code("port-vitest-components", "Port dead React component suites", ", ".join(COMPONENT_TESTS), ["ci-coverage"],
+         T(*COMPONENT_TESTS), COMPONENT_TESTS + ["client/src/components/ProfileClarityLauncher.tsx"], weight=7,
+         extra=PORT_RULES + " These suites also import @testing-library/react and user-event, which are not "
+               "installed; only react-dom is. Render-and-assert checks can be ported faithfully with "
+               "react-dom/server renderToStaticMarkup. If an interaction assertion cannot be ported without adding "
+               "a dependency, do not fake it: state exactly which assertions need a DOM toolchain so the owner "
+               "can decide - the task should then fail honestly rather than pass with weaker tests."))
+
+PR131 = ["client/src/lib/__tests__/pr131WorkflowTrigger.test.ts", "client/src/lib/__tests__/pr131WorkflowTrigger2.test.ts",
+         "client/src/lib/__tests__/pr131WorkflowTrigger3.test.ts"]
+add(code("remove-tautological-tests", "Remove tautological CI-trigger tests",
+         "three pr131WorkflowTrigger tests that assert only expect(true).toBe(true) - a test that cannot fail is "
+         "an illusion of coverage (AGENTS.md: Audit Hunter)", ["ci-coverage"],
+         " && ".join(f"test ! -e {f}" for f in PR131) + " && ! grep -rqs pr131WorkflowTrigger .github package.json",
+         PR131, weight=1,
+         extra="Delete each file with a '### DELETE: path' line only after confirming from its contents and the "
+               "ci-coverage audit that nothing depends on it. No replacement test is needed for a test that "
+               "asserted nothing."))
 
 DOCS_CHECK = ("node -e \"const fs=require('fs');const t=fs.readFileSync('AGENTS.md','utf8');"
               "const refs=[...new Set(t.match(/\\.github\\/workflows\\/[a-z0-9._-]+/g)||[])];"
@@ -558,6 +586,17 @@ def validate() -> list[str]:
                 if token.endswith((".test.ts", ".mjs")) or (token.startswith("scripts/") and token.endswith(".ts")):
                     if not (ROOT / token).is_file():
                         problems.append(f"{t['id']}: referenced file missing: {token}")
+    # A Code Agent is judged on a checkout of the untouched base commit, so the regression companions
+    # in its test_command must be gates it owns or gates that pass there; never another agent's work.
+    for t in TASKS:
+        if t["kind"] != "code":
+            continue
+        for other in TASKS:
+            if other is t or other["kind"] != "code":
+                continue
+            for f in other["context_files"]:
+                if (f.startswith("tests/") or "__tests__" in f) and f in t["test_command"] and f not in t["context_files"]:
+                    problems.append(f"{t['id']} test_command runs {f}, which {other['id']} is repairing")
     owners: dict[str, str] = {}
     for t in TASKS:
         if t["kind"] != "code":

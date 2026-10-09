@@ -2,7 +2,8 @@
 // Soul Codex verification gates — the Legion federation's final gate.
 //
 // Runs, on the current checkout:
-//   1. every node:test file in tests/, packages/ and server/ (one process per file)
+//   1. every *.test.ts / *.test.tsx file in tests/, packages/, server/, client/ and src/
+//      (one process per file)
 //   2. the root TypeScript check (npm run check)
 //   3. the verified-profile differentiation audit (96 profiles)
 //   4. the profile differentiation audit
@@ -15,7 +16,7 @@
 // Usage: node federation/legion/gates.mjs [--json receipt.json] [--jobs N] [--only tests|check|audits]
 
 import { spawn } from "node:child_process";
-import { mkdtempSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -43,7 +44,7 @@ function walk(dir, out = []) {
     const full = join(dir, name);
     const st = statSync(full);
     if (st.isDirectory()) walk(full, out);
-    else if (name.endsWith(".test.ts")) out.push(relative(ROOT, full));
+    else if (name.endsWith(".test.ts") || name.endsWith(".test.tsx")) out.push(relative(ROOT, full));
   }
   return out;
 }
@@ -100,7 +101,8 @@ async function pool(items, worker, size) {
 const gates = [];
 
 if (ONLY === "all" || ONLY === "tests") {
-  const files = [...walk(join(ROOT, "tests")), ...walk(join(ROOT, "packages")), ...walk(join(ROOT, "server"))]
+  const roots = ["tests", "packages", "server", "client", "src"].filter((d) => existsSync(join(ROOT, d)));
+  const files = roots.flatMap((d) => walk(join(ROOT, d)))
     .filter((f) => !f.includes("/fixtures/"))
     .sort();
   const results = await pool(

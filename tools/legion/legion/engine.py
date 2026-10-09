@@ -46,6 +46,8 @@ file you add or modify — never a diff, never a fragment — each as:
 ```language
 <entire file contents>
 ```
+To delete a tracked file, put this on its own line:
+### DELETE: repo/relative/path.ext
 Your files are written over a clean checkout of that commit and the repository's own tests run:
     {test_command}
 They must pass. Do not weaken, skip or delete an existing assertion to make it pass unless the

@@ -67,6 +67,13 @@ def scan_placeholders(text: str, allow: list[str] | None = None) -> list[str]:
     return findings
 
 
+DELETE_LINE = re.compile(r"^#{2,4}\s*DELETE:\s*`?(?P<path>[^\n`]+?)`?\s*$", re.M)
+
+
+def extract_deletions(output: str) -> list[str]:
+    return [m.group("path").strip() for m in DELETE_LINE.finditer(output)]
+
+
 def extract_files(output: str) -> dict[str, str]:
     files: dict[str, str] = {}
     for m in FILE_BLOCK.finditer(output):
@@ -87,8 +94,8 @@ def added_lines(patch: str) -> str:
 
 
 def _workspace_test(output, files, issues, test_command, allow_exec, timeout, workspace,
-                    allow_patterns) -> TesterReport:
-    prose = FILE_BLOCK.sub("", output)
+                    allow_patterns, deletions=()) -> TesterReport:
+    prose = DELETE_LINE.sub("", FILE_BLOCK.sub("", output))
     issues += [f"placeholder in rationale: {f}" for f in scan_placeholders(prose, allow_patterns)]
     for path, body in files.items():
         if path.endswith(".py"):
@@ -102,8 +109,10 @@ def _workspace_test(output, files, issues, test_command, allow_exec, timeout, wo
         return TesterReport(False, issues, files)
     if not allow_exec:
         return TesterReport(True, [], files, log="execution disabled (--no-exec); static checks passed")
-    rc, log, patch = workspace.apply_and_test(files, test_command, timeout)
+    rc, log, patch = workspace.apply_and_test(files, test_command, timeout, deletions=list(deletions))
     log = log[-8000:]
+    if log.startswith("[legion] cannot delete"):
+        return TesterReport(False, [log.replace("[legion] ", "")], files, log, False, patch)
     if not patch.strip():
         return TesterReport(False, ["the delivered files are identical to the repository; nothing was changed"],
                             files, log, True, patch)
@@ -134,19 +143,24 @@ def master_test(kind: str, output: str, *, test_command: str | None = None, allo
         return TesterReport(not issues, issues)
 
     files = extract_files(output)
-    if not files:
+    deletions = extract_deletions(output) if workspace is not None else []
+    if not files and not deletions:
         return TesterReport(False, issues + [
             "no files found; code must be delivered as '### FILE: path' followed by a fenced block"])
-    for path in files:
+    for path in deletions:
+        if path in files:
+            issues.append(f"{path} is both written and deleted")
+    for path in list(files) + deletions:
         if not _safe_path(path):
             issues.append(f"unsafe file path rejected: {path}")
         elif workspace is not None and _protected(path, workspace.link_dirs):
             issues.append(f"protected path rejected (git metadata or linked dependency dir): {path}")
-    if any(i.startswith(("unsafe", "protected")) for i in issues):
+    if any(i.startswith(("unsafe", "protected")) or i.endswith("written and deleted") for i in issues):
         return TesterReport(False, issues, files)
 
     if workspace is not None:
-        return _workspace_test(output, files, issues, test_command, allow_exec, timeout, workspace, allow_patterns)
+        return _workspace_test(output, files, issues, test_command, allow_exec, timeout, workspace, allow_patterns,
+                               deletions)
 
     for path, body in files.items():
         if path.endswith(".py"):

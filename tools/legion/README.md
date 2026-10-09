@@ -143,6 +143,7 @@ legion run --tasks-file federation.json --workspace /path/to/repo \
 - **Code tasks** return whole files. They are written over a fresh checkout, the task's
   `test_command` (the repo's own tests) must pass there, and the change is captured as a git patch
   that reviewers and judges see as a diff. The placeholder scan judges only lines the agent added.
+- A code task can remove a tracked file with a `### DELETE: path` line. The deletion is part of its patch.
 - `node_modules` is mirrored into each checkout. Workspace packages are re-pointed at the
   checkout, so changed package source is what gets imported.
 - **Integration gate:** after all waves, every passed patch is applied together and `--final-gate`

@@ -161,14 +161,22 @@ class Workspace:
             return text[:limit] + f"\n[... cut: file is {len(text):,} characters, shown {limit:,} ...]"
         return text
 
-    def apply_and_test(self, files: dict[str, str], test_command: str, timeout: int) -> tuple[int, str, str]:
-        """Overlay files on a fresh checkout, run the test command, return (rc, log, patch)."""
+    def apply_and_test(self, files: dict[str, str], test_command: str, timeout: int,
+                       deletions: list[str] | None = None) -> tuple[int, str, str]:
+        """Overlay files (and deletions) on a fresh checkout, run the test command,
+        return (rc, log, patch)."""
+        deletions = deletions or []
         with self.checkout() as wt:
+            for rel in deletions:
+                if not (wt / rel).is_file():
+                    return 1, f"[legion] cannot delete {rel}: no such tracked file at {self.short}", ""
+                _git(wt, "rm", "-q", "--", rel)
             for rel, body in files.items():
                 dest = wt / rel
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text(body, encoding="utf-8")
-            _git(wt, "add", "-A", "--", *files)
+            if files:
+                _git(wt, "add", "-A", "--", *files)
             patch = _git(wt, "diff", "--cached", "--binary", self.head).stdout
             rc, log = run_shell(test_command, wt, timeout)
         return rc, log, patch

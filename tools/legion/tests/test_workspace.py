@@ -194,6 +194,32 @@ def test_workspace_fields_require_workspace(tmp_path):
         asyncio.run(engine.run(_tasks()))
 
 
+def test_deletions(repo):
+    (repo / "test_noop.py").write_text("def test_noop():\n    assert True\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "noop")
+    ws = Workspace(repo)
+    try:
+        out = master_test("code", "### DELETE: test_noop.py\n\nRemoved: asserts nothing.\n" + fix_reply(),
+                          test_command=f"test ! -e test_noop.py && {GATE}", workspace=ws)
+        assert out.passed, out.issues
+        assert "deleted file mode" in out.patch and "test_noop.py" in out.patch and "raise ValueError" in out.patch
+        only_delete = master_test("code", "### DELETE: test_noop.py\n", test_command="test ! -e test_noop.py",
+                                  workspace=ws)
+        assert only_delete.passed and "deleted file mode" in only_delete.patch
+        missing = master_test("code", "### DELETE: nope.py\n", test_command="true", workspace=ws)
+        assert not missing.passed and "cannot delete nope.py" in missing.issues[0]
+        both = master_test("code", "### DELETE: calc.py\n" + fix_reply(), test_command="true", workspace=ws)
+        assert not both.passed and "both written and deleted" in both.issues[0]
+        unsafe = master_test("code", "### DELETE: ../outside.py\n", test_command="true", workspace=ws)
+        assert not unsafe.passed and "unsafe" in unsafe.issues[0]
+        integ = ws.integrate([("del", only_delete.patch)], "test ! -e test_noop.py", 60)
+        assert integ["passed"] and integ["applied"] == ["del"]
+    finally:
+        ws.close()
+    assert (repo / "test_noop.py").exists()
+
+
 def test_node_modules_mirror_repoints_workspace_packages(repo):
     pkg = repo / "packages" / "lib"
     pkg.mkdir(parents=True)
