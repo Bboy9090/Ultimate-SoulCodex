@@ -110,19 +110,22 @@ class Provider:
             self._client = None
 
     async def complete(self, system: str, prompt: str, max_tokens: int = 8192) -> str:
-        self.budget.take()
-        await self._limiter.acquire()
-        async with self._sem:
-            for attempt in range(self.max_retries + 1):
+        """Every outbound request, retries included, is charged to the call budget and the
+        rate limiter, so --budget-calls and --rpm hold even under provider throttling.
+        usage["calls"] counts requests sent; usage["retries"] the ones that were retried."""
+        for attempt in range(self.max_retries + 1):
+            self.budget.take()
+            await self._limiter.acquire()
+            async with self._sem:
+                self.usage["calls"] += 1
                 try:
-                    text = await self._call(system, prompt, max_tokens)
-                    self.usage["calls"] += 1
-                    return text
+                    return await self._call(system, prompt, max_tokens)
                 except _Retryable as exc:
                     if attempt >= self.max_retries:
                         raise ProviderError(f"{self.spec}: retries exhausted: {exc}") from exc
+                    self.usage["retries"] = self.usage.get("retries", 0) + 1
                     delay = exc.retry_after if exc.retry_after is not None else min(60.0, 2 ** attempt)
-                    await asyncio.sleep(delay + random.uniform(0, 0.5))
+            await asyncio.sleep(delay + random.uniform(0, 0.5))  # back off without holding a slot
         raise ProviderError("unreachable")
 
     async def _call(self, system: str, prompt: str, max_tokens: int) -> str:  # pragma: no cover

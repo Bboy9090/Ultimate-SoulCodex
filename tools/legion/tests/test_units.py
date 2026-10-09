@@ -154,7 +154,7 @@ def test_anthropic_retries_429_then_succeeds():
     text, p = asyncio.run(go())
     assert text == "hello" and len(calls) == 3
     assert calls[0].headers["x-api-key"] == "k" and calls[0].headers["anthropic-version"] == "2023-06-01"
-    assert p.usage == {"calls": 1, "input_tokens": 5, "output_tokens": 2}
+    assert p.usage == {"calls": 3, "retries": 2, "input_tokens": 5, "output_tokens": 2}
 
 
 def test_anthropic_hard_error_and_budget():
@@ -212,3 +212,66 @@ def test_make_provider(monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY")
     with pytest.raises(ProviderError, match="ANTHROPIC_API_KEY"):
         make_provider("anthropic/x")
+
+
+def test_retries_are_charged_to_budget_and_limiter():
+    attempts = []
+
+    def throttled(request):
+        attempts.append(1)
+        return httpx.Response(429, headers={"retry-after": "0"}, json={"error": "slow down"})
+
+    async def go():
+        p = _anthropic(throttled, budget=Budget(3), max_retries=6)
+        try:
+            await p.complete("s", "p")
+        finally:
+            await p.aclose()
+
+    with pytest.raises(BudgetExceeded):
+        asyncio.run(go())
+    assert len(attempts) == 3          # the budget of 3 stopped the 4th request, not 7 attempts
+
+    class CountingLimiter:
+        def __init__(self):
+            self.n = 0
+
+        async def acquire(self):
+            self.n += 1
+
+    replies = iter([httpx.Response(503, headers={"retry-after": "0"}), httpx.Response(503, headers={"retry-after": "0"}),
+                    httpx.Response(200, json={"content": [{"type": "text", "text": "ok"}]})])
+
+    async def go2():
+        p = _anthropic(lambda r: next(replies))
+        p._limiter = CountingLimiter()
+        try:
+            return await p.complete("s", "p"), p._limiter.n, p.budget.calls
+        finally:
+            await p.aclose()
+
+    assert asyncio.run(go2()) == ("ok", 3, 3)
+
+
+def test_child_processes_never_see_credentials(monkeypatch):
+    from legion.sandbox import is_credential, sanitized_env
+    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL", "OPENAI_API_KEY", "GEMINI_API_KEY", "GITHUB_TOKEN",
+                 "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "AWS_SECRET_ACCESS_KEY", "NPM_TOKEN", "STRIPE_API_KEY"):
+        assert is_credential(name), name
+    for name in ("PATH", "HOME", "DATABASE_URL", "SESSION_SECRET", "NODE_ENV", "CI"):
+        assert not is_credential(name), name
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-secret")
+    monkeypatch.setenv("GITHUB_TOKEN", "ghs_secret")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db")
+    monkeypatch.setenv("CUSTOM_API_KEY", "needed-by-tests")
+    monkeypatch.setenv("LEGION_KEEP_ENV", "CUSTOM_API_KEY")
+    env = sanitized_env()
+    assert "ANTHROPIC_API_KEY" not in env and "GITHUB_TOKEN" not in env and "LEGION_KEEP_ENV" not in env
+    assert env["DATABASE_URL"] == "postgresql://db" and env["CUSTOM_API_KEY"] == "needed-by-tests"
+
+    # model-written code executed by the Master Tester cannot read the key from its environment
+    probe = ("### FILE: test_env.py\n```python\nimport os\n\n\ndef test_no_key():\n"
+             "    assert 'ANTHROPIC_API_KEY' not in os.environ\n    assert 'GITHUB_TOKEN' not in os.environ\n"
+             "    assert os.environ['DATABASE_URL'] == 'postgresql://db'\n```\n")
+    report = master_test("code", probe)
+    assert report.passed and report.executed, report.issues

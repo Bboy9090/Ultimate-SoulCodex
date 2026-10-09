@@ -160,6 +160,14 @@ Command-line flags override them.
 The Master Tester runs model-written code on your machine. Run Legion inside a container or VM
 for untrusted goals, or pass `--no-exec` to keep only the static checks.
 
+Every command Legion runs gets a sanitized environment (`legion/sandbox.py`): tests, evidence,
+workspace setup and the integration gate. Provider keys (`ANTHROPIC_*`, `OPENAI_*`, `GEMINI_*`,
+…), CI tokens and anything ending in `_API_KEY`, `_ACCESS_KEY` or `_TOKEN` are removed.
+`LEGION_KEEP_ENV=NAME1,NAME2` keeps specific ones a test genuinely needs. This closes the inherited-environment path. Code running as the same OS user could still read Legion's own
+`/proc/<pid>/environ`, so for untrusted goals use a container or VM and a spend-limited key.
+
+`--budget-calls` and `--rpm` count every request, retries included.
+
 ## Tests
 
 ```bash

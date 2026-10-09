@@ -265,3 +265,39 @@ def test_task_file_config_and_cli_dry_run(repo, tmp_path):
     out2 = subprocess.run([sys.executable, "-m", "legion.cli", "run", "--tasks-file", str(tf), "--workspace", str(repo),
                            "--dry-run"], capture_output=True, text=True, env=env, cwd=tmp_path)
     assert out2.returncode == 2 and "missing.py" in out2.stdout
+
+
+def test_workspace_commands_get_sanitized_env(repo, monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-secret")
+    monkeypatch.setenv("DATABASE_URL", "postgresql://db")
+    ws = Workspace(repo)
+    try:
+        ev = ws.evidence("env | sort")
+        assert "sk-ant-secret" not in ev and "ANTHROPIC_API_KEY" not in ev
+        assert "DATABASE_URL=postgresql://db" in ev
+        leak = master_test("code", fix_reply(),
+                           test_command=f'test -z "$ANTHROPIC_API_KEY" && {GATE}', workspace=ws)
+        assert leak.passed, leak.issues
+        integ = ws.integrate([], 'test -z "$ANTHROPIC_API_KEY"', 60)
+        assert integ["gate_exit"] == 0
+    finally:
+        ws.close()
+
+
+def test_cli_flags_beat_task_file_even_at_default_values(repo, tmp_path):
+    tf = tmp_path / "fed.json"
+    tf.write_text(json.dumps({"config": {"goal": "g", "reviewers": 5, "judges": 7, "batch_size": 9},
+                              "tasks": [{"id": "a", "title": "a", "instructions": "x"}]}))
+    env = {"PATH": "/usr/bin:/bin", "PYTHONPATH": str(ROOT)}
+
+    def plan_line(*extra):
+        out = subprocess.run([sys.executable, "-m", "legion.cli", "run", "--tasks-file", str(tf), "--dry-run", *extra],
+                             capture_output=True, text=True, env=env, cwd=tmp_path)
+        assert out.returncode == 0, out.stderr
+        return out.stdout
+
+    from legion.scheduler import estimate_calls
+    # file values apply when the flag is absent: 1 task x (1 + 5 reviewers + 7 judges)
+    assert f"{estimate_calls(1, 5, 7, 2, 1)[0]:,} (everything passes" in plan_line()
+    # an explicit flag equal to the parser default (3) still wins over the file's 5
+    assert f"{estimate_calls(1, 3, 7, 2, 1)[0]:,} (everything passes" in plan_line("--reviewers", "3")

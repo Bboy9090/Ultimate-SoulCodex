@@ -93,11 +93,21 @@ def _open_workspace(cfg: Config) -> Workspace | None:
     return ws
 
 
-async def cmd_run(args, defaults: dict) -> int:
+def explicit_dests(argv: list[str]) -> set[str]:
+    """Names of the options actually given on the command line. Parsed with every default
+    suppressed, so an explicit value equal to the default still counts as given."""
+    p = parser()
+    run_parser = p._subparsers._group_actions[0].choices["run"]
+    for action in run_parser._actions:
+        action.default = argparse.SUPPRESS
+    return set(vars(p.parse_args(argv))) - {"cmd"}
+
+
+async def cmd_run(args, explicit: set[str]) -> int:
     file_cfg = load_task_file_config(args.tasks_file) if args.tasks_file else {}
     for key, value in file_cfg.items():
         dest = FILE_TO_ARG[key]
-        if getattr(args, dest) == defaults.get(dest):
+        if dest not in explicit:  # command line beats task file, task file beats defaults
             setattr(args, dest, value)
     if not args.goal:
         print("error: a goal is required (positional argument or \"config.goal\" in the task file)", file=sys.stderr)
@@ -279,13 +289,12 @@ def parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
     p = parser()
     args = p.parse_args(argv)
     if args.cmd == "run":
-        run_parser = p._subparsers._group_actions[0].choices["run"]
-        defaults = {a.dest: a.default for a in run_parser._actions}
         try:
-            return asyncio.run(cmd_run(args, defaults))
+            return asyncio.run(cmd_run(args, explicit_dests(argv)))
         except (ValueError, OSError) as exc:
             print(f"error: {exc}", file=sys.stderr)
             return 2

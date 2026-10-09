@@ -21,11 +21,11 @@ pass the repository's own tests. The combined result is judged by the final gate
 
 | File | Purpose |
 |---|---|
-| `gates.mjs` | Final gate. Runs every `*.test.ts(x)` file in `tests/ packages/ server/ client/ src/` in its own process, plus `npm run check`, four audits and an optional JSON receipt. Postgres-only tests are SKIPPED, never counted as passed. |
+| `gates.mjs` | Final gate. Runs every `*.test.ts(x)` file in `tests/ packages/ server/ client/ src/` in its own process, plus `npm run check`, four audits and an optional JSON receipt. The database journeys run against Postgres; a gate that cannot run fails the run unless `--allow-skip` is passed. |
 | `build_verification_tasks.py` | Single source of truth for the federation. It refuses to emit a task that references a missing file, a test owned by two agents, or a code agent judged on another agent's unfinished work. `--check` fails CI if the JSON is stale. |
 | `soul-codex-verification.json` | Generated Legion task file: run config plus 59 tasks. |
 | `../../tools/legion/` | The Legion engine: Commander, worker fleet, Committee, Judges, Master Tester, ledger, workspace mode. |
-| `../../.github/workflows/legion-federation.yml` | Manual workflow. `gates` mode needs no secrets; `federation` mode needs `ANTHROPIC_API_KEY`. |
+| `../../.github/workflows/legion-federation.yml` | Manual workflow with a Postgres 16 service. `gates` mode needs no secrets; `federation` mode needs `ANTHROPIC_API_KEY`, which is scoped to the one step that calls the model. Inputs are validated and reach scripts only as environment variables. |
 
 ## Run it
 
@@ -33,7 +33,10 @@ Local (Node 22, Python ≥ 3.10):
 
 ```bash
 npm ci && npm install --no-save --ignore-scripts free-human-design@1.0.1 && npm run build:workspaces
+export DATABASE_URL=postgresql://…/soulcodex SESSION_SECRET=$(openssl rand -hex 32)
+npx drizzle-kit push --force                                        # schema for the database journeys
 node federation/legion/gates.mjs --json gates-receipt.json          # receipts only, no model calls
+# no database? add --allow-skip: the 2 database journeys are reported as skipped, not passed
 
 pip install ./tools/legion
 export ANTHROPIC_API_KEY=...
@@ -64,8 +67,10 @@ run as long as HEAD has not moved.
 
 ## Baseline on main @ `6761534` (2026-10-09)
 
-Measured with `gates.mjs` on this branch, whose only changes are the federation files. Result:
-**184 gates passed, 35 failed, 2 skipped (of 221)**. The type-check is clean.
+Measured with `gates.mjs` on this branch, whose only changes are the federation files, against
+a local Postgres 16 with the schema pushed by `drizzle-kit`. Result: **186 gates passed, 35 failed,
+0 skipped (of 221)**. Both database journeys pass (active consumer auth 2/2, Gate 4 production
+deletion 1/1), and the type-check is clean.
 
 | Finding | Gate | Owner agents |
 |---|---|---|
@@ -96,8 +101,8 @@ stale contract, test defect or environment) before a Code Agent changes anything
 - The baseline was run in a Linux container with Node 22.22.0. It is a receipt for main @ `6761534`
   only; a later commit needs a fresh `gates.mjs` run. (An earlier run on `f6540a0` gave the same
   failures, minus the client suites the gate did not yet scan.)
-- `tests/active-consumer-auth-postgres.test.ts` and `tests/gate4-production-deletion.test.ts` need
-  `DATABASE_URL` and were skipped.
+- The database journeys need `DATABASE_URL` (schema pushed) and `SESSION_SECRET`; neither workflow
+  runs them anywhere else in CI today. Locally they passed against Postgres 16.
 - **A real model-backed federation run has not been executed yet.** That requires the API key.
   The plumbing was exercised end to end on this branch's first commit, with a local stand-in server
   in place of the model API. All 55 agents of that version ran in 3 waves over 16.5 minutes:

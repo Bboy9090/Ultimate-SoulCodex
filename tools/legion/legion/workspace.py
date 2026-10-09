@@ -20,6 +20,8 @@ import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
+from .sandbox import sanitized_env
+
 AUTO_LINK_NAMES = ("node_modules", ".venv", "venv")
 
 
@@ -35,7 +37,7 @@ def _git(root: Path, *args: str, check: bool = True, input_text: str | None = No
 
 
 def run_shell(command: str, cwd: Path, timeout: int) -> tuple[int, str]:
-    env = dict(os.environ)
+    env = sanitized_env()
     env.setdefault("CI", "true")
     try:
         proc = subprocess.run(command, cwd=cwd, shell=True, capture_output=True, text=True,

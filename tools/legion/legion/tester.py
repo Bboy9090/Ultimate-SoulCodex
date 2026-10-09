@@ -19,6 +19,8 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path, PurePosixPath
 
+from .sandbox import sanitized_env
+
 PLACEHOLDER_PATTERNS: list[tuple[str, re.Pattern]] = [
     ("TODO marker", re.compile(r"\bTODO\b")),
     ("FIXME marker", re.compile(r"\bFIXME\b")),
@@ -189,7 +191,7 @@ def master_test(kind: str, output: str, *, test_command: str | None = None, allo
             cmd, shell = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"], False
         else:
             cmd, shell = [sys.executable, "-m", "unittest", "discover", "-p", "test_*.py"], False
-        env = dict(os.environ)
+        env = sanitized_env()
         env["PYTHONPATH"] = str(root) + os.pathsep + env.get("PYTHONPATH", "")
         env["PYTHONDONTWRITEBYTECODE"] = "1"
         try:

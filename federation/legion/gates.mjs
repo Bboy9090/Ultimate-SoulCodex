@@ -10,10 +10,13 @@
 //   5. the Human Design differential audit against the pinned independent verifier
 //   6. the strict golden astrology fixture validator (Astro-Databank rated charts)
 //
-// Exit code 0 only when every gate that ran passed. Tests that need infrastructure this
-// machine does not have (a Postgres DATABASE_URL) are reported as SKIPPED, never as passed.
+// Exit code 0 only when every gate ran and passed. Tests that need a Postgres DATABASE_URL
+// (with the schema pushed: npx drizzle-kit push --force) and SESSION_SECRET are reported as
+// SKIPPED when that is missing, and a skip FAILS the run: a gate that did not run is not a
+// pass. For a local run without a database, --allow-skip reports the skips and exits 0.
 //
-// Usage: node federation/legion/gates.mjs [--json receipt.json] [--jobs N] [--only tests|check|audits]
+// Usage: node federation/legion/gates.mjs [--json receipt.json] [--jobs N]
+//                                         [--only tests|check|audits] [--allow-skip]
 
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readdirSync, statSync, writeFileSync } from "node:fs";
@@ -30,6 +33,7 @@ const opt = (name, fallback) => {
 const JSON_OUT = opt("--json", null);
 const JOBS = Number(opt("--jobs", process.env.GATE_JOBS ?? "4"));
 const ONLY = opt("--only", "all");
+const ALLOW_SKIP = args.includes("--allow-skip");
 const FILE_TIMEOUT_MS = Number(process.env.GATE_FILE_TIMEOUT_MS ?? 300_000);
 
 // Tests that require a live Postgres database (see their own setup code).
@@ -108,8 +112,9 @@ if (ONLY === "all" || ONLY === "tests") {
   const results = await pool(
     files,
     async (file) => {
-      if (NEEDS_DATABASE.has(file) && !process.env.DATABASE_URL) {
-        return { gate: file, kind: "test", status: "SKIPPED", reason: "needs DATABASE_URL (Postgres)" };
+      if (NEEDS_DATABASE.has(file) && !(process.env.DATABASE_URL && process.env.SESSION_SECRET)) {
+        return { gate: file, kind: "test", status: "SKIPPED",
+          reason: "needs DATABASE_URL (Postgres with the schema pushed) and SESSION_SECRET" };
       }
       const r = await run(process.execPath, ["--import", "tsx", "--test", file], FILE_TIMEOUT_MS);
       const counts = tapCounts(r.output);
@@ -177,6 +182,7 @@ const receipt = {
   commit: sha,
   note: "Results describe the working tree of this checkout at the time of the run.",
   totals: { gates: gates.length, passed: ran.length - failed.length, failed: failed.length, skipped: skipped.length },
+  skipsAllowed: ALLOW_SKIP,
   gates,
 };
 if (JSON_OUT) writeFileSync(JSON_OUT, JSON.stringify(receipt, null, 2) + "\n");
@@ -188,4 +194,8 @@ for (const g of failed) {
   for (const f of g.failures ?? []) console.log(`     ${f}`);
 }
 for (const g of skipped) console.log(`SKIP ${g.gate}: ${g.reason}`);
-process.exitCode = failed.length ? 1 : 0;
+if (skipped.length && !ALLOW_SKIP) {
+  console.log(`${skipped.length} gate(s) did not run, so this run cannot pass. Provide the missing ` +
+    "infrastructure, or pass --allow-skip for a local run that knowingly excludes them.");
+}
+process.exitCode = failed.length || (skipped.length && !ALLOW_SKIP) ? 1 : 0;
