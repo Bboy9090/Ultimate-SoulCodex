@@ -59,6 +59,8 @@ jobs:
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
           tests/integration-readiness.test.ts
+          tests/telemetry-consent.test.ts
+          tests/telemetry-consent-settings-contract.test.ts
           tests/public-profile-projection.test.ts
           tests/share-privacy-accessibility-contract.test.ts
           tests/pwa-update-lifecycle-contract.test.ts
@@ -138,6 +140,7 @@ jobs:
             echo "policy=native-store-evidence-requires-server-verification-and-account-binding"
             echo "policy=production-persistence-mode-is-explicit-and-durable-features-fail-closed"
             echo "policy=enabled-provider-configuration-fails-closed-without-claiming-production-activation"
+            echo "policy=analytics-and-admob-require-persisted-granted-consent-and-premium-suppresses-ads"
             echo "policy=railway-promotion-requires-live-database-readiness"
             echo "policy=account-deletion-removes-public-shares"
             echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"

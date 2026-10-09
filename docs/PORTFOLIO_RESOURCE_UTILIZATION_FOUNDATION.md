@@ -56,6 +56,14 @@ The gate reports only provider status, missing environment-variable names, and p
 
 A passing configuration gate does **not** mean production activation is approved. The report deliberately returns `claimsProductionActivationReady: false` because privacy, consent, fallbacks, entitlements, ownership, and cost controls require independent evidence.
 
+## Persisted telemetry-consent gate
+
+Telemetry collection is fail-closed. Missing, malformed, or cleared consent resolves to `unset`, which blocks Analytics and AdMob.
+
+Only a persisted `granted` choice can make Analytics eligible to collect when the Analytics provider itself is enabled. AdMob additionally requires the free tier: premium entitlement suppresses ads even when consent is granted and the provider is configured.
+
+A caller-declared boolean, route parameter, or in-memory request value is not accepted as proof of consent. Collection decisions must derive from the persisted consent state.
+
 ## Required evidence before production activation
 
 - Google project ownership confirmed.
