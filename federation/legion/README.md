@@ -81,7 +81,7 @@ out of 200. Across 196 test files, 1,387 assertions pass and 31 fail. The type-c
 | Device-timezone substitution contract | 1 assertion | adv-location → fix-location |
 | `tests/integration-config.test.ts` imports `../../server/…`, which resolves outside the repo | 1 file | fix-integration-config-test |
 | AGENTS.md cites `.github/workflows/ci.yml`, which does not exist | doc check | fix-agents-doc |
-| None of the failing test files is run by any workflow | coverage | ci-coverage |
+| 93 of 196 test files are run by no GitHub workflow, including every failing file above | coverage | ci-coverage |
 
 Passing gates with real numbers:
 - **Verified differentiation (96 profiles):** 96 unique narratives. Maximum bigram Jaccard between material pairs is 0.797 against a < 0.9 threshold; minimum verified evidence is 18.
@@ -96,6 +96,16 @@ stale contract, test defect or environment) before a Code Agent changes anything
   `f6540a0` only; a later commit needs a fresh `gates.mjs` run.
 - `tests/active-consumer-auth-postgres.test.ts` and `tests/gate4-production-deletion.test.ts` need
   `DATABASE_URL` and were skipped.
-- The federation's plumbing was exercised end to end against this repository with scripted model
-  replies. **A real model-backed federation run has not been executed yet.** That requires the API key.
+- **A real model-backed federation run has not been executed yet.** That requires the API key.
+  The plumbing was exercised end to end on `20cfdcf`, with a local stand-in server in place of the
+  model API. All 55 agents ran in 3 waves over 16.5 minutes:
+  - 41 evidence commands executed on clean checkouts.
+  - The 14 code agents were judged by the repository's own tests. The stand-in supplied a genuine
+    fix for one of them (`tests/integration-config.test.ts` import path), and that change passed.
+    The 13 deliberately wrong submissions were all rejected by the repo's tests, with the real
+    failure output.
+  - The integration gate applied the passing patch to HEAD and re-ran `gates.mjs`. That test file
+    left the failure list, and the gate correctly still failed on the 22 remaining failures (plus the
+    golden fixture validator added to the gate after the baseline above).
+  This proves the machinery, not the quality of any model's audit or fix.
 - App Store / Play submission stays owner-deferred (AGENTS.md); the store agent only audits.

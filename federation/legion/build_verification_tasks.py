@@ -27,6 +27,12 @@ def T(*files: str) -> str:
     return "node --import tsx --test " + " ".join(files)
 
 
+def steps(*commands: str) -> str:
+    """Run several evidence commands in sequence, reporting each one's own exit code, so an agent
+    never mistakes the last command's status for the status of the whole evidence block."""
+    return " ; ".join(f'{c} ; echo "[exit code of step {i}: $?]"' for i, c in enumerate(commands, 1))
+
+
 # Text audits quote repository source, which may legitimately contain these words.
 AUDIT_ALLOW = ["placeholder wording", "TODO marker", "FIXME marker", "TBD marker", "unimplemented stub"]
 # Code changes re-emit whole files; only lines the agent adds are scanned (see Legion's tester).
@@ -153,9 +159,10 @@ add(audit("cal-numerology", CAL, "Numerology",
 add(audit("cal-human-design", CAL, "Human Design mechanics vs independent verifier",
           "Human Design gates, lines, channels, centers, type and authority - including the 20-profile "
           "differential audit against the pinned independent verifier free-human-design@1.0.1",
-          T("tests/human-design-differential-contract.test.ts", "tests/human-design-complete-input-matrix.test.ts",
-            "tests/server-profile-human-design-parity.test.ts", "packages/astrology/__tests__/human-design-phase3.test.ts")
-          + " ; node --import tsx scripts/audit-human-design-differential.ts hd-differential-receipt.json",
+          steps(T("tests/human-design-differential-contract.test.ts", "tests/human-design-complete-input-matrix.test.ts",
+                  "tests/server-profile-human-design-parity.test.ts",
+                  "packages/astrology/__tests__/human-design-phase3.test.ts"),
+                "node --import tsx scripts/audit-human-design-differential.ts hd-differential-receipt.json"),
           ["scripts/audit-human-design-differential.ts", "tests/human-design-differential-contract.test.ts",
            "governance/release-audits/HUMAN-DESIGN-CORE-VERIFICATION-RECEIPT-v1.md"],
           weight=5,
@@ -165,13 +172,13 @@ add(audit("cal-human-design", CAL, "Human Design mechanics vs independent verifi
 add(audit("cal-offline-astronomy", CAL, "Offline and local astronomy (failing on HEAD)",
           "the offline/local Sun, offline codex generator and birth-date exploration - these four files "
           "FAIL on the base commit",
-          T("tests/offline-ephemeris-accuracy.test.ts", "tests/foundation-local-astronomy-boundary.test.ts",
-            "packages/core/offline-codex/__tests__/offline-codex.test.ts", "tests/birth-date-exploration.test.ts",
-            "tests/astronomy-engine-compat.test.ts")
-          + " ; node --import tsx -e \"import('./packages/core/index.ts').then(m => console.log('resolveOfflineSun probe:', "
-            "JSON.stringify(m.resolveOfflineSun('1990-09-17', '11:11', 'America/New_York'))))\""
-          + " ; node --import tsx -e \"import * as A from 'astronomy-engine'; console.log('tsx namespace keys:', "
-            "Object.keys(A).length, 'SunPosition:', typeof A.SunPosition, 'default.SunPosition:', typeof A.default?.SunPosition)\"",
+          steps(T("tests/offline-ephemeris-accuracy.test.ts", "tests/foundation-local-astronomy-boundary.test.ts",
+                  "packages/core/offline-codex/__tests__/offline-codex.test.ts", "tests/birth-date-exploration.test.ts",
+                  "tests/astronomy-engine-compat.test.ts"),
+                "node --import tsx -e \"import('./packages/core/index.ts').then(m => console.log('resolveOfflineSun probe:', "
+                "JSON.stringify(m.resolveOfflineSun('1990-09-17', '11:11', 'America/New_York'))))\"",
+                "node --import tsx -e \"import * as A from 'astronomy-engine'; console.log('tsx namespace keys:', "
+                "Object.keys(A).length, 'SunPosition:', typeof A.SunPosition, 'default.SunPosition:', typeof A.default?.SunPosition)\""),
           ["packages/core/compute/offline-sun.ts", "server/services/astronomy-engine-compat.ts",
            "tests/offline-ephemeris-accuracy.test.ts", "tests/foundation-local-astronomy-boundary.test.ts",
            "tests/birth-date-exploration.test.ts", "client/src/lib/birthDateExploration.ts",
@@ -203,8 +210,8 @@ add(audit("cor-golden-fixtures", COR, "Golden regression fixtures and provenance
 add(audit("cor-named-goldens", COR, "Named golden charts (golden validator failing on HEAD)",
           "named golden charts: Robert Gonzalez regression, Bobby big-three golden, and the strict golden "
           "astrology fixture validator - which FAILS on the base commit (Carl Jung Moon 12.42 degrees off)",
-          T("packages/core/__tests__/robert-gonzalez.regression.test.ts", "tests/bobby-big-three-golden.test.ts")
-          + " ; node --import tsx scripts/validate-astrology-fixtures.ts",
+          steps(T("packages/core/__tests__/robert-gonzalez.regression.test.ts", "tests/bobby-big-three-golden.test.ts"),
+                "node --import tsx scripts/validate-astrology-fixtures.ts"),
           ["scripts/validate-astrology-fixtures.ts", "tests/golden/astrology-fixtures.json",
            "packages/core/__tests__/robert-gonzalez.regression.test.ts", "tests/bobby-big-three-golden.test.ts"],
           weight=5,

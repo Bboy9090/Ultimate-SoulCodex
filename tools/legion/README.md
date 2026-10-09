@@ -130,6 +130,30 @@ costs real model calls: **1 worker + R reviewers + J judges at minimum**, more w
 The report states exactly how many agents received work. Actual speed is set by your API rate
 limits (`--concurrency`, `--rpm`), and spend by `--budget-calls`. Always `--dry-run` big runs first.
 
+## Workspace mode: point the swarm at a real repository
+
+```bash
+legion run --tasks-file federation.json --workspace /path/to/repo \
+  --workspace-setup "npm run build:workspaces" --final-gate "npm test"
+```
+
+- **`evidence_command`** (per task) runs once on a clean, detached checkout of the exact HEAD commit.
+  Its real output goes to the worker, every reviewer and every judge as ground truth.
+- **`context_files`** are read from that commit with `git show`, so uncommitted edits never leak in.
+- **Code tasks** return whole files. They are written over a fresh checkout, the task's
+  `test_command` (the repo's own tests) must pass there, and the change is captured as a git patch
+  that reviewers and judges see as a diff. The placeholder scan judges only lines the agent added.
+- `node_modules` is mirrored into each checkout. Workspace packages are re-pointed at the
+  checkout, so changed package source is what gets imported.
+- **Integration gate:** after all waves, every passed patch is applied together and `--final-gate`
+  must exit 0, otherwise the run is not "all passed". You get `combined.patch` + `integration.log`.
+- **`after`** (per task) waits for other tasks and sees their status without requiring them to pass.
+  It's for final auditors that must report on failures.
+- Nothing is pushed. You review the patches.
+
+A task file may carry run settings: `{"config": {"goal": ..., "final_gate": ..., "reviewers": 5}, "tasks": [...]}`.
+Command-line flags override them.
+
 ## Safety
 
 The Master Tester runs model-written code on your machine. Run Legion inside a container or VM
