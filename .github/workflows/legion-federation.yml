@@ -1,0 +1,132 @@
+name: Legion Verification Federation
+
+# Manual only. "gates" runs every verification gate on the exact commit and needs no secrets.
+# "federation" additionally runs the 55-agent Legion federation (requires the ANTHROPIC_API_KEY
+# repository secret). The federation never pushes: proposed changes come back as patches in the
+# uploaded artifact, for a human to review and apply.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "gates = receipts only; federation = gates + full Legion run"
+        type: choice
+        options: [gates, federation]
+        default: gates
+      budget_calls:
+        description: "Hard cap on total model calls for the federation run"
+        default: "1650"
+      worker_model:
+        default: "anthropic/claude-sonnet-5-5"
+      reviewer_model:
+        default: "anthropic/claude-sonnet-5-5"
+      judge_model:
+        default: "anthropic/claude-opus-5-5"
+      commander_model:
+        default: "anthropic/claude-opus-5-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legion-federation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Legion engine tests
+        run: |
+          pip install "./tools/legion[test]"
+          python -m pytest -q -p no:cacheprovider tools/legion/tests
+      - name: Federation task file is current
+        run: python3 federation/legion/build_verification_tasks.py --check
+      - name: Run all verification gates
+        run: node federation/legion/gates.mjs --jobs 4 --json gates-receipt.json
+      - name: Preserve exact candidate SHA
+        if: always()
+        run: printf '%s\n' "$GITHUB_SHA" > GATES-SHA.txt
+      - name: Upload gate receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-gates
+          path: |
+            gates-receipt.json
+            GATES-SHA.txt
+          if-no-files-found: error
+          retention-days: 90
+
+  federation:
+    if: ${{ inputs.mode == 'federation' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Require API key
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Set the ANTHROPIC_API_KEY repository secret to run the federation."
+            exit 1
+          fi
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Install pinned independent Human Design verifier
+        run: npm install --no-save --ignore-scripts free-human-design@1.0.1
+      - name: Build workspaces
+        run: npm run build:workspaces
+      - name: Install Legion
+        run: pip install ./tools/legion
+      - name: Run the Verification Federation
+        run: |
+          legion run \
+            --tasks-file federation/legion/soul-codex-verification.json \
+            --workspace . \
+            --commander "${{ inputs.commander_model }}" \
+            --worker "${{ inputs.worker_model }}" \
+            --reviewer "${{ inputs.reviewer_model }}" \
+            --judge "${{ inputs.judge_model }}" \
+            --budget-calls "${{ inputs.budget_calls }}" \
+            --concurrency 8 \
+            --batch 8 \
+            --out legion_runs \
+            --yes
+      - name: Upload federation run
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: legion-federation-run
+          path: legion_runs/
+          if-no-files-found: error
+          retention-days: 90
