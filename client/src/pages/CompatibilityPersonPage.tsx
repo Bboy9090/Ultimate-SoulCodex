@@ -1,3 +1,4 @@
+import AureonAvatar from "@/components/AureonAvatar";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, HeartHandshake, Sparkles } from "lucide-react";
@@ -282,6 +283,7 @@ export default function CompatibilityPersonPage() {
         {initialConnection && friendPlacements.length > 0 ? (
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
+              <AureonAvatar />
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
