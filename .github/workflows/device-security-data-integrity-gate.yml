@@ -61,6 +61,7 @@ jobs:
           tests/integration-readiness.test.ts
           tests/telemetry-consent.test.ts
           tests/telemetry-consent-settings-contract.test.ts
+          client/src/lib/friendChartCompatibility.test.ts
           tests/public-profile-projection.test.ts
           tests/share-privacy-accessibility-contract.test.ts
           tests/pwa-update-lifecycle-contract.test.ts
