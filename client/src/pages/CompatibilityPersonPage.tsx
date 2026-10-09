@@ -9,6 +9,7 @@ import { buildCompatibilityProfilePayload } from "../lib/compatibilityProfilePay
 import { connectionComparableSunSign, findConnectionById, loadConnections, placementLabel } from "../lib/connectionRepository";
 import { personalAtlasPlacements } from "../lib/personalAstrologyAtlas";
 import { personalPlacementMeaning, type AtlasSign } from "../lib/astrologyAtlas";
+import { compareFriendCharts } from "../lib/friendChartCompatibility";
 import { apiFetch } from "../lib/queryClient";
 
 const SIGNS = [
@@ -153,11 +154,17 @@ export default function CompatibilityPersonPage() {
   );
   const friendPlacements = initialConnection?.placements ?? [];
   const placementComparisons = yourPlacements
-    .filter((placement) => placement.kind === "planet" && placement.house)
+    .filter((placement) => placement.kind !== "angle" && placement.house)
     .flatMap((placement) => {
       const friend = friendPlacements.find((row) => row.key === placement.key);
       return friend ? [{ yours: placement, theirs: friend }] : [];
     });
+  const friendChartComparison = compareFriendCharts(
+    yourPlacements
+      .filter((placement) => placement.kind !== "angle")
+      .map(({ key, sign, house }) => ({ key, sign, house })),
+    friendPlacements,
+  );
 
   const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
     const label = placementComparisonLine(yours, theirs).label;
@@ -284,8 +291,29 @@ export default function CompatibilityPersonPage() {
 
             {placementComparisons.length ? (
               <div className="space-y-4">
-                <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4" data-testid="friend-placement-snapshot">
-                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection snapshot</p>
+                <div className="grid gap-3 sm:grid-cols-2" data-testid="friend-placement-snapshot">
+                  <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Shared chart resonance</p>
+                    <p className="mt-2 font-serif text-3xl text-[var(--sc-gold-bright)]">{friendChartComparison.overallScore === null ? "—" : `${friendChartComparison.overallScore}/100`}</p>
+                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.overallCoverage.matched} of {friendChartComparison.overallCoverage.available} shared chart keys overlap</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Average of matching saved planets, Nodes, or Chiron. This is a transparent symbolic reflection score, not a probability or forecast.</p>
+                  </div>
+                  <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4" data-testid="friendship-chart-score">
+                    <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Friendship resonance</p>
+                    <p className="mt-2 font-serif text-3xl text-[var(--sc-gold-bright)]">{friendChartComparison.friendshipScore === null ? "—" : `${friendChartComparison.friendshipScore}/100`}</p>
+                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.friendshipCoverage.matched} of 4 friendship placements available on both charts</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Moon · emotional rhythm; Mercury · communication; Venus · affection and values; Jupiter · mutual growth.</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {friendChartComparison.friendshipMatches.map((match) => (
+                        <span key={match.key} className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-ivory-soft)]">
+                          {placementLabel(match.key as Parameters<typeof placementLabel>[0])} · {match.score}/100
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection pattern</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {Object.entries(placementSignalCounts).map(([label, count]) => (
                       <span key={label} className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] px-3 py-1.5 text-xs font-semibold text-[var(--sc-gold-bright)]">
@@ -294,19 +322,23 @@ export default function CompatibilityPersonPage() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
-                    Counts describe only the planet/sign/house rows present on both charts. They are not compatibility percentages or relationship predictions.
+                    Counts describe only rows present on both charts. Missing placements stay missing.
                   </p>
                 </div>
+                <p className="text-xs leading-5 text-[var(--sc-stone)]">
+                  Scoring key: same sign = 100; same element = 78; same mode = 65; other sign pattern = 48; same house adds 8 points, capped at 100. Exact degree-based aspects are not inferred from this privacy-limited saved-chart data.
+                </p>
                 {placementComparisons.map(({ yours, theirs }) => {
                   const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
                   const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);
                   const comparison = placementComparisonLine(yours, theirs);
+                  const chartMatch = friendChartComparison.matches.find((match) => match.key === yours.key);
                   return (
                     <article key={yours.key} className="rounded-2xl border border-[var(--sc-line)] bg-black/10 p-4" data-testid={`friend-placement-${yours.key}`}>
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                         <h3 className="font-serif text-xl text-[var(--sc-ivory)]">{placementLabel(theirs.key)}</h3>
                         <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1 text-xs font-semibold text-[var(--sc-gold-bright)]">
-                          {comparison.label}
+                          {chartMatch ? `${chartMatch.score}/100 · ` : ""}{comparison.label}
                         </span>
                       </div>
                       <div className="grid gap-3 md:grid-cols-2">
@@ -420,9 +452,10 @@ export default function CompatibilityPersonPage() {
             {result?.available && dimensionScores && !error ? (
               <>
                 <section className="sc-panel sc-panel-gold p-6">
-                  <div className="sc-eyebrow">Symbolic comparison</div>
+                  <div className="sc-eyebrow">Sun-sign foundation</div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
                   {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
+                  <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four dimensions are the privacy-minimized Sun-sign foundation. The chart resonance above is a separate local comparison of saved placements and reports its own coverage.</p>
                 </section>
 
                 <section className="grid gap-3 sm:grid-cols-2" aria-label="Compatibility dimensions">
