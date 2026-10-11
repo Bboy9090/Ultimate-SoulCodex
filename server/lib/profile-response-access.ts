@@ -75,6 +75,8 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
     };
     projected.biography = freeArchetype.description;
     projected.dailyGuidance = freeArchetype.guidance;
+    projected.depthInterpretation = null;
+    projected.synthesis = null;
   }
 
   return projected as T;
