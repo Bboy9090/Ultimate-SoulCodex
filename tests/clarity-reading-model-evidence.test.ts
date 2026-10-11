@@ -167,3 +167,54 @@ test("primary clarity prose stays direct while technical framing remains in evid
   assert.match(primary, /Notice|Watch|useful question|chosen skill/i);
   assert.match(model.limitations.join(" "), /symbolic|deterministic|verified/i);
 });
+
+
+test("Free reading access excludes live Plus numerology and Human Design core from synthesis inputs", () => {
+  const model = buildClarityReadingModel({
+    birthDate: "1990-09-17",
+    fullBirthName: "Robert Example",
+    verifiedAstrologyData: verifiedChart(),
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      ...hdTrust,
+    },
+  }, {
+    fullNameNumerology: false,
+    humanDesignCore: false,
+  });
+
+  assert.equal(model.signals.some((signal) => ["expression", "soul-urge"].includes(signal.id)), false);
+  assert.equal(model.signals.some((signal) => signal.id.startsWith("hd-")), false);
+  assert.doesNotMatch([model.visiblePattern, model.gift, model.cost, model.relationshipImpact, model.coreContradiction ?? ""].join(" "), /Expression \d|Soul Urge \d/);
+});
+
+test("qualified Human Design reading surface is limited to the currently sold core fields", () => {
+  const model = buildClarityReadingModel({
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "Wait a lunar cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      definition: "No Definition",
+      centers: { defined: [], undefined: ["Head"] },
+      channels: ["1-8"],
+      activatedGates: [1, 8],
+      ...hdTrust,
+    },
+  }, {
+    fullNameNumerology: false,
+    humanDesignCore: true,
+  });
+
+  for (const id of ["hd-type", "hd-strategy", "hd-authority", "hd-profile"]) {
+    assert.equal(model.signals.some((signal) => signal.id === id), true, id);
+  }
+  for (const id of ["hd-definition", "hd-centers", "hd-channels", "hd-gates", "hd-incarnation-cross"]) {
+    assert.equal(model.signals.some((signal) => signal.id === id), false, id);
+  }
+});
