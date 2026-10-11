@@ -13,6 +13,8 @@ test("free keeps core clarity capabilities", () => {
     "core_profile",
     "big_three",
     "date_numerology",
+    "name_numerology_preview",
+    "human_design_preview",
     "evidence_provenance",
     "diamond_closure",
     "basic_connections",
