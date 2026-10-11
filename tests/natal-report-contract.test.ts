@@ -195,3 +195,23 @@ test("natal report withholds internally incoherent Human Design even with valid-
   const report = buildNatalReportInput(profile);
   assert.deepEqual(report.humanDesign, {});
 });
+
+
+test("durable premium access overrides stale profile premium metadata for PDF rendering", () => {
+  const profile = evidenceProfile();
+  profile.isPremium = false;
+  const report = buildNatalReportInput(profile, { premiumAccess: true });
+  assert.equal(report.isPremium, true);
+});
+
+test("explicit non-premium access can fail closed despite stale profile premium metadata", () => {
+  const profile = evidenceProfile();
+  profile.isPremium = true;
+  const report = buildNatalReportInput(profile, { premiumAccess: false });
+  assert.equal(report.isPremium, false);
+});
+
+test("production PDF route passes durable entitlement into the report adapter", () => {
+  const routes = readFileSync("server/routes.ts", "utf8");
+  assert.match(routes, /buildNatalReportInput\(profile, \{ premiumAccess: tierAllowsCapability\(entitlement\.tier, "premium_exports"\) \}\)/);
+});
