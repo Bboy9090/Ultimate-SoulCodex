@@ -133,7 +133,7 @@ describe("clarityReadingModel", () => {
     expect(model.signals.some((signal) => signal.id === "rising")).toBe(false);
   });
 
-  it("exposes verified houses, governed points, and Human Design bodygraph evidence", () => {
+  it("exposes verified houses, governed points, and the qualified Human Design core", () => {
     const model = buildClarityReadingModel({
       verifiedAstrologyData: {
         verification: { policyId: "ASTRO-EQUAL-HOUSE-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1" },
@@ -202,8 +202,8 @@ describe("clarityReadingModel", () => {
       expect.objectContaining({ id: "chiron", value: "Cancer · House 8" }),
       expect.objectContaining({ id: "hd-type", value: "Reflector" }),
       expect.objectContaining({ id: "hd-authority", value: "Lunar Authority" }),
-      expect.objectContaining({ id: "hd-gates", value: "1, 2" }),
     ]));
+    expect(model.signals.some((signal) => ["hd-definition", "hd-centers", "hd-channels", "hd-gates"].includes(signal.id))).toBe(false);
   });
 
   it("uses direct depth interpretation before generic fallbacks", () => {

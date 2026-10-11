@@ -22,6 +22,8 @@ import {
   type ReadingFit,
 } from "@/lib/depthEngine";
 import { getProfilePath } from "@/lib/clarityNavigation";
+import { tierAllowsCapability } from "@shared/product-access";
+import { useProductAccess } from "@/hooks/useProductAccess";
 
 type ClarityReadingExperienceProps = {
   profileId: string;
@@ -165,7 +167,10 @@ function DepthChapterCard({
 }
 
 export default function ClarityReadingExperience({ profileId, profileName, model, offline = false }: ClarityReadingExperienceProps) {
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
   const [depth, setDepth] = useState<ReadingDepth>("standard");
+  const effectiveDepth: ReadingDepth = depth === "deep" && !deeperInterpretationUnlocked ? "standard" : depth;
   const [fits, setFits] = useState<FitMap>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -177,6 +182,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
   const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
 
   const changeDepth = (nextDepth: ReadingDepth) => {
+    if (nextDepth === "deep" && !deeperInterpretationUnlocked) return;
     setDepth(nextDepth);
   };
 
@@ -224,12 +230,28 @@ export default function ClarityReadingExperience({ profileId, profileName, model
       <section aria-label="Reading depth" className="mb-6 rounded-2xl border border-[var(--sc-line)] bg-white/[0.035] p-4">
         <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Choose how far to go</p>
         <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label="Choose reading depth">
-          {(["quick", "standard", "deep"] as ReadingDepth[]).map((option) => (
-            <button key={option} type="button" onClick={() => changeDepth(option)} aria-pressed={depth === option} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold capitalize transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${depth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}>
-              {option === "quick" ? "Quick insight" : option === "standard" ? "Standard reading" : "Deep dive"}
-            </button>
-          ))}
+          {(["quick", "standard", "deep"] as ReadingDepth[]).map((option) => {
+            const locked = option === "deep" && !deeperInterpretationUnlocked;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => changeDepth(option)}
+                aria-pressed={effectiveDepth === option}
+                disabled={locked}
+                className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold capitalize transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${effectiveDepth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"} ${locked ? "cursor-not-allowed opacity-55" : ""}`}
+              >
+                {option === "quick" ? "Quick insight" : option === "standard" ? "Standard reading" : locked ? "Deep dive · Plus" : "Deep dive"}
+              </button>
+            );
+          })}
         </div>
+        {!deeperInterpretationUnlocked ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-3">
+            <p className="m-0 text-xs leading-5 text-[var(--sc-stone)]">Quick and Standard remain available on Free. Soul Codex+ opens the relationship, stress-response, and reflection layers in Deep Dive.</p>
+            <Link href="/pricing" className="text-xs font-semibold text-[var(--sc-gold-bright)] no-underline">Open Deep Dive</Link>
+          </div>
+        ) : null}
       </section>
 
       <section aria-label="Human-depth reading chapters" className="mb-6 grid gap-5">
@@ -237,7 +259,7 @@ export default function ClarityReadingExperience({ profileId, profileName, model
           <DepthChapterCard
             key={chapter.id}
             chapter={chapter}
-            depth={depth}
+            depth={effectiveDepth}
             index={index}
             fit={fits[chapter.id]}
             onFit={(fit) => recordFit(chapter.id, fit)}

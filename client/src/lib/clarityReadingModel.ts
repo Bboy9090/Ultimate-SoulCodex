@@ -1,5 +1,4 @@
 import { calcExpression, calcLifePath, calcSoulUrge } from "@soulcodex/core";
-import { humanDesignDefinedChannels, humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { getSynthesisPlacement } from "./placementVerification";
 export type ClarityConfidence =
@@ -38,6 +37,16 @@ export interface ClarityReadingModel {
   signals: ClaritySignal[];
   limitations: string[];
 }
+
+export type ClarityReadingAccess = {
+  fullNameNumerology: boolean;
+  humanDesignCore: boolean;
+};
+
+const DEFAULT_READING_ACCESS: ClarityReadingAccess = {
+  fullNameNumerology: true,
+  humanDesignCore: true,
+};
 
 type AnyRecord = Record<string, any>;
 const ZODIAC_SIGNS = new Set([
@@ -280,7 +289,10 @@ function numerologyTension(expression: number | undefined, soulUrge: number | un
   return `Two different pulls may be active at once: ${expressionTheme.pull} and ${soulTheme.pull}. The useful question is which one you are choosing on purpose, and which one is quietly making the decision for you.`;
 }
 
-export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingModel {
+export function buildClarityReadingModel(
+  profile: AnyRecord,
+  access: ClarityReadingAccess = DEFAULT_READING_ACCESS,
+): ClarityReadingModel {
   const astrology = (profile.astrologyData ?? {}) as AnyRecord;
   const verified = (profile.verifiedAstrologyData ?? profile.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile.numerologyData ?? {}) as AnyRecord;
@@ -289,7 +301,9 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   const archetype = (profile.archetypeData ?? {}) as AnyRecord;
   const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
   const birthDate = typeof profile.birthDate === "string" ? profile.birthDate.slice(0, 10) : null;
-  const fullBirthName = typeof profile.fullBirthName === "string" && profile.fullBirthName.trim()
+  const fullBirthName = access.fullNameNumerology &&
+    typeof profile.fullBirthName === "string" &&
+    profile.fullBirthName.trim()
     ? profile.fullBirthName.trim()
     : null;
   let lifePath: number | undefined;
@@ -455,20 +469,12 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
   if (chiron?.policyId === "ASTRO-CHIRON-v1" && chiron?.qualificationMethod === "live-jpl-qualified-against-swiss" && validHouse(chiron.house)) {
     addSignal(signals, "chiron", "Chiron", `${verified.chiron.sign}${verified.chiron.house ? ` · House ${verified.chiron.house}` : ""}`, "verified", "live JPL qualified against Swiss Ephemeris");
   }
-  if (verifiedHumanDesignCore(humanDesign)) {
+  if (access.humanDesignCore && verifiedHumanDesignCore(humanDesign)) {
     addSignal(signals, "hd-type", "Human Design type", humanDesign.type, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-strategy", "Strategy", humanDesign.strategy, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-authority", "Authority", humanDesign.authority, "verified", "HUMAN-DESIGN-CORE-v1");
     addSignal(signals, "hd-profile", "Profile", humanDesign.profile, "verified", "HUMAN-DESIGN-CORE-v1");
-    addSignal(signals, "hd-definition", "Definition", humanDesign.definition, "verified", "verified bodygraph calculation");
-    const hdCenters = normalizeHumanDesignCenters(humanDesign.centers);
-    addSignal(signals, "hd-centers", "Defined centers", hdCenters.defined.join(", ") || "None", "verified", "verified bodygraph calculation");
-    const hdChannels = humanDesignDefinedChannels(humanDesign.channels);
-    addSignal(signals, "hd-channels", "Defined channels", humanDesignListLabel(hdChannels, "channel", "None"), "verified", "verified bodygraph calculation");
-    if (Array.isArray(humanDesign.activatedGates)) {
-      addSignal(signals, "hd-gates", "Activated gates", humanDesignListLabel(humanDesign.activatedGates, "gate"), "verified", "verified bodygraph calculation");
-    }
-  } else if (humanDesign.status === "range_analyzed" && humanDesign.components) {
+  } else if (access.humanDesignCore && humanDesign.status === "range_analyzed" && humanDesign.components) {
     const stableComponent = (key: string): AnyRecord | null => {
       const component = humanDesign.components?.[key];
       return component?.evidenceState === "stable_across_range" &&
@@ -487,11 +493,6 @@ export function buildClarityReadingModel(profile: AnyRecord): ClarityReadingMode
     addStableHd("strategy", "hd-strategy", "Strategy");
     addStableHd("authority", "hd-authority", "Authority");
     addStableHd("profile", "hd-profile", "Profile");
-    addStableHd("definition", "hd-definition", "Definition");
-    addStableHd("centers", "hd-centers", "Defined centers", "None");
-    addStableHd("channels", "hd-channels", "Defined channels", "None");
-    addStableHd("gates", "hd-gates", "Activated gates", "None");
-    addStableHd("incarnationCross", "hd-incarnation-cross", "Incarnation Cross");
   }
   addSignal(signals, "enneagram", "Enneagram", personality.enneagram?.type, "supported", "user assessment");
   addSignal(signals, "mbti", "MBTI", personality.mbti?.type, "supported", "user assessment");

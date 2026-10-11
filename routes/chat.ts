@@ -29,6 +29,19 @@ Ask one narrower question or complete the missing profile information.
 **Evidence**
 The runtime clarity validator rejected the generated response. No unresolved placement was promoted into interpretation.`;
 
+export function applySoulGuideDepthMode(systemInstruction: string, isPremium: boolean): string {
+  const depthInstruction = isPremium
+    ? `SOUL CODEX+ DEPTH MODE:
+- Keep the same direct, evidence-bound voice as Free.
+- Expand supported contradictions, relationship impact, decision impact, recurring patterns, tradeoffs, and repair/action guidance when the supplied evidence supports them.
+- Do not increase factual certainty, infer missing placements, or turn symbolic interpretation into verified psychology.`
+    : `FREE CLARITY MODE:
+- Give a complete brief answer, not a teaser: name the strongest supported pattern, the main tension, why it matters, and one concrete next move.
+- Prefer the smallest sufficient explanation. Do not withhold accuracy, evidence limits, uncertainty, or the core conclusion.
+- Do not simulate premium depth by inventing extra biography, placements, systems, or certainty.`;
+  return `${systemInstruction}\n\n${depthInstruction}`;
+}
+
 export function enforceDiamondRuntimeOutput(text: string): {
   content: string;
   valid: boolean;
@@ -122,6 +135,8 @@ export function registerChatRoutes(app: Express) {
       } else {
         systemInstruction = buildGeneralPrompt();
       }
+
+      systemInstruction = applySoulGuideDepthMode(systemInstruction, isPremium);
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
