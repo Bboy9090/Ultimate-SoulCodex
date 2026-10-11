@@ -53,6 +53,85 @@ export default function AurelionPlanetaryMatcher({
         .aurelion-orbit-ring { animation: aurelion-orbit 34s linear infinite; transform-origin: 50% 50%; }
         .aurelion-orbit-ring-slow { animation: aurelion-orbit 58s linear infinite reverse; transform-origin: 50% 50%; }
         .aurelion-pulse { animation: aurelion-pulse 3.6s ease-in-out infinite; }
+        .aurelion-planet-button { background: transparent; border-color: transparent; }
+        .aurelion-planet-surface {
+          position: relative;
+          display: grid;
+          place-items: center;
+          width: 42px;
+          height: 42px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,.22);
+          box-shadow: inset -7px -6px 12px rgba(0,0,0,.38), 0 0 12px rgba(114,216,197,.12);
+          isolation: isolate;
+        }
+        .aurelion-planet-glyph {
+          position: relative;
+          z-index: 2;
+          color: #fffaf0;
+          font-size: 17px;
+          line-height: 1;
+          font-weight: 700;
+          text-shadow: 0 1px 3px rgba(0,0,0,.95), 0 0 4px rgba(0,0,0,.8);
+        }
+        .aurelion-planet-surface[data-planet="sun"] {
+          background: radial-gradient(circle at 35% 32%, #fff6b0 0 10%, #ffd45d 22%, #f49b22 55%, #b9470a 100%);
+          box-shadow: inset -6px -6px 10px rgba(135,54,0,.28), 0 0 18px rgba(244,177,55,.42);
+        }
+        .aurelion-planet-surface[data-planet="moon"] {
+          background:
+            radial-gradient(circle at 30% 28%, rgba(65,69,78,.42) 0 9%, transparent 10%),
+            radial-gradient(circle at 68% 62%, rgba(75,79,87,.34) 0 8%, transparent 9%),
+            linear-gradient(135deg, #ddd9cf, #817f82 72%, #4d5057);
+        }
+        .aurelion-planet-surface[data-planet="mercury"] {
+          background:
+            radial-gradient(circle at 66% 30%, rgba(78,62,48,.45) 0 7%, transparent 8%),
+            linear-gradient(140deg, #bba68f, #756b62 60%, #3f3b39);
+        }
+        .aurelion-planet-surface[data-planet="venus"] {
+          background: repeating-linear-gradient(165deg, #f6df98 0 5px, #c99c56 6px 10px, #f0c878 11px 15px);
+        }
+        .aurelion-planet-surface[data-planet="mars"] {
+          background:
+            radial-gradient(circle at 64% 35%, rgba(91,38,25,.45) 0 8%, transparent 9%),
+            linear-gradient(145deg, #dc7048, #9d3f2b 62%, #53251e);
+        }
+        .aurelion-planet-surface[data-planet="jupiter"] {
+          background: repeating-linear-gradient(180deg, #e2c39b 0 4px, #9f684b 5px 8px, #eed7b3 9px 13px, #b87e58 14px 17px);
+        }
+        .aurelion-planet-surface[data-planet="saturn"] {
+          background: linear-gradient(145deg, #ecd9a5, #bd965b 62%, #71573c);
+        }
+        .aurelion-planet-surface[data-planet="saturn"]::after {
+          content: "";
+          position: absolute;
+          width: 56px;
+          height: 17px;
+          border: 2px solid rgba(226,199,139,.8);
+          border-left-color: rgba(226,199,139,.38);
+          border-right-color: rgba(226,199,139,.38);
+          border-radius: 50%;
+          transform: rotate(-16deg);
+          z-index: 1;
+          pointer-events: none;
+        }
+        .aurelion-planet-surface[data-planet="uranus"] {
+          background: linear-gradient(145deg, #c4f4f0, #6bc8cc 62%, #287b8d);
+        }
+        .aurelion-planet-surface[data-planet="neptune"] {
+          background: repeating-linear-gradient(175deg, #648cff 0 7px, #3159cc 8px 13px, #183482 14px 18px);
+        }
+        .aurelion-planet-surface[data-planet="pluto"] {
+          background:
+            radial-gradient(circle at 38% 38%, #ddd4c2 0 13%, transparent 14%),
+            linear-gradient(145deg, #b79c7d, #6d594e 62%, #353036);
+        }
+        .aurelion-planet-button[aria-pressed="true"] .aurelion-planet-surface {
+          outline: 2px solid var(--sc-gold);
+          outline-offset: 3px;
+          box-shadow: inset -7px -6px 12px rgba(0,0,0,.32), 0 0 20px rgba(217,182,111,.38);
+        }
         @media (prefers-reduced-motion: reduce) {
           .aurelion-orbit-ring, .aurelion-orbit-ring-slow, .aurelion-pulse { animation: none; }
         }
@@ -92,13 +171,15 @@ export default function AurelionPlanetaryMatcher({
                   type="button"
                   key={placement.key}
                   onClick={() => setSelectedKey(placement.key)}
-                  className={`absolute grid h-10 w-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border text-xl transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-teal)] ${active ? "border-[var(--sc-gold)] bg-[rgba(217,182,111,.16)] text-[var(--sc-gold-bright)]" : "border-[rgba(114,216,197,.2)] bg-[rgba(5,10,18,.92)] text-[var(--sc-ivory)]"}`}
+                  className="aurelion-planet-button absolute grid h-12 w-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-teal)]"
                   style={{ left: `${x}%`, top: `${y}%` }}
                   aria-label={`Inspect ${placement.label}`}
                   aria-pressed={active}
                   data-testid={`aurelion-planet-${placement.key}`}
                 >
-                  {placement.symbol}
+                  <span className="aurelion-planet-surface" data-planet={placement.key} aria-hidden="true">
+                    <span className="aurelion-planet-glyph">{placement.symbol}</span>
+                  </span>
                 </button>
               );
             })}
