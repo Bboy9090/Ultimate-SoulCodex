@@ -4,6 +4,8 @@ export type SoulCodexCapability =
   | "core_profile"
   | "big_three"
   | "date_numerology"
+  | "name_numerology_preview"
+  | "human_design_preview"
   | "evidence_provenance"
   | "diamond_closure"
   | "interpretation_depth"
@@ -33,6 +35,16 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   core_profile: { minimumTier: "free", availability: "live", label: "Core profile" },
   big_three: { minimumTier: "free", availability: "live", label: "Supported Big 3" },
   date_numerology: { minimumTier: "free", availability: "live", label: "Date-based numerology" },
+  name_numerology_preview: {
+    minimumTier: "free",
+    availability: "live",
+    label: "Name numerology preview",
+  },
+  human_design_preview: {
+    minimumTier: "free",
+    availability: "live",
+    label: "Verified Human Design preview",
+  },
   evidence_provenance: { minimumTier: "free", availability: "live", label: "Evidence and provenance" },
   diamond_closure: { minimumTier: "free", availability: "live", label: "Diamond Way closure" },
   interpretation_depth: {
@@ -54,13 +66,13 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
     minimumTier: "plus",
     availability: "live",
     label: "Full name numerology",
-    upgradeReason: "Unlock Expression, Soul Urge, Personality, and Maturity when a complete birth name is available.",
+    upgradeReason: "Expand the free verified Expression preview into Soul Urge, Personality, and Maturity when a complete birth name is available.",
   },
   human_design_depth: {
     minimumTier: "plus",
     availability: "live",
     label: "Human Design core",
-    upgradeReason: "Unlock verified Type, Strategy, Authority, and Profile. Centers, channels, and deeper interaction synthesis remain planned until their paid surfaces are fully qualified.",
+    upgradeReason: "Expand the free verified Type preview into Strategy, Authority, and Profile. Centers, channels, and deeper interaction synthesis remain planned until their paid surfaces are fully qualified.",
   },
   advanced_daily: {
     minimumTier: "plus",
