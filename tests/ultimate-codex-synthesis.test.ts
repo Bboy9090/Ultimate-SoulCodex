@@ -342,3 +342,22 @@ test("explicit Plus Ultimate Codex access preserves the current full synthesis",
   assert.match(plusResult.identitySignature, /Reflector 2\/5/);
   assert.ok(plusResult.evidenceSignature.some((value) => value.startsWith("num:expression:")));
 });
+
+
+test("qualified Plus HD core excludes unqualified bodygraph detail from Codex identity", () => {
+  const result = buildUltimateCodexSynthesis(profile(), {
+    fullNameNumerology: true,
+    humanDesignCore: true,
+    humanDesignDetails: false,
+  });
+
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":type:Reflector")));
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":authority:Lunar Authority")));
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":profile:2/5")));
+  assert.equal(result.evidenceSignature.some((value) => value.includes(":definition:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:center:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:channel:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:gate:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:activation:")), false);
+  assert.match(result.identitySignature, /Reflector 2\/5/);
+});
