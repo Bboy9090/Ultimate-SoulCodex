@@ -10,6 +10,7 @@ const compatibilityRoute = readFileSync(new URL("../server/routes/compatibility.
 const routes = readFileSync(new URL("../server/routes.ts", import.meta.url), "utf8");
 const diamondClosure = readFileSync(new URL("../client/src/components/DiamondClosure.tsx", import.meta.url), "utf8");
 const pricing = readFileSync(new URL("../client/src/pages/PricingPage.tsx", import.meta.url), "utf8");
+const systems = readFileSync(new URL("../client/src/pages/SystemsDetailsPage.tsx", import.meta.url), "utf8");
 
 test("every Free promise has a concrete implementation surface", () => {
   assert.match(profile, /Your Big 3/);
@@ -18,6 +19,12 @@ test("every Free promise has a concrete implementation surface", () => {
   assert.equal(SOUL_CODEX_CAPABILITIES.human_design_preview.availability, "live");
   assert.match(profile, /Expression unavailable/);
   assert.match(profile, /verified Human Design Type remains visible on Free/);
+  assert.match(systems, /Free preview:/);
+  assert.match(systems, /Free verified preview:/);
+  assert.match(systems, /canSeeFullNumerology \? \(/);
+  assert.match(systems, /canSeeHumanDesignDepth \? \(/);
+  assert.doesNotMatch(systems, /humanDesignCenters/);
+  assert.doesNotMatch(systems, /humanDesignListLabel/);
   assert.match(profile, /Why am I seeing this\?/);
   assert.match(diamondClosure, /Clarity/);
   assert.match(diamondClosure, /Depth/);
