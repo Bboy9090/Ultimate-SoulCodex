@@ -15,6 +15,8 @@ test("explicit stored verification checks ownership and updates the same existin
     storage: {
       getProfile: async (id) => id === stored.id ? stored : undefined,
       updateProfile: async (id, updates) => { assert.equal(id, "owned-profile"); writes++; stored = { ...stored, ...updates }; return stored; },
+      getUser: async (id) => id === "owner" ? ({ id } as any) : undefined,
+      getLatestEntitlementGrant: async () => undefined,
     },
     requireDurableFeature: () => true,
     // External astronomy is isolated here; actual HD and trust are calculated.
@@ -39,14 +41,15 @@ test("explicit stored verification checks ownership and updates the same existin
   const verified = await request("owner");
   assert.equal(verified.statusCode, 200);
   assert.equal(verified.body.id, "owned-profile");
-  assert.equal(verified.body.humanDesignData.status, "verified");
-  assert.equal(verified.body.humanDesignData.type, "Reflector");
-  assert.equal(verified.body.humanDesignData.profile, "2/5");
+  assert.equal(verified.body.humanDesignData.status, "verified_locked");
+  assert.equal(verified.body.humanDesignData.type, undefined);
+  assert.equal(verified.body.humanDesignData.profile, undefined);
   assert.equal(verified.body.numerologyData.lifePath, 9);
   assert.match(verified.body.archetypeData.description, /Saved assessed peacemaker tendency/);
   assert.equal(writes, 1);
-  assert.match(verified.body.biography, /Reflector/);
-  assert.match(verified.body.dailyGuidance, /Lunar Authority/);
+  assert.doesNotMatch(verified.body.biography, /Reflector|Lunar Authority/);
+  assert.equal(stored.humanDesignData.status, "verified");
+  assert.equal(stored.humanDesignData.type, "Reflector");
   assert.match(verified.headers["Cache-Control"], /no-store/);
 });
 
@@ -55,7 +58,7 @@ test("assessment edits during verification cause conflict instead of stale narra
   let reads = 0;
   let writes = 0;
   const handler = storedProfileVerificationHandler({
-    storage: { getProfile: async () => ++reads === 1 ? profile : { ...profile, personalityData: { mbti: { type: "INTJ" } } }, updateProfile: async () => { writes++; return profile; } },
+    storage: { getProfile: async () => ++reads === 1 ? profile : { ...profile, personalityData: { mbti: { type: "INTJ" } } }, updateProfile: async () => { writes++; return profile; }, getUser: async () => ({ id: "owner" } as any), getLatestEntitlementGrant: async () => undefined },
     requireDurableFeature: () => true, calculateAstrology: async () => ({} as any),
   });
   const response: any = { setHeader() {}, status(code: number) { this.code = code; return this; }, json() {} };
@@ -66,7 +69,7 @@ test("assessment edits during verification cause conflict instead of stale narra
 
 test("durable storage refusal prevents verification or write", async () => {
   const handler = storedProfileVerificationHandler({
-    storage: { getProfile: async () => { throw new Error("must not read"); }, updateProfile: async () => { throw new Error("must not write"); } },
+    storage: { getProfile: async () => { throw new Error("must not read"); }, updateProfile: async () => { throw new Error("must not write"); }, getUser: async () => { throw new Error("must not resolve user"); }, getLatestEntitlementGrant: async () => { throw new Error("must not resolve entitlement"); } },
     requireDurableFeature: (res) => { res.status(503).json({ message: "Durable storage required" }); return false; },
   });
   const response: any = { setHeader() {}, status(code: number) { this.code = code; return this; }, json() {} };
