@@ -290,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const snapshot = buildPublicProfileProjection(profile, selection);
+      const entitlement = await resolveProductEntitlementForUser(storage, req.session?.userId ?? null);\n      const snapshot = buildPublicProfileProjection(profile, selection, entitlement.tier);
       if (Object.keys(snapshot.fields).length === 0) {
         return res.status(422).json({ message: "None of the selected fields are currently eligible for public sharing." });
       }
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Ownership is established by the same user/session policy as the profile
       // itself. Do not require a second pseudo-secret equal to the profile ID.
-      const pdfBuffer = await buildNatalReportPdf(buildNatalReportInput(profile));
+      const pdfBuffer = await buildNatalReportPdf(buildNatalReportInput(profile, { premiumAccess: tierAllowsCapability(entitlement.tier, "premium_exports") }));
       const filename = natalReportFilename(profile.name);
 
       res.setHeader("Content-Type", "application/pdf");
