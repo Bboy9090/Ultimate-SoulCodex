@@ -83,7 +83,7 @@ export default function PricingPage() {
           <h2 className="mt-2 font-serif text-3xl font-semibold">Access FAQ</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <Faq question="Do I need to recreate my profile?" answer="No. Identity, Reading, Timeline, and Compatibility reuse the same saved profile." />
-            <Faq question="What does Soul Codex+ actually unlock?" answer="The same Soul Codex voice goes deeper: expanded interpretation layers where evidence already exists, full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy and uncertainty are never paywalled." />
+            <Faq question="What does Soul Codex+ actually unlock?" answer="The same Soul Codex voice goes deeper: expanded interpretation layers where evidence already exists, full-name numerology, verified Human Design core, up to five qualified Daily influences, and the evidence-aware natal PDF report. Roadmap features are shown separately and are not sold yet. Accuracy is never paywalled. Uncertainty and missing-data honesty stay visible on Free." />
             <Faq question="When does paid access begin?" answer="Only after the payment provider's signed subscription evidence is verified by Soul Codex and creates a valid durable entitlement. A return page or local flag never grants Plus." />
             <Faq question="Where are card details entered?" answer="Soul Codex does not contain raw card-number, expiration, CVC, or CVV fields. When a qualified purchase path is active, payment details stay on the approved provider or app-store surface." />
           </div>
