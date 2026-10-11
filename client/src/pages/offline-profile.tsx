@@ -484,7 +484,17 @@ export default function OfflineProfilePage() {
                     ? "Unknown-time range analysis is complete. Stable-across-range placements may influence synthesis with explicit range provenance. Conditional placements remain branch-only; houses and Midheaven stay unavailable until birth time is known."
                     : "This local reading uses deterministic numerology only. The calendar Sun candidate is display-only until ephemeris verification or full-day range analysis. Time-sensitive astronomy remains unresolved rather than guessed."}</p></div></div></div>
 
-        <DepthSoulGuide interpretation={profile.depthInterpretation} />
+        {canSeeInterpretationDepth ? (
+          <DepthSoulGuide interpretation={profile.depthInterpretation} />
+        ) : (
+          <section className="sc-panel sc-panel-gold p-5 sm:p-6" data-testid="free-offline-diamond-clarity">
+            <p className="sc-eyebrow">Diamond clarity · Free</p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Your supported core pattern</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--sc-ivory-soft)]">{ultimateCodex.identitySignature}</p>
+            <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">{freeGuidance}</p>
+            <Link href={readingHref} className="sc-button-primary mt-5 inline-flex">Open the full Free reading</Link>
+          </section>
+        )}
       </main>
     </div>
   );
