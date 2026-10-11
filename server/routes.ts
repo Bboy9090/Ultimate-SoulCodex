@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Ownership is established by the same user/session policy as the profile
       // itself. Do not require a second pseudo-secret equal to the profile ID.
-      const pdfBuffer = await buildNatalReportPdf(buildNatalReportInput(profile));
+      const pdfBuffer = await buildNatalReportPdf(buildNatalReportInput(profile, { premiumAccess: tierAllowsCapability(entitlement.tier, "premium_exports") }));
       const filename = natalReportFilename(profile.name);
 
       res.setHeader("Content-Type", "application/pdf");
