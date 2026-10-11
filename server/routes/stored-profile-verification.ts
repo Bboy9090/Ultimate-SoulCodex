@@ -29,7 +29,7 @@ export function storedProfileVerificationHandler(dependencies: {
         userId: (req as any).session?.userId ?? null, sessionId: (req as any).sessionID ?? null,
       })) return res.status(404).json({ message: "Profile not found" });
       const userId = (req as any).session?.userId ?? null;
-      const entitlement = await resolveProductEntitlementForUser(dependencies.storage as IStorage, userId);
+      const entitlement = await resolveProductEntitlementForUser(dependencies.storage, userId);
       const birthDate = new Date(profile.birthDate).toISOString().slice(0, 10);
       const input = {
         birthDate, birthTime: profile.birthTime ?? undefined, timezone: profile.timezone ?? undefined,
