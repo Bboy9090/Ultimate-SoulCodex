@@ -16,3 +16,9 @@ test("Timeline advanced daily limit remains tier-driven", () => {
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT\[tier\]/);
   assert.match(timeline, /tierAllowsCapability\(tier, "advanced_daily"\)/);
 });
+
+
+test("Timeline does not show a cached deeper archetype title on Free", () => {
+  assert.match(timeline, /tierAllowsCapability\(tier, "interpretation_depth"\)/);
+  assert.match(timeline, /canSeeInterpretationDepth && profile\?\.archetype/);
+});
