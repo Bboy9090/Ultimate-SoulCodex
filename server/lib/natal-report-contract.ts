@@ -130,7 +130,7 @@ function reportHighlights(astrology: Record<string, any>, numerology: Record<str
   return highlights;
 }
 
-export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
+export function buildNatalReportInput(profile: ProfileLike, options: { premiumAccess?: boolean } = {}): NatalReportInput {
   const astrology = record(profile.astrologyData);
   const numerology = record(profile.numerologyData);
   const humanDesignRecord = record(profile.humanDesignData);
@@ -193,7 +193,7 @@ export function buildNatalReportInput(profile: ProfileLike): NatalReportInput {
         : "Use verified data as evidence, symbolic systems as lenses, and lived experience as the final check.",
       hdInterpretation: humanDesignText,
     },
-    isPremium: Boolean(profile.isPremium),
+    isPremium: options.premiumAccess ?? Boolean(profile.isPremium),
   };
 }
 
