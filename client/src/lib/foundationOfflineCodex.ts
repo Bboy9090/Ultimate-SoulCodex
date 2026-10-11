@@ -280,18 +280,26 @@ export function generateFoundationOfflineCodexProfile(
     interpretations: {
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
       birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
-      expression: expression === null
-        ? "Expression unavailable: full birth name was not supplied."
-        : `Expression ${expression}: deterministic full-birth-name number, symbolic interpretation.`,
-      soulUrge: soulUrge === null
-        ? "Soul Urge unavailable: full birth name was not supplied."
-        : `Soul Urge ${soulUrge}: deterministic full-birth-name vowel calculation, symbolic interpretation.`,
-      personality: personality === null
-        ? "Personality Number unavailable: full birth name was not supplied."
-        : `Personality ${personality}: deterministic full-birth-name consonant calculation, symbolic interpretation.`,
-      maturity: maturity === null
-        ? "Maturity Number unavailable: full birth name was not supplied."
-        : `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
+      expression: !includeNameNumerology
+        ? "Expression is reserved for Soul Codex+ depth in this local reading."
+        : expression === null
+          ? "Expression unavailable: full birth name was not supplied."
+          : `Expression ${expression}: deterministic full-birth-name number, symbolic interpretation.`,
+      soulUrge: !includeNameNumerology
+        ? "Soul Urge is reserved for Soul Codex+ depth in this local reading."
+        : soulUrge === null
+          ? "Soul Urge unavailable: full birth name was not supplied."
+          : `Soul Urge ${soulUrge}: deterministic full-birth-name vowel calculation, symbolic interpretation.`,
+      personality: !includeNameNumerology
+        ? "Personality Number is reserved for Soul Codex+ depth in this local reading."
+        : personality === null
+          ? "Personality Number unavailable: full birth name was not supplied."
+          : `Personality ${personality}: deterministic full-birth-name consonant calculation, symbolic interpretation.`,
+      maturity: !includeNameNumerology
+        ? "Maturity Number is reserved for Soul Codex+ depth in this local reading."
+        : maturity === null
+          ? "Maturity Number unavailable: full birth name was not supplied."
+          : `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
