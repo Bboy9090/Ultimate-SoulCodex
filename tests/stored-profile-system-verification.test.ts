@@ -58,7 +58,7 @@ test("assessment edits during verification cause conflict instead of stale narra
   let reads = 0;
   let writes = 0;
   const handler = storedProfileVerificationHandler({
-    storage: { getProfile: async () => ++reads === 1 ? profile : { ...profile, personalityData: { mbti: { type: "INTJ" } } }, updateProfile: async () => { writes++; return profile; } },
+    storage: { getProfile: async () => ++reads === 1 ? profile : { ...profile, personalityData: { mbti: { type: "INTJ" } } }, updateProfile: async () => { writes++; return profile; }, getUser: async () => ({ id: "owner" } as any), getLatestEntitlementGrant: async () => undefined },
     requireDurableFeature: () => true, calculateAstrology: async () => ({} as any),
   });
   const response: any = { setHeader() {}, status(code: number) { this.code = code; return this; }, json() {} };
@@ -69,7 +69,7 @@ test("assessment edits during verification cause conflict instead of stale narra
 
 test("durable storage refusal prevents verification or write", async () => {
   const handler = storedProfileVerificationHandler({
-    storage: { getProfile: async () => { throw new Error("must not read"); }, updateProfile: async () => { throw new Error("must not write"); } },
+    storage: { getProfile: async () => { throw new Error("must not read"); }, updateProfile: async () => { throw new Error("must not write"); }, getUser: async () => { throw new Error("must not resolve user"); }, getLatestEntitlementGrant: async () => { throw new Error("must not resolve entitlement"); } },
     requireDurableFeature: (res) => { res.status(503).json({ message: "Durable storage required" }); return false; },
   });
   const response: any = { setHeader() {}, status(code: number) { this.code = code; return this; }, json() {} };
