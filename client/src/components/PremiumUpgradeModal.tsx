@@ -48,7 +48,7 @@ export function PremiumUpgradeModal({
           <div className="space-y-3">
             <h3 className="text-sm font-semibold uppercase text-[var(--sc-stone)]">Included premium access</h3>
             <div className="space-y-2 text-sm">
-              {["Full-name numerology: Expression, Soul Urge, Personality, and Maturity", "Verified Human Design Type, Strategy, Authority, and Profile", "Up to five qualified Daily influences", "Evidence-aware downloadable natal PDF report"].map((item) => (
+              {["Deeper interpretation across supported Identity, relationship, and Aureon readings", "Full-name numerology: Expression, Soul Urge, Personality, and Maturity", "Verified Human Design Type, Strategy, Authority, and Profile", "Up to five qualified Daily influences", "Evidence-aware downloadable natal PDF report"].map((item) => (
                 <div className="flex items-start space-x-3" key={item}>
                   <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#72d6b7]" />
                   <span>{item}</span>
