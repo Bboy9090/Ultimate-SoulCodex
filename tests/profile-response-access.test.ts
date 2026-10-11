@@ -24,6 +24,18 @@ const profile = {
       maturity: "maturity",
     },
   },
+  astrologyData: {},
+  archetypeData: {
+    title: "Premium Reflector Architect",
+    description: "Premium archetype description using paid layers.",
+    strengths: ["Premium strength"],
+    shadows: ["Premium shadow"],
+    themes: ["Premium theme"],
+    guidance: "Premium archetype guidance.",
+    tarotCards: ["legacy-card"],
+  },
+  biography: "Premium biography mentions Reflector 2/5 and Expression 4.",
+  dailyGuidance: "Premium daily guidance mentions Lunar Authority.",
   humanDesignData: {
     status: "verified",
     type: "Reflector",
@@ -79,4 +91,32 @@ test("projection does not mutate the stored profile object", () => {
   assert.equal(profile.numerologyData.expression, 4);
   assert.equal(profile.humanDesignData.type, "Reflector");
   assert.equal(profile.humanDesignData.status, "verified");
+});
+
+
+test("Free profile response replaces stored Plus prose with a Free-safe synthesis", () => {
+  const out = projectProfileResponseForTier(profile, "free");
+  assert.notEqual(out.biography, profile.biography);
+  assert.notEqual(out.dailyGuidance, profile.dailyGuidance);
+  assert.notEqual(out.archetypeData.title, profile.archetypeData.title);
+  assert.doesNotMatch(out.biography, /Reflector|2\/5|Expression 4|Premium/i);
+  assert.doesNotMatch(out.dailyGuidance, /Lunar Authority|Premium/i);
+  assert.doesNotMatch(JSON.stringify(out.archetypeData), /Premium|legacy-card|Reflector|2\/5/i);
+  assert.match(out.biography, /Life Path 9|symbolic reflection profile/i);
+});
+
+test("Plus profile response preserves stored deeper prose", () => {
+  const out = projectProfileResponseForTier(profile, "plus");
+  assert.equal(out.biography, profile.biography);
+  assert.equal(out.dailyGuidance, profile.dailyGuidance);
+  assert.equal(out.archetypeData.title, profile.archetypeData.title);
+  assert.deepEqual(out.archetypeData.tarotCards, ["legacy-card"]);
+});
+
+test("Free prose projection does not mutate stored deeper prose", () => {
+  projectProfileResponseForTier(profile, "free");
+  assert.equal(profile.biography, "Premium biography mentions Reflector 2/5 and Expression 4.");
+  assert.equal(profile.dailyGuidance, "Premium daily guidance mentions Lunar Authority.");
+  assert.equal(profile.archetypeData.title, "Premium Reflector Architect");
+  assert.deepEqual(profile.archetypeData.tarotCards, ["legacy-card"]);
 });
