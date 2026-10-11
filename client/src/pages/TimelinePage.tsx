@@ -69,6 +69,7 @@ export default function TimelinePage() {
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
   const { tier } = useProductAccess();
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
   const todayDate = localTimelineDate(new Date());
   const todayCard = cachedTodayCard?.profileId === profile?.id && cachedTodayCard?.date === todayDate
@@ -296,7 +297,7 @@ export default function TimelinePage() {
             {personalMonth ? <span className="sc-trust-chip">Month {personalMonth} · {MONTH_LABELS[personalMonth]}</span> : null}
           </div>
           <p className="mb-0 mt-5 max-w-4xl text-base leading-7 text-[var(--sc-ivory-soft)]">{phase.essence}</p>
-          {profile?.archetype ? (
+          {canSeeInterpretationDepth && profile?.archetype ? (
             <p className="mb-0 mt-4 text-sm text-[var(--sc-stone)]">
               {typeof profile.archetype === "string" ? profile.archetype : (profile.archetype as any)?.name || "Your archetype"} moving through a Year {personalYear} phase
             </p>
