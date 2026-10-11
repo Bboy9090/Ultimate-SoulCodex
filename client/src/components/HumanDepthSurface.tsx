@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { CheckCircle2, ChevronDown, CircleHelp, Scale, Users } from "lucide-react";
+import { Link } from "wouter";
+import { tierAllowsCapability } from "@shared/product-access";
+import { useProductAccess } from "@/hooks/useProductAccess";
 
 export type HumanDepthFit = "very-much" | "partly" | "not-really";
 
@@ -30,6 +33,8 @@ const fitOptions: Array<{ value: HumanDepthFit; label: string }> = [
 ];
 
 export default function HumanDepthSurface({ profileId, heading, intro, items }: Props) {
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
   const storageKey = `soulcodex:surface-fit:${profileId}:${heading}`;
   const [fits, setFits] = useState<Record<string, HumanDepthFit>>(() => {
     if (typeof window === "undefined") return {};
@@ -58,6 +63,18 @@ export default function HumanDepthSurface({ profileId, heading, intro, items }: 
         <p className="sc-eyebrow mb-2">Human-depth explanation</p>
         <h2 className="font-serif text-3xl font-medium text-[var(--sc-ivory)]">{heading}</h2>
         {intro && <p className="mt-3 max-w-3xl leading-7 text-[var(--sc-stone)]">{intro}</p>}
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+          <p className="m-0 text-xs leading-5 text-[var(--sc-stone)]">
+            {deeperInterpretationUnlocked
+              ? "Soul Codex+ depth is active: supported tradeoffs, misunderstandings, and relationship impact are open."
+              : "Free keeps the core observation, real-life examples, next move, feedback, and evidence. Plus expands the deeper costs, misunderstandings, and relationship impact."}
+          </p>
+          {!deeperInterpretationUnlocked ? (
+            <Link href="/pricing" className="text-xs font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
+              Open deeper layers
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       {items.map((item) => (
@@ -76,15 +93,15 @@ export default function HumanDepthSurface({ profileId, heading, intro, items }: 
               </section>
             ) : null}
 
-            {(item.benefit || item.tradeoff) && (
+            {deeperInterpretationUnlocked && (item.benefit || item.tradeoff) && (
               <div className="relative mt-5 grid gap-4 md:grid-cols-2">
                 {item.benefit && <section className="rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.045)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-teal)]"><CheckCircle2 className="h-4 w-4" /> What this gives you</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.benefit}</p></section>}
                 {item.tradeoff && <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.045)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-gold-bright)]"><Scale className="h-4 w-4" /> What it may cost</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.tradeoff}</p></section>}
               </div>
             )}
 
-            {item.misunderstanding && <section className="relative mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.03] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-ivory-soft)]"><CircleHelp className="h-4 w-4" /> How this may be misunderstood</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.misunderstanding}</p></section>}
-            {item.relationshipView && <section className="relative mt-4 rounded-2xl border border-[rgba(154,116,220,.16)] bg-[rgba(154,116,220,.04)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-violet)]"><Users className="h-4 w-4" /> In relationships</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.relationshipView}</p></section>}
+            {deeperInterpretationUnlocked && item.misunderstanding && <section className="relative mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.03] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-ivory-soft)]"><CircleHelp className="h-4 w-4" /> How this may be misunderstood</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.misunderstanding}</p></section>}
+            {deeperInterpretationUnlocked && item.relationshipView && <section className="relative mt-4 rounded-2xl border border-[rgba(154,116,220,.16)] bg-[rgba(154,116,220,.04)] p-4"><h4 className="mb-2 flex items-center gap-2 font-semibold text-[var(--sc-violet)]"><Users className="h-4 w-4" /> In relationships</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.relationshipView}</p></section>}
             {item.practicalTakeaway && <section className="relative mt-4 rounded-2xl border border-[rgba(114,216,197,.16)] bg-[rgba(114,216,197,.04)] p-4"><h4 className="mb-2 font-semibold text-[var(--sc-teal)]">What to do with this insight</h4><p className="leading-7 text-[var(--sc-ivory-soft)]">{item.practicalTakeaway}</p></section>}
 
             <section className="relative mt-5 border-t border-[var(--sc-line)] pt-5">

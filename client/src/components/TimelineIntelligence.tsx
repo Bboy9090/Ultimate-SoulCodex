@@ -3,12 +3,17 @@ import { generateTimelineIntelligence, type TimelineIntelligenceSummary, type Sy
 import { getRecentDailyPulseEntries } from "../lib/dailyPulseStorage";
 import { buildTimelineLivedSignals, TIMELINE_LOOKBACK_ENTRIES, trackingDepth } from "../lib/timelineIntelligenceViewModel";
 import { IconCheck } from "./Icons";
+import { Link } from "wouter";
+import { tierAllowsCapability } from "@shared/product-access";
+import { useProductAccess } from "@/hooks/useProductAccess";
 
 interface TimelineIntelligenceProps {
   systemSignals: SystemSignal[];
 }
 
 export default function TimelineIntelligence({ systemSignals }: TimelineIntelligenceProps) {
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
   const [summary, setSummary] = useState<TimelineIntelligenceSummary | null>(null);
   const [showLocked, setShowLocked] = useState(false);
 
@@ -153,6 +158,28 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
         </div>
       )}
 
+      {!deeperInterpretationUnlocked ? (
+        <div style={{
+          padding: "1.25rem",
+          background: "rgba(212,168,95,0.07)",
+          borderRadius: "12px",
+          border: "1px solid rgba(212,168,95,0.2)",
+        }} data-testid="timeline-plus-depth-gate">
+          <div style={{ fontSize: "0.75rem", color: "var(--sc-gold)", textTransform: "uppercase", marginBottom: "0.5rem", fontWeight: 700 }}>
+            Free clarity · Plus depth
+          </div>
+          <h3 style={{ fontSize: "1.05rem", color: "var(--sc-ivory)", margin: 0 }}>Your current pattern is visible. Plus opens the deeper timeline read.</h3>
+          <p style={{ fontSize: "0.9rem", color: "var(--sc-stone)", lineHeight: "1.6", marginBottom: "0.75rem" }}>
+            Free keeps the current system signals, your lived averages, and the strongest observed match. Soul Codex+ expands divergences, tracking-depth analysis, and the broader observation set without changing the evidence standard.
+          </p>
+          <Link href="/pricing" style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--sc-gold)" }}>
+            Open deeper timeline layers
+          </Link>
+        </div>
+      ) : null}
+
+      {deeperInterpretationUnlocked ? (
+        <>
       {/* Card 4: Divergences */}
       {summary.divergences.length > 0 && (
         <div style={{
@@ -252,6 +279,9 @@ export default function TimelineIntelligence({ systemSignals }: TimelineIntellig
           </div>
         </div>
       )}
+
+        </>
+      ) : null}
 
       {/* Next Suggestion */}
       {summary.nextTrackingSuggestion && (
