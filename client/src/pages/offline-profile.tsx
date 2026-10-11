@@ -132,6 +132,7 @@ export default function OfflineProfilePage() {
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}, {
       fullNameNumerology: canSeeFullNumerology,
       humanDesignCore: canSeeHumanDesignDepth,
+      humanDesignDetails: false,
     }),
     [reconciledProfile, canSeeFullNumerology, canSeeHumanDesignDepth],
   );
