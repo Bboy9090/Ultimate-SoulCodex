@@ -73,6 +73,11 @@ jobs:
             -project ios/App/App.xcodeproj \
             -scheme "Ultimate Soul Codex"
 
+      - name: Require checked-in Swift package resolution parity
+        run: |
+          cat ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          git diff --exit-code -- ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
       - name: Verify archive scheme
         run: |
           xcodebuild \

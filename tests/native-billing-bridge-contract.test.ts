@@ -12,7 +12,10 @@ const activity = readFileSync(new URL("../android/app/src/main/java/app/soulcode
 const gradle = readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8");
 
 test("native billing is server-cataloged and disabled without verifier readiness", () => {
+  assert.match(billing, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+  assert.match(billing, /SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED/);
   assert.match(billing, /SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED/);
+  assert.match(billing, /platformNativeBillingFlagEnabled/);
   assert.match(billing, /appleNativeVerifierConfigured/);
   assert.match(billing, /googleNativeVerifierConfigured/);
   assert.match(billing, /server_verifier_not_configured/);

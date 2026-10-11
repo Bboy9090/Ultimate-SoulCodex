@@ -91,8 +91,19 @@ function webCheckoutFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED?.trim().toLowerCase() === "true";
 }
 
-function nativeBillingFlagEnabled(): boolean {
+function legacyNativeBillingFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED?.trim().toLowerCase() === "true";
+}
+
+function platformNativeBillingFlagEnabled(platform: "ios" | "android"): boolean {
+  const explicit =
+    platform === "ios"
+      ? process.env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED
+      : process.env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED;
+  if (explicit !== undefined) {
+    return explicit.trim().toLowerCase() === "true";
+  }
+  return legacyNativeBillingFlagEnabled();
 }
 
 function googleRtdnVerificationTokenMatches(candidate: unknown): boolean {
@@ -619,14 +630,14 @@ export function registerBillingRoutes(app: Express): void {
   });
   app.get("/api/billing/native-catalog", (req: any, res) => {
     const platform = String(req.query?.platform ?? "").trim().toLowerCase();
-    const enabled = nativeBillingFlagEnabled();
-
     if (platform !== "ios" && platform !== "android") {
       return res.status(400).json({
         message: "platform must be ios or android",
         code: "native_billing_platform_invalid",
       });
     }
+
+    const enabled = platformNativeBillingFlagEnabled(platform);
 
     const monthlyProductId =
       platform === "ios" ? appleMonthlyProductId() : googleMonthlyProductId();
@@ -664,9 +675,17 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
-    if (!nativeBillingFlagEnabled()) {
+    const parsed = nativeBillingEvidenceSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Native billing evidence is invalid",
+        code: "native_billing_evidence_invalid",
+      });
+    }
+
+    if (!platformNativeBillingFlagEnabled(parsed.data.platform)) {
       return res.status(503).json({
-        message: "Native Soul Codex+ billing is not enabled",
+        message: "Native Soul Codex+ billing is not enabled for this platform",
         code: "native_billing_disabled",
       });
     }
@@ -684,14 +703,6 @@ export function registerBillingRoutes(app: Express): void {
       return res.status(401).json({
         message: "Your account session is no longer valid",
         code: "authentication_required",
-      });
-    }
-
-    const parsed = nativeBillingEvidenceSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: "Native billing evidence is invalid",
-        code: "native_billing_evidence_invalid",
       });
     }
 

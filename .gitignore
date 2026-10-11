@@ -71,3 +71,8 @@ create_pr_and_files.sh
 =======
 *.tar.gz
 >>>>>>> 19a4477 (Update project structure and component styling across the application)
+
+# Legion federation runs and Python caches
+legion_runs/
+__pycache__/
+*.egg-info/

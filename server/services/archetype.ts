@@ -1,4 +1,5 @@
 import { extractVerifiedAstrology } from "../lib/verified-astrology";
+import { verifiedProfileHumanDesignSummary } from "./profile-human-design";
 import { canonicalNumberPattern, canonicalSignPattern, type CanonicalSymbolicPattern } from "@shared/symbolic-vocabulary";
 
 interface ArchetypeData {
@@ -36,6 +37,7 @@ export function synthesizeArchetype(
   astrologyData: unknown,
   numerologyData: any,
   personalityData: any,
+  humanDesignData?: unknown,
 ): ArchetypeData {
   const verified = extractVerifiedAstrology({ astrologyData });
   const sun = verified.sun?.toLowerCase() ?? null;
@@ -51,15 +53,22 @@ export function synthesizeArchetype(
   const pathPattern = canonicalNumberPattern(lifePath);
   const expressionPattern = canonicalNumberPattern(expression);
   const soulPattern = canonicalNumberPattern(soulUrge);
+  const humanDesignSummary = verifiedProfileHumanDesignSummary(humanDesignData);
+  const assessedDescriptions = [
+    Number.isInteger(personalityData?.enneagram?.type) && personalityData.enneagram.type >= 1 && personalityData.enneagram.type <= 9
+      ? personalityData.enneagram.description : null,
+    /^[IE][NS][TF][JP]$/.test(personalityData?.mbti?.type ?? "") ? personalityData.mbti.description : null,
+  ].filter((value): value is string => typeof value === "string" && Boolean(value.trim()));
 
   const supported = [sunPattern, moonPattern, risingPattern, pathPattern, expressionPattern, soulPattern].filter(Boolean);
-  if (supported.length === 0) return unresolvedArchetype;
+  if (supported.length === 0 && !humanDesignSummary) return unresolvedArchetype;
 
   const titleParts = unique([
     sunPattern ? String(verified.sun) + " " + sunPattern.word : null,
     pathPattern ? "LP" + lifePath + " " + pathPattern.word : null,
     moonPattern ? String(verified.moon) + " Moon " + moonPattern.word : null,
     risingPattern ? String(verified.rising) + " Rising " + risingPattern.word : null,
+    humanDesignSummary ? "Human Design " + humanDesignSummary.split(";")[0] : null,
   ]);
   const title = titleParts.slice(0, 3).join(" × ");
 
@@ -70,6 +79,8 @@ export function synthesizeArchetype(
     pathPattern ? "Life Path " + lifePath + " adds the governed numerology theme of " + pathPattern.drive + "." : null,
     expressionPattern ? "Expression " + expression + " adds an outward-development theme of " + expressionPattern.drive + "." : null,
     soulPattern ? "Soul Urge " + soulUrge + " adds an inner-motivation theme of " + soulPattern.drive + "." : null,
+    humanDesignSummary ? "Verified Human Design supports symbolic decision reflection: " + humanDesignSummary + "." : null,
+    ...assessedDescriptions.map((description) => "Saved user-assessment context: " + description + " These are assessed tendencies, not verified identity facts."),
   ]);
 
   const strengths = unique([
@@ -87,6 +98,7 @@ export function synthesizeArchetype(
     lifePath ? "Life Path " + lifePath : null,
     expression ? "Expression " + expression : null,
     soulUrge ? "Soul Urge " + soulUrge : null,
+    humanDesignSummary ? "Human Design " + humanDesignSummary : null,
     personalityData?.enneagram?.type ? "Enneagram " + personalityData.enneagram.type : null,
     personalityData?.mbti?.type ? "MBTI " + personalityData.mbti.type : null,
   ]);

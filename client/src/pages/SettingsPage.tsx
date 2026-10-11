@@ -25,6 +25,11 @@ import {
   writeReflectionLens,
   type ReflectionLens,
 } from "../lib/reflectionLens";
+import {
+  persistTelemetryConsent,
+  readPersistedTelemetryConsent,
+  type TelemetryConsentState,
+} from "../lib/telemetryConsent";
 
 type CurrentUser = {
   id: string;
@@ -37,6 +42,9 @@ export default function SettingsPage() {
   const [, navigate] = useLocation();
   const nativeApple = Capacitor.isNativePlatform();
   const [reflectionLens, setReflectionLens] = useState<ReflectionLens>(() => readReflectionLens());
+  const [telemetryConsent, setTelemetryConsent] = useState<TelemetryConsentState>(() =>
+    typeof window === "undefined" ? "unset" : readPersistedTelemetryConsent(window.localStorage),
+  );
   const { data: currentUser, isLoading: userLoading } = useQuery<CurrentUser | null>({
     queryKey: ["/api/auth/user"],
     refetchOnMount: true,
@@ -78,6 +86,11 @@ export default function SettingsPage() {
   const selectReflectionLens = (value: ReflectionLens) => {
     setReflectionLens(value);
     writeReflectionLens(value);
+  };
+
+  const selectTelemetryConsent = (state: Exclude<TelemetryConsentState, "unset">) => {
+    persistTelemetryConsent(window.localStorage, state);
+    setTelemetryConsent(state);
   };
 
   const accountLabel = userLoading
@@ -167,6 +180,52 @@ export default function SettingsPage() {
               <AlertTriangle className="h-4 w-4" /> Clear data from this device
             </button>
           </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6">
+          <SectionHeading icon={<ShieldCheck className="h-5 w-5" />} eyebrow="Privacy choice" title="Usage data & free-tier ads" />
+          <p className="mt-5 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+            Choose whether Soul Codex may use privacy-governed usage analytics and, on the free tier, eligible ad services after those providers are separately configured and approved. This preference does not turn Analytics or AdMob on by itself.
+          </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2" role="radiogroup" aria-label="Usage data and ads consent">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={telemetryConsent === "granted"}
+              data-testid="telemetry-consent-granted"
+              onClick={() => selectTelemetryConsent("granted")}
+              className={`rounded-2xl border p-4 text-left transition ${
+                telemetryConsent === "granted"
+                  ? "border-[rgba(114,216,197,.45)] bg-[rgba(114,216,197,.07)]"
+                  : "border-white/[0.07] bg-white/[0.02] hover:border-[rgba(114,216,197,.24)]"
+              }`}
+            >
+              <strong className="block text-[var(--sc-ivory)]">Allow</strong>
+              <span className="mt-2 block text-xs leading-5 text-[var(--sc-stone)]">
+                Persist consent for eligible Analytics and free-tier ad services. Premium still suppresses ads.
+              </span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={telemetryConsent === "denied"}
+              data-testid="telemetry-consent-denied"
+              onClick={() => selectTelemetryConsent("denied")}
+              className={`rounded-2xl border p-4 text-left transition ${
+                telemetryConsent === "denied"
+                  ? "border-red-300/35 bg-red-300/[0.055]"
+                  : "border-white/[0.07] bg-white/[0.02] hover:border-red-300/20"
+              }`}
+            >
+              <strong className="block text-[var(--sc-ivory)]">Don’t allow</strong>
+              <span className="mt-2 block text-xs leading-5 text-[var(--sc-stone)]">
+                Persist denial. Analytics collection and ad serving remain blocked by policy.
+              </span>
+            </button>
+          </div>
+          <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-xs leading-5 text-[var(--sc-stone)]">
+            Current choice: <strong className="text-[var(--sc-ivory-soft)]">{telemetryConsent}</strong>. Clearing this device also clears this local preference, which returns the policy to fail-closed <strong className="text-[var(--sc-ivory-soft)]">unset</strong>.
+          </div>
         </section>
 
         <section className="sc-panel mt-4 p-6">

@@ -62,8 +62,18 @@ function providerReadiness(env = process.env) {
     ].filter((key) => !present(env[key])),
   };
 
-  const nativeEnabled = truthy(env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED);
-  const nativeConfigured = apple.configured && google.configured && apple.productionOnly;
+  const legacyNativeEnabled = truthy(env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED);
+  const iosEnabled =
+    env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED === undefined
+      ? legacyNativeEnabled
+      : truthy(env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED);
+  const androidEnabled =
+    env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED === undefined
+      ? legacyNativeEnabled
+      : truthy(env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED);
+  const iosConfigured = apple.configured && apple.productionOnly;
+  const androidConfigured = google.configured;
+  const nativeConfigured = iosConfigured && androidConfigured;
 
   return {
     persistenceConfigured: persistent,
@@ -73,11 +83,16 @@ function providerReadiness(env = process.env) {
     google,
     webAuth,
     webActivationSafe: !stripe.enabled || (stripe.configured && webAuth.configured),
-    nativeActivationSafe: !nativeEnabled || nativeConfigured,
+    iosActivationSafe: !iosEnabled || iosConfigured,
+    androidActivationSafe: !androidEnabled || androidConfigured,
+    nativeActivationSafe:
+      (!iosEnabled || iosConfigured) && (!androidEnabled || androidConfigured),
     fullyConfigured: stripe.configured && webAuth.configured && nativeConfigured,
     flags: {
       webCheckoutEnabled: stripe.enabled,
-      nativeBillingEnabled: nativeEnabled,
+      iosBillingEnabled: iosEnabled,
+      androidBillingEnabled: androidEnabled,
+      legacyNativeBillingEnabled: legacyNativeEnabled,
     },
   };
 }
@@ -85,7 +100,11 @@ function providerReadiness(env = process.env) {
 const readiness = providerReadiness();
 console.log(JSON.stringify(readiness, null, 2));
 
-if (!readiness.webActivationSafe || !readiness.nativeActivationSafe) {
+if (
+  !readiness.webActivationSafe ||
+  !readiness.iosActivationSafe ||
+  !readiness.androidActivationSafe
+) {
   console.error("Soul Codex+ billing activation is unsafe: an enabled purchase surface is missing required production configuration.");
   process.exit(2);
 }

@@ -1,3 +1,4 @@
+import AureonAvatar from "@/components/AureonAvatar";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, HeartHandshake, Sparkles } from "lucide-react";
@@ -160,7 +161,9 @@ export default function CompatibilityPersonPage() {
       return friend ? [{ yours: placement, theirs: friend }] : [];
     });
   const friendChartComparison = compareFriendCharts(
-    yourPlacements.filter((placement) => placement.kind !== "angle").map(({ key, sign, house }) => ({ key, sign, house })),
+    yourPlacements
+      .filter((placement) => placement.kind !== "angle")
+      .map(({ key, sign, house }) => ({ key, sign, house })),
     friendPlacements,
   );
 
@@ -265,24 +268,12 @@ export default function CompatibilityPersonPage() {
         </Link>
 
         <header className="mt-7 max-w-4xl">
-          <div className="mb-5 inline-flex items-center gap-3">
-            <img
-              src="/images/aureon-guide.webp"
-              alt="Aureon, Soul Guide"
-              className="h-12 w-12 rounded-xl border border-[var(--sc-line-gold)] object-cover shadow-[0_0_18px_rgba(217,182,111,.14)]"
-              loading="lazy"
-            />
-            <div>
-              <p className="sc-eyebrow">Soul Guide</p>
-              <p className="font-serif text-xl text-[var(--sc-ivory)]">Aureon</p>
-            </div>
-          </div>
           <div className="sc-eyebrow">Compare a person</div>
           <h1 className="mt-4 font-serif text-[clamp(3rem,7vw,5.5rem)] font-medium leading-[.97] tracking-[-.04em] text-[var(--sc-ivory)]">
-            Two charts. Four relationship lenses. Your connection, in context.
+            One person. Four signals. No universal verdict.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. Chart scores below use every planet, Node, and Chiron placement actually shared by both charts. The optional Sun-sign foundation adds four broad relationship lenses; it does not replace the full chart comparison. The comparison stays grounded in what you both actually shared.
+            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same planet and verified house context.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
@@ -292,10 +283,11 @@ export default function CompatibilityPersonPage() {
         {initialConnection && friendPlacements.length > 0 ? (
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
+              <AureonAvatar />
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                See where your styles line up, where you move through different life areas, and what each placement brings. A planet points to what’s active; its sign gives the style; its house shows where it plays out. This uses only chart facts saved for both of you. Missing placements stay missing.
+                A placement-by-placement comparison using only chart facts actually saved for both people. Missing planets stay missing.
               </p>
             </div>
 
@@ -305,20 +297,23 @@ export default function CompatibilityPersonPage() {
                   <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Shared chart resonance</p>
                     <p className="mt-2 font-serif text-3xl text-[var(--sc-gold-bright)]">{friendChartComparison.overallScore === null ? "—" : `${friendChartComparison.overallScore}/100`}</p>
-                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.overallCoverage.matched} of {friendChartComparison.overallCoverage.available} chart placements overlap</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Average of every matching saved planet, Node, or Chiron sign pattern, with a small same-house bonus. Symbolic reflection, not a relationship forecast.</p>
+                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.overallCoverage.matched} of {friendChartComparison.overallCoverage.available} shared chart keys overlap</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Average of matching saved planets, Nodes, or Chiron. This is a transparent symbolic reflection score, not a probability or forecast.</p>
                   </div>
                   <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4" data-testid="friendship-chart-score">
                     <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Friendship resonance</p>
                     <p className="mt-2 font-serif text-3xl text-[var(--sc-gold-bright)]">{friendChartComparison.friendshipScore === null ? "—" : `${friendChartComparison.friendshipScore}/100`}</p>
-                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.friendshipCoverage.matched} of 4 friendship placements have matching saved data</p>
-                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Moon · emotional rhythm; Mercury · communication; Venus · affection and values; Jupiter · mutual growth. Only shared, saved placements count.</p>
+                    <p className="mt-1 text-xs text-[var(--sc-stone)]">{friendChartComparison.friendshipCoverage.matched} of 4 friendship placements available on both charts</p>
+                    <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Moon · emotional rhythm; Mercury · communication; Venus · affection and values; Jupiter · mutual growth.</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {friendChartComparison.friendshipMatches.map((match) => <span key={match.key} className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-ivory-soft)]">{placementLabel(match.key as Parameters<typeof placementLabel>[0])} · {match.score}/100</span>)}
+                      {friendChartComparison.friendshipMatches.map((match) => (
+                        <span key={match.key} className="rounded-full border border-[var(--sc-line)] px-2.5 py-1 text-xs text-[var(--sc-ivory-soft)]">
+                          {placementLabel(match.key as Parameters<typeof placementLabel>[0])} · {match.score}/100
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
-
                 <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection pattern</p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -329,10 +324,12 @@ export default function CompatibilityPersonPage() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
-                    Counts describe only the planet/sign/house rows present on both charts. They are not compatibility percentages or relationship predictions.
+                    Counts describe only rows present on both charts. Missing placements stay missing.
                   </p>
                 </div>
-                <p className="text-xs leading-5 text-[var(--sc-stone)]">Scoring key: same sign = 100; same element = 78; same mode = 65; other sign pattern = 48; same house adds 8 points (maximum 100). Scores average only the placements both people shared. Exact degree-based planetary aspects are not available in this privacy-limited chart share.</p>
+                <p className="text-xs leading-5 text-[var(--sc-stone)]">
+                  Scoring key: same sign = 100; same element = 78; same mode = 65; other sign pattern = 48; same house adds 8 points, capped at 100. Exact degree-based aspects are not inferred from this privacy-limited saved-chart data.
+                </p>
                 {placementComparisons.map(({ yours, theirs }) => {
                   const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
                   const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);
@@ -460,7 +457,7 @@ export default function CompatibilityPersonPage() {
                   <div className="sc-eyebrow">Sun-sign foundation</div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
                   {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
-                  <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four 0–100 scores are the Sun-sign foundation. The shared chart resonance and friendship scores above use every matching saved placement and show their data coverage separately.</p>
+                  <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four dimensions are the privacy-minimized Sun-sign foundation. The chart resonance above is a separate local comparison of saved placements and reports its own coverage.</p>
                 </section>
 
                 <section className="grid gap-3 sm:grid-cols-2" aria-label="Compatibility dimensions">
@@ -468,8 +465,8 @@ export default function CompatibilityPersonPage() {
                     <article className="sc-panel min-w-0 p-5" key={dimension.key}>
                       <div className="flex items-start justify-between gap-4">
                         <h3 className="m-0 font-serif text-lg font-semibold">{dimension.label}</h3>
-                        <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic score ${dimensionScores[dimension.key]} out of 100, ${symbolicBand(dimensionScores[dimension.key])}`}>
-                          {dimensionScores[dimension.key]}/100 · {symbolicBand(dimensionScores[dimension.key])}
+                        <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic model band ${symbolicBand(dimensionScores[dimension.key])}`}>
+                          {symbolicBand(dimensionScores[dimension.key])}
                         </span>
                       </div>
                       <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>

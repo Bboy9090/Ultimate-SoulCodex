@@ -32,7 +32,7 @@ FIREBASE_WEB_APP_ORIGIN=https://soulcodex.up.railway.app
 GOOGLE_ANALYTICS_MEASUREMENT_ID=
 ```
 
-Analytics events must be suppressed until the user has made the required consent choice. Do not use a caller-declared consent value as proof; bind collection to the app's persisted consent state.
+Analytics events must be suppressed until the user has made the required consent choice. Do not use a caller-declared consent value as proof; bind collection to the app's persisted consent state. Missing, malformed, or cleared consent fails closed to `unset` and blocks collection.
 
 ## AdMob
 
@@ -45,7 +45,7 @@ ADMOB_ANDROID_REWARDED_UNIT_ID=
 ADMOB_IOS_REWARDED_UNIT_ID=
 ```
 
-Use Google's test ad identifiers during development. Premium entitlement must suppress all ads.
+Use Google's test ad identifiers during development. Ad serving requires persisted granted consent. Premium entitlement must suppress all ads even when consent is granted and AdMob is enabled.
 
 ## Gemini / Vertex
 

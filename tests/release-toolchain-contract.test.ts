@@ -71,7 +71,7 @@ test("store workflow constructs and validates both Capacitor native payloads", a
   assert.match(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ github\.sha \}\}/);
 });
 
-test("Google Play production publishing is signed, inspectable, and main-only", async () => {
+test("Google Play qualification requires signed main candidates and records a deferred publishing handoff", async () => {
   const workflow = await text(storeWorkflowPath);
   for (const secret of [
     "ANDROID_KEYSTORE",
@@ -86,16 +86,16 @@ test("Google Play production publishing is signed, inspectable, and main-only", 
   assert.match(workflow, /Detect Google Play publishing credentials/);
   assert.match(workflow, /id:\s*play/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
-  assert.match(workflow, /Google Play service-account blocker/);
+  assert.match(workflow, /Google Play production handoff blocked/);
   assert.match(workflow, /\.\/gradlew --no-daemon bundleRelease/);
   assert.match(workflow, /test -s "\$AAB"/);
   assert.match(workflow, /jarsigner -verify "\$AAB"/);
   assert.match(workflow, /AAB-SHA256\.txt/);
   assert.match(workflow, /RELEASE-CANDIDATE-SHA\.txt/);
-  assert.match(
-    workflow,
-    /Publish signed AAB to Google Play production\n\s+if: github\.ref == 'refs\/heads\/main'/,
-  );
+  assert.match(workflow, /Require signed Android candidate on main\n\s+if: github\.ref == 'refs\/heads\/main'/);
+  assert.match(workflow, /production_publish_attempted=false/);
+  assert.match(workflow, /production_publish_deferred=true/);
+  assert.doesNotMatch(workflow, /Publish signed AAB to Google Play production/);
 });
 
 test("native release validation requires inspectable client release identity", async () => {

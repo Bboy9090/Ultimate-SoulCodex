@@ -9,7 +9,8 @@ test("local-first creation distinguishes completed verification from deferred fa
 
   assert.match(source, /Promise<boolean>/);
   assert.match(source, /!navigator\.onLine\) return false/);
-  assert.match(source, /return true;/);
+  assert.match(source, /return !profileNeedsOnlineVerification\(hydrated\);/);
+  assert.match(source, /currentActive\?\.id === localProfile\.id/);
   assert.match(source, /return false;/);
   assert.match(source, /verificationCompleted = await requestVerificationWhenOnline/);
   assert.match(source, /online verification request completed/);

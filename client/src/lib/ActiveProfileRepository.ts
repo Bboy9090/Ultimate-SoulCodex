@@ -14,6 +14,8 @@
 
 import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
+import { FOUNDATION_NARRATIVE_REVISION, generateFoundationOfflineCodexProfile } from "./foundationOfflineCodex";
+import { reconcileOfflineProfile } from "./profileVerificationReconciliation";
 
 function validEvidenceText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -134,6 +136,12 @@ export interface StoredProfile {
   humanDesignData?: any;
   archetype?: string;
   synthesis?: any;
+  foundationNarrativeRevision?: number;
+  birthTimeStatus?: "known" | "unknown";
+  biography?: string;
+  dailyGuidance?: string;
+  archetypeData?: any;
+  depthInterpretation?: any;
   elements?: any;
   confidence?: any;
   schemaVersion?: number;
@@ -192,7 +200,7 @@ export function loadActiveProfile(): ProfileLoadResult {
     if (canonical.status === "loaded") {
       const validation = validateProfile(canonical.profile);
       if (validation.valid) {
-        const repaired = repairStoredLifePath(canonical.profile);
+        const repaired = repairLocalNarrative(repairStoredLifePath(canonical.profile));
         if (repaired !== canonical.profile) saveToKey(CANONICAL_KEY, repaired);
         return { status: "loaded", profile: repaired };
       }
@@ -399,6 +407,57 @@ function migrateLegacyProfile(profile: StoredProfile): {
 
   notifyProfileUpdated();
   return { success: true, profile: readBack.profile };
+}
+
+function repairLocalNarrative(profile: StoredProfile): StoredProfile {
+  if (!profile.id?.startsWith("local-") ||
+    profile.foundationNarrativeRevision === FOUNDATION_NARRATIVE_REVISION ||
+    !profile.name?.trim() || !profile.birthDate ||
+    !profile.birthLocation?.trim() || !profile.timezone?.trim()) return profile;
+
+  // Regenerating symbolic prose must not erase an observed/user-assessed reading.
+  const existingDepth = profile.depthInterpretation ?? profile.synthesis;
+  if (Array.isArray(existingDepth?.evidence) && existingDepth.evidence.some((entry: any) =>
+    ["user-stated", "mirror", "tracker"].includes(entry?.system) ||
+    entry?.claimKind === "observed")) return profile;
+
+  try {
+    const baseline = generateFoundationOfflineCodexProfile({
+      name: profile.name,
+      fullBirthName: profile.fullBirthName,
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTimeStatus === "unknown" ? "" : profile.birthTime ?? "",
+      birthLocation: profile.birthLocation,
+      timezone: profile.timezone,
+      latitude: profile.latitude ?? "",
+      longitude: profile.longitude ?? "",
+    }, { id: profile.id });
+    const astrology = sanitizeAstrologyVerificationClaims(profile.astrologyData);
+    const humanDesign = sanitizeHumanDesignVerificationClaim(profile.humanDesignData);
+    const synthesisAstrology = profile.birthTimeStatus === "unknown" && astrology
+      ? { ...astrology, rising: { ...astrology.rising, verificationStatus: "unresolved", sign: null } }
+      : astrology;
+    const regenerated = reconcileOfflineProfile(baseline, {
+      astrologyData: synthesisAstrology,
+      humanDesignData: humanDesign,
+    });
+    return {
+      ...profile,
+      numerologyData: regenerated.numerologyData,
+      lifePathNumber: regenerated.numerologyData.lifePath,
+      biography: regenerated.biography,
+      dailyGuidance: regenerated.dailyGuidance,
+      archetypeData: regenerated.archetypeData,
+      archetype: regenerated.archetypeData.title,
+      depthInterpretation: regenerated.depthInterpretation,
+      synthesis: regenerated.depthInterpretation,
+      foundationNarrativeRevision: FOUNDATION_NARRATIVE_REVISION,
+      birthTimeStatus: baseline.birthTimeStatus,
+      updatedAt: regenerated.updatedAt,
+    };
+  } catch {
+    return profile;
+  }
 }
 
 function repairStoredLifePath(profile: StoredProfile): StoredProfile {

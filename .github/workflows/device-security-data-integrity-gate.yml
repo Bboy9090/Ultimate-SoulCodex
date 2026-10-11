@@ -58,6 +58,10 @@ jobs:
           tests/full-birth-name-persistence-contract.test.ts
           tests/production-persistence-truth.test.ts
           tests/persistence-readiness.test.ts
+          tests/integration-readiness.test.ts
+          tests/telemetry-consent.test.ts
+          tests/telemetry-consent-settings-contract.test.ts
+          client/src/lib/friendChartCompatibility.test.ts
           tests/public-profile-projection.test.ts
           tests/share-privacy-accessibility-contract.test.ts
           tests/pwa-update-lifecycle-contract.test.ts
@@ -72,6 +76,17 @@ jobs:
           tests/accessibility-device-acceptance-contract.test.ts
           tests/form-accessibility-recovery-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/profile-verification-boundary.test.ts
+          tests/known-time-profile-verification-http.test.ts
+          tests/human-design-complete-input-matrix.test.ts
+          tests/human-design-availability.test.ts
+          tests/server-profile-human-design-parity.test.ts
+          tests/stored-profile-system-verification.test.ts
+          tests/server-symbolic-fallback.test.ts
+          tests/foundation-local-truth-invariants.test.ts
+          tests/active-profile-contract.test.ts
+          tests/timeline-today-card.test.ts
+          client/src/lib/__tests__/foundationOfflineCodexRepair.test.ts
           tests/local-first-verification-failure-truth.test.ts
           tests/verified-profile-differentiation-corpus.test.ts
           server/tests/gate1-foundation.test.ts
@@ -86,6 +101,12 @@ jobs:
 
       - name: Audit production dependencies for high-severity vulnerabilities
         run: npm audit --omit=dev --audit-level=high
+
+      - name: Foundation truth and privacy invariants
+        run: node scripts/verify-foundation-web-rc.mjs
+
+      - name: Validate provider configuration readiness
+        run: npm run validate:integrations
 
       - name: Typecheck
         run: npm run check
@@ -119,6 +140,8 @@ jobs:
             echo "policy=durable-billing-ledger-and-signed-subscription-verification"
             echo "policy=native-store-evidence-requires-server-verification-and-account-binding"
             echo "policy=production-persistence-mode-is-explicit-and-durable-features-fail-closed"
+            echo "policy=enabled-provider-configuration-fails-closed-without-claiming-production-activation"
+            echo "policy=analytics-and-admob-require-persisted-granted-consent-and-premium-suppresses-ads"
             echo "policy=railway-promotion-requires-live-database-readiness"
             echo "policy=account-deletion-removes-public-shares"
             echo "policy=public-share-projection-excludes-private-birth-and-assessment-data"

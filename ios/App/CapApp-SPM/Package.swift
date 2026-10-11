@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "CapApp-SPM", targets: ["CapApp-SPM"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.3"),
         .package(url: "https://github.com/ionic-team/capacitor-contacts.git", exact: "1.0.1"),
         .package(url: "https://github.com/ionic-team/capacitor-keyboard.git", exact: "8.0.3"),
         .package(name: "CapacitorSplashScreen", path: "../Vendor/CapacitorSplashScreen"),

@@ -48,10 +48,26 @@ Status: Google-only integration lane. Production activation remains disabled unt
 10. YouTube, Drive, Speech, and media workflows.
 11. TensorFlow/Flutter lanes after the shared contracts are stable.
 
+## Configuration readiness gate
+
+Run `npm run validate:integrations` before enabling provider flags in a deployment.
+
+The gate reports only provider status, missing environment-variable names, and policy blockers. It does not print credential values. Disabled providers pass safely. An explicitly enabled provider fails closed when its runtime contract is incomplete. AWS remains policy-blocked by this portfolio plan even if an AWS region is configured.
+
+A passing configuration gate does **not** mean production activation is approved. The report deliberately returns `claimsProductionActivationReady: false` because privacy, consent, fallbacks, entitlements, ownership, and cost controls require independent evidence.
+
+## Persisted telemetry-consent gate
+
+Telemetry collection is fail-closed. Missing, malformed, or cleared consent resolves to `unset`, which blocks Analytics and AdMob.
+
+Only a persisted `granted` choice can make Analytics eligible to collect when the Analytics provider itself is enabled. AdMob additionally requires the free tier: premium entitlement suppresses ads even when consent is granted and the provider is configured.
+
+A caller-declared boolean, route parameter, or in-memory request value is not accepted as proof of consent. Collection decisions must derive from the persisted consent state.
+
 ## Required evidence before production activation
 
 - Google project ownership confirmed.
-- Privacy and consent behavior tested.
+- Privacy and persisted-consent behavior tested.
 - Test identifiers used in development.
 - No secrets committed.
 - Offline and provider-failure fallbacks verified.

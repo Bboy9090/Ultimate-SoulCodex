@@ -809,7 +809,7 @@ describe('Phase 3: Human Design Canonical Implementation', () => {
         birthLocation: 'New York, NY',
         latitude: '40.7128',
         longitude: '-74.0060',
-        timezone: 'EST',
+        timezone: 'EDT',
       });
 
       assert.strictEqual(result.result?.status, 'resolved');

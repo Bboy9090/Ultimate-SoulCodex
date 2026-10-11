@@ -1,3 +1,4 @@
+import AureonAvatar from "@/components/AureonAvatar";
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
@@ -101,6 +102,11 @@ export default function VerifiedNatalChart({
     ...synthesis.aspects.map((_, index) => ({ kind: "aspect", index } as const)),
   ];
 
+  function selectChartItem(item: ChartSelection) {
+    setGuideIndex(null);
+    setSelection(item);
+  }
+
   function startGuide() {
     if (!guideStops.length) return;
     setSelection(guideStops[0]);
@@ -147,9 +153,9 @@ export default function VerifiedNatalChart({
         <span className="sc-trust-chip">verified geometry</span>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(320px,460px)_1fr] xl:items-start">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,460px)_1fr] xl:items-start">
         <div className="mx-auto w-full max-w-[460px]">
-          <svg viewBox="0 0 360 360" role="img" aria-label="Verified natal chart wheel" className="h-auto w-full">
+          <svg viewBox="0 0 360 360" role="group" aria-label="Verified natal chart wheel" className="h-auto w-full">
             <circle cx="180" cy="180" r="166" fill="rgba(8,6,14,.72)" stroke="var(--sc-line-gold)" />
             <circle cx="180" cy="180" r="144" fill="none" stroke="var(--sc-line)" />
             <circle cx="180" cy="180" r="103" fill="rgba(13,9,22,.76)" stroke="var(--sc-line)" />
@@ -166,8 +172,8 @@ export default function VerifiedNatalChart({
                   aria-label={`Open ${sign} sign meaning`}
                   aria-pressed={selection?.kind === "sign" && selection.sign === sign}
                   className="cursor-pointer outline-none"
-                  onClick={() => setSelection({ kind: "sign", sign: sign as AtlasSign })}
-                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "sign", sign: sign as AtlasSign }))}
+                  onClick={() => selectChartItem({ kind: "sign", sign: sign as AtlasSign })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "sign", sign: sign as AtlasSign }))}
                   animate={{ opacity: selection && !(selection.kind === "sign" && selection.sign === sign) ? 0.6 : 1, scale: selection?.kind === "sign" && selection.sign === sign ? 1.22 : 1 }}
                   transition={{ duration: reducedMotion ? 0 : 0.2 }}
                   style={{ transformOrigin: `${p.x}px ${p.y}px` }}
@@ -193,8 +199,8 @@ export default function VerifiedNatalChart({
                   aria-label={`Open House ${house.house} in ${house.sign}`}
                   aria-pressed={selected}
                   className="cursor-pointer outline-none"
-                  onClick={() => setSelection({ kind: "house", house: house.house })}
-                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "house", house: house.house }))}
+                  onClick={() => selectChartItem({ kind: "house", house: house.house })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "house", house: house.house }))}
                   animate={{ opacity: selection && !selected ? 0.68 : 1 }}
                   transition={{ duration: reducedMotion ? 0 : 0.2 }}
                 >
@@ -222,8 +228,8 @@ export default function VerifiedNatalChart({
                 aria-label={`Open ${line.planet1} ${line.aspect} ${line.planet2}`}
                 aria-pressed={selected}
                 className="cursor-pointer outline-none"
-                onClick={() => setSelection({ kind: "aspect", index: sourceIndex })}
-                onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "aspect", index: sourceIndex }))}
+                onClick={() => selectChartItem({ kind: "aspect", index: sourceIndex })}
+                onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "aspect", index: sourceIndex }))}
                 animate={{ pathLength: selected ? 1 : 0.96 }}
                 transition={{ duration: reducedMotion ? 0 : 0.25 }}
               />
@@ -241,8 +247,8 @@ export default function VerifiedNatalChart({
                   aria-label={`Open ${placement.label} in ${placement.sign}${placement.house ? `, House ${placement.house}` : ""}`}
                   aria-pressed={selected}
                   className="cursor-pointer outline-none"
-                  onClick={() => setSelection({ kind: "planet", key: placement.key })}
-                  onKeyDown={(event) => selectWithKeyboard(event, () => setSelection({ kind: "planet", key: placement.key }))}
+                  onClick={() => selectChartItem({ kind: "planet", key: placement.key })}
+                  onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "planet", key: placement.key }))}
                   animate={{ scale: selected ? 1.18 : 1, opacity: selection && !selected ? 0.72 : 1 }}
                   transition={{ type: "spring", stiffness: 360, damping: 24, duration: reducedMotion ? 0 : undefined }}
                   style={{ transformOrigin: `${p.x + jitter}px ${p.y + jitter}px` }}
@@ -264,29 +270,21 @@ export default function VerifiedNatalChart({
         <div className="space-y-4">
           <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/images/aureon-guide.webp"
-                  alt="Aureon, Soul Guide"
-                  data-testid="soul-guide-avatar"
-                  className="h-16 w-16 rounded-2xl border border-[var(--sc-line-gold)] object-cover shadow-[0_0_22px_rgba(217,182,111,.18)]"
-                  loading="lazy"
-                />
-                <div>
-                  <p className="sc-eyebrow">Soul Guide</p>
-                  <h3 className="mt-1 font-serif text-2xl text-[var(--sc-ivory)]">Aureon</h3>
-                  <p className="mt-1 text-xs text-[var(--sc-stone)]">Your chart, one placement at a time.</p>
-                </div>
+              <div>
+                <AureonAvatar />
+                <p className="sc-eyebrow">Tap the chart · Meet your placements</p>
+                <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Explore your chart</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                 {guideIndex === null && <button type="button" className="sc-button-secondary" onClick={startGuide}>Walk me through it</button>}
                 {selection && <button type="button" className="sc-button-ghost" onClick={() => { setSelection(null); setGuideIndex(null); }}>Close</button>}
+
               </div>
             </div>
 
             {guideIndex !== null && <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] bg-black/10 p-3" data-testid="soul-guide-walkthrough" aria-live="polite">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-[var(--sc-ivory-soft)]"><strong className="text-[var(--sc-gold-bright)]">Block {guideIndex + 1} of {guideStops.length}:</strong> {guideStopLabel(guideStops[guideIndex])}</p>
+                <p className="text-sm text-[var(--sc-ivory-soft)]"><strong className="text-[var(--sc-gold-bright)]">Step {guideIndex + 1} of {guideStops.length}:</strong> {guideStopLabel(guideStops[guideIndex])}</p>
                 <div className="flex gap-2">
                   <button type="button" className="sc-button-ghost" onClick={() => moveGuide(-1)} disabled={guideIndex === 0}>Back</button>
                   <button type="button" className="sc-button-secondary" onClick={() => moveGuide(1)}>{guideIndex === guideStops.length - 1 ? "Finish walk" : "Next"}</button>
@@ -405,7 +403,7 @@ export default function VerifiedNatalChart({
             {synthesis.placements.map((placement) => {
               const cusp = placement.house ? synthesis.houseCusps.find((house) => house.house === placement.house) : null;
               return (
-                <button type="button" key={placement.key} aria-pressed={selection?.kind === "planet" && selection.key === placement.key} onClick={() => setSelection({ kind: "planet", key: placement.key })} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
+                <button type="button" key={placement.key} aria-pressed={selection?.kind === "planet" && selection.key === placement.key} onClick={() => selectChartItem({ kind: "planet", key: placement.key })} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3 text-left transition hover:-translate-y-0.5 hover:border-[var(--sc-gold)] focus-visible:outline focus-visible:outline-2">
                   <div className="flex items-center justify-between gap-3">
                     <strong className="text-sm text-[var(--sc-ivory)]">{GLYPH[placement.key]} {placement.label}</strong>
                     <span className="text-sm font-semibold text-[var(--sc-gold-bright)]">{placement.sign}</span>
@@ -427,7 +425,7 @@ export default function VerifiedNatalChart({
                 type="button"
                 key={point.key}
                 aria-pressed={selection?.kind === "point" && selection.key === point.key}
-                onClick={() => setSelection({ kind: "point", key: point.key })}
+                onClick={() => selectChartItem({ kind: "point", key: point.key })}
                 className="rounded-full border border-[var(--sc-line)] px-3 py-2 text-sm text-[var(--sc-ivory-soft)] transition hover:border-[var(--sc-gold)] hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2"
               >{POINT_GLYPH[point.key]} {point.label} · {point.sign}{point.house ? ` · H${point.house}` : ""}</button>)}
             </div>
@@ -440,7 +438,7 @@ export default function VerifiedNatalChart({
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               {synthesis.houseCusps.map((house) => (
-                  <button type="button" key={house.house} aria-pressed={selection?.kind === "house" && selection.house === house.house} onClick={() => setSelection({ kind: "house", house: house.house })} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3 text-left transition hover:border-[var(--sc-gold)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
+                  <button type="button" key={house.house} aria-pressed={selection?.kind === "house" && selection.house === house.house} onClick={() => selectChartItem({ kind: "house", house: house.house })} className="rounded-xl border border-[var(--sc-line)] bg-black/10 p-3 text-left transition hover:border-[var(--sc-gold)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
                     <div className="flex items-center justify-between gap-3 text-sm">
                       <strong className="text-[var(--sc-ivory)]">House {house.house} · {house.sign}</strong>
                       <span className="text-xs text-[var(--sc-gold-bright)]">{house.degree !== null ? house.degree.toFixed(2) + "°" : ""}</span>
@@ -458,7 +456,7 @@ export default function VerifiedNatalChart({
             <ul className="mt-3 space-y-2 text-sm text-[var(--sc-stone)]">
               {synthesis.aspects.length ? synthesis.aspects.map((aspect, index) => (
                 <li key={aspect.planet1 + "-" + aspect.planet2 + "-" + index}>
-                  <button type="button" aria-pressed={selection?.kind === "aspect" && selection.index === index} onClick={() => setSelection({ kind: "aspect", index })} className="w-full rounded-xl border border-transparent p-2 text-left transition hover:border-[var(--sc-line)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
+                  <button type="button" aria-pressed={selection?.kind === "aspect" && selection.index === index} onClick={() => selectChartItem({ kind: "aspect", index })} className="w-full rounded-xl border border-transparent p-2 text-left transition hover:border-[var(--sc-line)] hover:bg-white/[0.03] focus-visible:outline focus-visible:outline-2">
                     <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet1}</strong>
                     {" "}{aspect.aspect}{" "}
                     <strong className="capitalize text-[var(--sc-ivory-soft)]">{aspect.planet2}</strong>

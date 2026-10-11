@@ -7,8 +7,8 @@ Do not duplicate or independently edit store copy here. Use the canonical packet
 
 ## Current release identity
 
-- Android: `4.1.0` / versionCode `4000010` / `soulcodex.app`
-- iOS: `4.1.0` / build `4000010` / `app.soulcodex.ios` / App Store ID `6764221944`
+- Android: `4.1.0` / versionCode `4000011` / `soulcodex.app`
+- iOS: `4.1.0` / build `4000011` / `app.soulcodex.ios` / App Store ID `6764221944`
 - Release authority: use the successful exact-head Store Candidate / hardening receipt for the binary being submitted; do not hard-code a moving SHA here.
 
 ## Verified public URLs

@@ -16,6 +16,7 @@ import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileReposit
 import {
   reconcileActiveProfile,
   reconcileOfflineProfile,
+  profileNeedsOnlineVerification,
 } from "@/lib/profileVerificationReconciliation";
 import {
   Form,
@@ -114,7 +115,7 @@ async function requestVerificationWhenOnline(
     const syncedAt = verification.updatedAt || new Date().toISOString();
 
     const currentActive = loadActiveProfile().profile;
-    if (currentActive) {
+    if (currentActive?.id === localProfile.id) {
       const activeSave = saveActiveProfile(
         reconcileActiveProfile(currentActive, verification, syncedAt),
       );
@@ -125,9 +126,8 @@ async function requestVerificationWhenOnline(
       }
     }
 
-    await saveOfflineProfile(
-      reconcileOfflineProfile(localProfile, verification, syncedAt),
-    );
+    const hydrated = reconcileOfflineProfile(localProfile, verification, syncedAt);
+    await saveOfflineProfile(hydrated);
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(
@@ -136,7 +136,7 @@ async function requestVerificationWhenOnline(
         }),
       );
     }
-    return true;
+    return !profileNeedsOnlineVerification(hydrated);
   } catch (error) {
     console.warn(
       "[local-first-create] Requested online verification could not complete; local profile remains available",
