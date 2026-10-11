@@ -16,6 +16,7 @@ import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
 import { FOUNDATION_NARRATIVE_REVISION, generateFoundationOfflineCodexProfile } from "./foundationOfflineCodex";
 import { reconcileOfflineProfile } from "./profileVerificationReconciliation";
+import { readBoundedOfflinePlus } from "./offlineEntitlementCache";
 
 function validEvidenceText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -431,7 +432,7 @@ function repairLocalNarrative(profile: StoredProfile): StoredProfile {
       timezone: profile.timezone,
       latitude: profile.latitude ?? "",
       longitude: profile.longitude ?? "",
-    }, { id: profile.id });
+    }, { id: profile.id, includeNameNumerology: Boolean(readBoundedOfflinePlus()) });
     const astrology = sanitizeAstrologyVerificationClaims(profile.astrologyData);
     const humanDesign = sanitizeHumanDesignVerificationClaim(profile.humanDesignData);
     const synthesisAstrology = profile.birthTimeStatus === "unknown" && astrology
