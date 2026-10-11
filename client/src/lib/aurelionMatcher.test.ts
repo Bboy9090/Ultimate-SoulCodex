@@ -52,3 +52,27 @@ test("Aurelion match summary stays bounded to shared saved signals", () => {
 test("Aurelion reports unavailable matching when no shared signals exist", () => {
   assert.match(aurelionMatchSummary("Jordan", []), /cannot match Jordan yet/i);
 });
+
+
+test("Aurelion reads the same verifiedAstrologyData source used by Compatibility", () => {
+  const placements = buildAurelionPlacements({
+    verifiedAstrologyData: {
+      planets: {
+        moon: { sign: "Gemini", degree: 8.2 },
+        venus: { sign: "Libra" },
+      },
+      planetaryHouses: {
+        moon: 7,
+        venus: 11,
+      },
+    },
+  });
+
+  assert.deepEqual(
+    placements.map((placement) => [placement.key, placement.sign, placement.house]),
+    [
+      ["moon", "Gemini", 7],
+      ["venus", "Libra", 11],
+    ],
+  );
+});
