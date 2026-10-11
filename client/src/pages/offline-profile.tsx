@@ -171,7 +171,12 @@ export default function OfflineProfilePage() {
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
   const canRequestOnlineEvidence = Boolean(reconciledProfile.timezone?.trim());
   const readingHref = `/reading/${profile.id}`;
-  const dailyGuidance = splitDailyGuidance(profile.dailyGuidance);
+  const freeGuidance = ultimateCodex.integrationMoves[0] ?? "Choose one supported pattern and test it against one real event today.";
+  const visibleDailyGuidance = canSeeInterpretationDepth ? profile.dailyGuidance : freeGuidance;
+  const dailyGuidance = splitDailyGuidance(visibleDailyGuidance);
+  const visibleBiography = canSeeInterpretationDepth
+    ? profile.biography
+    : ultimateCodex.identitySignature;
   const identityTitle =
     ultimateCodex.derivedArchetype ??
     (ultimateCodex.coverage !== "insufficient"
@@ -468,7 +473,7 @@ export default function OfflineProfilePage() {
               </div>
             </div>
           )}
-          <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
+          <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{visibleBiography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 
         <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
