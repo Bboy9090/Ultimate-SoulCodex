@@ -39,6 +39,7 @@ import {
   publicShareSelectionSchema,
 } from "./lib/public-profile-projection";
 import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
+import { projectInterpretationInputsForTier } from "./lib/profile-interpretation-access";
 import { tierAllowsCapability } from "@shared/product-access";
 import { registerBillingRoutes } from "./billing";
 
@@ -177,13 +178,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
       const numerologyData = calculateNumerology(birthData.fullBirthName, birthData.birthDate);
       const tarotCards = getTarotBirthCards(birthData.birthDate);
-      const archetypeData = synthesizeArchetype(astrologyData, numerologyData, {}, humanDesignData);
+      const authenticatedUserId = req.session?.userId ?? null;
+      const entitlement = await resolveProductEntitlementForUser(storage, authenticatedUserId);
+      const interpretationInputs = projectInterpretationInputsForTier(
+        entitlement.tier,
+        numerologyData,
+        humanDesignData,
+      );
+      const archetypeData = synthesizeArchetype(
+        astrologyData,
+        interpretationInputs.numerologyData,
+        {},
+        interpretationInputs.humanDesignData,
+      );
       const biography = await generateBiography({
         name: birthData.name,
         archetypeTitle: archetypeData.title,
         astrologyData,
-        humanDesignData,
-        numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: {},
         archetype: archetypeData,
       });
@@ -191,13 +204,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: birthData.name,
         archetypeTitle: archetypeData.title,
         astrologyData,
-        humanDesignData,
-        numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: {},
         archetype: archetypeData,
       });
-
-      const authenticatedUserId = req.session?.userId ?? null;
       const profile = await storage.createProfile({
         userId: authenticatedUserId,
         sessionId: authenticatedUserId ? null : (req.sessionID ?? null),
@@ -341,13 +352,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const enneagramResult = calculateEnneagram(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "enneagram", responses: assessment.responses, calculatedType: enneagramResult?.type?.toString() || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), enneagram: enneagramResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData, profile.humanDesignData);
+      const entitlement = await resolveProductEntitlementForUser(storage, req.session?.userId ?? null);
+      const interpretationInputs = projectInterpretationInputsForTier(
+        entitlement.tier,
+        profile.numerologyData,
+        profile.humanDesignData,
+      );
+      const archetypeData = synthesizeArchetype(
+        profile.astrologyData,
+        interpretationInputs.numerologyData,
+        updatedPersonalityData,
+        interpretationInputs.humanDesignData,
+      );
       const biography = await generateBiography({
         name: profile.name,
         archetypeTitle: archetypeData.title,
         astrologyData: profile.astrologyData,
-        humanDesignData: profile.humanDesignData,
-        numerologyData: profile.numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: updatedPersonalityData,
         archetype: archetypeData,
       });
@@ -355,8 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: profile.name,
         archetypeTitle: archetypeData.title,
         astrologyData: profile.astrologyData,
-        humanDesignData: profile.humanDesignData,
-        numerologyData: profile.numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: updatedPersonalityData,
         archetype: archetypeData,
       });
@@ -383,13 +405,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mbtiResult = calculateMBTI(assessment.responses);
       await storage.createAssessment({ profileId, assessmentType: "mbti", responses: assessment.responses, calculatedType: mbtiResult?.type || null });
       const updatedPersonalityData = { ...(profile.personalityData as any), mbti: mbtiResult };
-      const archetypeData = synthesizeArchetype(profile.astrologyData, profile.numerologyData, updatedPersonalityData, profile.humanDesignData);
+      const entitlement = await resolveProductEntitlementForUser(storage, req.session?.userId ?? null);
+      const interpretationInputs = projectInterpretationInputsForTier(
+        entitlement.tier,
+        profile.numerologyData,
+        profile.humanDesignData,
+      );
+      const archetypeData = synthesizeArchetype(
+        profile.astrologyData,
+        interpretationInputs.numerologyData,
+        updatedPersonalityData,
+        interpretationInputs.humanDesignData,
+      );
       const biography = await generateBiography({
         name: profile.name,
         archetypeTitle: archetypeData.title,
         astrologyData: profile.astrologyData,
-        humanDesignData: profile.humanDesignData,
-        numerologyData: profile.numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: updatedPersonalityData,
         archetype: archetypeData,
       });
@@ -397,8 +430,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: profile.name,
         archetypeTitle: archetypeData.title,
         astrologyData: profile.astrologyData,
-        humanDesignData: profile.humanDesignData,
-        numerologyData: profile.numerologyData,
+        humanDesignData: interpretationInputs.humanDesignData,
+        numerologyData: interpretationInputs.numerologyData,
         personalityData: updatedPersonalityData,
         archetype: archetypeData,
       });
