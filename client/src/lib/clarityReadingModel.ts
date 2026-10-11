@@ -41,11 +41,13 @@ export interface ClarityReadingModel {
 export type ClarityReadingAccess = {
   fullNameNumerology: boolean;
   humanDesignCore: boolean;
+  interpretationDepth?: boolean;
 };
 
 const DEFAULT_READING_ACCESS: ClarityReadingAccess = {
   fullNameNumerology: true,
   humanDesignCore: true,
+  interpretationDepth: true,
 };
 
 type AnyRecord = Record<string, any>;
@@ -298,8 +300,9 @@ export function buildClarityReadingModel(
   const numerology = (profile.numerologyData ?? {}) as AnyRecord;
   const humanDesign = (profile.humanDesignData ?? {}) as AnyRecord;
   const personality = (profile.personalityData ?? {}) as AnyRecord;
-  const archetype = (profile.archetypeData ?? {}) as AnyRecord;
-  const depth = (profile.depthInterpretation ?? {}) as AnyRecord;
+  const interpretationDepth = access.interpretationDepth !== false;
+  const archetype = interpretationDepth ? (profile.archetypeData ?? {}) as AnyRecord : {};
+  const depth = interpretationDepth ? (profile.depthInterpretation ?? {}) as AnyRecord : {};
   const birthDate = typeof profile.birthDate === "string" ? profile.birthDate.slice(0, 10) : null;
   const fullBirthName = access.fullNameNumerology &&
     typeof profile.fullBirthName === "string" &&
@@ -321,19 +324,37 @@ export function buildClarityReadingModel(
   const expressionTheme = expression ? EXPRESSION_THEMES[expression] : undefined;
   const soulTheme = soulUrge ? SOUL_URGE_THEMES[soulUrge] : undefined;
 
-  const title = firstSupportedText(
-    depth.title,
-    depth.claritySummary?.title,
-    archetype.title,
-    archetype.name,
-  ) ?? "Your evolving pattern";
+  const freeIdentityParts = [
+    getSynthesisPlacement(verified.sun)?.sign ? `${getSynthesisPlacement(verified.sun)?.sign} Sun` : null,
+    getSynthesisPlacement(verified.moon)?.sign ? `${getSynthesisPlacement(verified.moon)?.sign} Moon` : null,
+    getSynthesisPlacement(verified.rising)?.sign ? `${getSynthesisPlacement(verified.rising)?.sign} Rising` : null,
+    lifePath ? `Life Path ${lifePath}` : null,
+  ].filter((value): value is string => Boolean(value));
 
-  const summary = firstSupportedText(
-    depth.summary,
-    sectionText(depth.claritySummary),
-    profile.biography,
-    archetype.description,
-  ) ?? "Start with the pattern you can actually recognize in your life. Keep what fits; discard what does not.";
+  const freeTitle = freeIdentityParts.length
+    ? freeIdentityParts.slice(0, 3).join(" · ")
+    : "Your supported core pattern";
+  const freeSummary = freeIdentityParts.length
+    ? `Your Free clarity is built from ${freeIdentityParts.join(", ")}. Use these as supported reflection anchors, not as a fixed personality verdict.`
+    : "Start with the pattern you can actually recognize in your life. Keep what fits; discard what does not.";
+
+  const title = interpretationDepth
+    ? firstSupportedText(
+        depth.title,
+        depth.claritySummary?.title,
+        archetype.title,
+        archetype.name,
+      ) ?? freeTitle
+    : freeTitle;
+
+  const summary = interpretationDepth
+    ? firstSupportedText(
+        depth.summary,
+        sectionText(depth.claritySummary),
+        profile.biography,
+        archetype.description,
+      ) ?? freeSummary
+    : freeSummary;
 
   const depthEvidence = Array.isArray(depth.evidence) ? depth.evidence as AnyRecord[] : [];
   const protectiveEvidenceIds = Array.isArray(depth.protectiveFunction?.evidenceIds)
@@ -517,11 +538,13 @@ export function buildClarityReadingModel(
       numerologyTension(expression, soulUrge),
     ),
     ...progressive,
-    groundedAction: firstSupportedText(
-      sectionText(depth.groundedAction),
-      sectionText(depth.action),
-      profile.dailyGuidance,
-    ) ?? DEFAULT_ACTION,
+    groundedAction: interpretationDepth
+      ? firstSupportedText(
+          sectionText(depth.groundedAction),
+          sectionText(depth.action),
+          profile.dailyGuidance,
+        ) ?? DEFAULT_ACTION
+      : DEFAULT_ACTION,
     signals,
     limitations,
   };
