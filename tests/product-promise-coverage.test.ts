@@ -14,6 +14,10 @@ const pricing = readFileSync(new URL("../client/src/pages/PricingPage.tsx", impo
 test("every Free promise has a concrete implementation surface", () => {
   assert.match(profile, /Your Big 3/);
   assert.match(profile, /Life Path/);
+  assert.equal(SOUL_CODEX_CAPABILITIES.name_numerology_preview.availability, "live");
+  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_preview.availability, "live");
+  assert.match(profile, /Expression unavailable/);
+  assert.match(profile, /verified Human Design Type remains visible on Free/);
   assert.match(profile, /Why am I seeing this\?/);
   assert.match(diamondClosure, /Clarity/);
   assert.match(diamondClosure, /Depth/);
