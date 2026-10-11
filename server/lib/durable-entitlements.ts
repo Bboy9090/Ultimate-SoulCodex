@@ -231,7 +231,7 @@ export function entitlementFromGrant(
 }
 
 export async function resolveProductEntitlementForUser(
-  storage: IStorage,
+  storage: Pick<IStorage, "getUser" | "getLatestEntitlementGrant">,
   userId: string | null | undefined,
   now = new Date(),
 ): Promise<ProductEntitlement> {
