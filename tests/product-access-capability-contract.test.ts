@@ -24,6 +24,7 @@ test("free keeps core clarity capabilities", () => {
 
 test("live Plus capabilities gate depth rather than accuracy", () => {
   for (const capability of [
+    "interpretation_depth",
     "full_name_numerology",
     "human_design_depth",
     "advanced_daily",
