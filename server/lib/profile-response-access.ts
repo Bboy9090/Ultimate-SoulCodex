@@ -69,7 +69,10 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
       profile.personalityData,
       projected.humanDesignData,
     );
-    projected.archetypeData = freeArchetype;
+    projected.archetypeData = {
+      ...freeArchetype,
+      shadows: [],
+    };
     projected.biography = freeArchetype.description;
     projected.dailyGuidance = freeArchetype.guidance;
   }
