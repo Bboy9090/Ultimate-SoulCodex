@@ -61,7 +61,7 @@ test("public projection emits only explicitly selected safe fields", () => {
   const projection = buildPublicProfileProjection(profile, {
     fields: ["displayName", "sunSign", "lifePath", "archetypeTitle"],
     displayName: "Bobby",
-  });
+  }, "plus");
 
   assert.deepEqual(projection, {
     version: 1,
@@ -78,7 +78,7 @@ test("public projection structurally excludes private profile material", () => {
   const projection = buildPublicProfileProjection(profile, {
     fields: ["displayName", "sunSign", "moonSign", "risingSign", "lifePath", "archetypeTitle"],
     displayName: "Bobby",
-  });
+  }, "plus");
   const serialized = JSON.stringify(projection);
 
   for (const forbidden of [
@@ -159,4 +159,34 @@ test("comparison chart shares only verified sign-and-house rows selected by the 
   const serialized = JSON.stringify(projection);
   assert.doesNotMatch(serialized, /birthDate|birthTime|longitude|degree|evidenceArtifactId|rawEvidence/);
   assert.doesNotMatch(serialized, /venus/i);
+});
+
+
+test("Free public projection omits a requested stored archetype title", () => {
+  const projection = buildPublicProfileProjection(profile, {
+    fields: ["displayName", "sunSign", "lifePath", "archetypeTitle"],
+    displayName: "Bobby",
+  }, "free");
+
+  assert.deepEqual(projection, {
+    version: 1,
+    fields: {
+      displayName: "Bobby",
+      sunSign: "Virgo",
+      lifePath: 9,
+    },
+  });
+});
+
+test("Plus public projection may include the selected archetype title", () => {
+  const projection = buildPublicProfileProjection(profile, {
+    fields: ["archetypeTitle"],
+  }, "plus");
+
+  assert.deepEqual(projection, {
+    version: 1,
+    fields: {
+      archetypeTitle: "The Builder",
+    },
+  });
 });
