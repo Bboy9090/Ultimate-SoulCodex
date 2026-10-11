@@ -36,6 +36,19 @@ const profile = {
   },
   biography: "Premium biography mentions Reflector 2/5 and Expression 4.",
   dailyGuidance: "Premium daily guidance mentions Lunar Authority.",
+  depthInterpretation: {
+    title: "Premium depth title",
+    summary: "Premium depth summary with Expression 4 and Reflector 2/5.",
+    shadow: { summary: "Premium shadow layer" },
+    relationshipImpact: { summary: "Premium relationship layer" },
+    evidence: [
+      { id: "premium-expression", system: "numerology", field: "expression", value: 4 },
+      { id: "premium-hd", system: "human-design", field: "core", value: "Reflector 2/5" },
+    ],
+  },
+  synthesis: {
+    summary: "Legacy premium synthesis",
+  },
   humanDesignData: {
     status: "verified",
     type: "Reflector",
@@ -102,6 +115,8 @@ test("Free profile response replaces stored Plus prose with a Free-safe synthesi
   assert.doesNotMatch(out.biography, /Reflector|2\/5|Expression 4|Premium/i);
   assert.doesNotMatch(out.dailyGuidance, /Lunar Authority|Premium/i);
   assert.doesNotMatch(JSON.stringify(out.archetypeData), /Premium|legacy-card|Reflector|2\/5/i);\n  assert.deepEqual(out.archetypeData.shadows, []);
+  assert.equal(out.depthInterpretation, null);
+  assert.equal(out.synthesis, null);
   assert.match(out.biography, /Life Path 9|symbolic reflection profile/i);
 });
 
@@ -119,4 +134,6 @@ test("Free prose projection does not mutate stored deeper prose", () => {
   assert.equal(profile.dailyGuidance, "Premium daily guidance mentions Lunar Authority.");
   assert.equal(profile.archetypeData.title, "Premium Reflector Architect");
   assert.deepEqual(profile.archetypeData.tarotCards, ["legacy-card"]);
+  assert.equal(profile.depthInterpretation.title, "Premium depth title");
+  assert.equal(profile.synthesis.summary, "Legacy premium synthesis");
 });
