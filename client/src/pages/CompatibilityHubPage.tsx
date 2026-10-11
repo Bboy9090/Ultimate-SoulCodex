@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import Navigation from "../components/navigation";
 import { tierAllowsCapability } from "@shared/product-access";
 import FeatureState from "../components/FeatureState";
+import AurelionPlanetaryMatcher from "../components/AurelionPlanetaryMatcher";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import { useProductAccess } from "../hooks/useProductAccess";
 import {
@@ -158,6 +159,10 @@ export default function CompatibilityHubPage() {
             </p>
           </aside>
         </header>
+
+        <div className="mb-5">
+          <AurelionPlanetaryMatcher profile={profile} />
+        </div>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Compatibility dimensions">
           {DIMENSIONS.map(({ icon: Icon, title, text, premium }, index) => (

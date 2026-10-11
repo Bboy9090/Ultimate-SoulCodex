@@ -1,10 +1,11 @@
-import AureonAvatar from "@/components/AureonAvatar";
+import AurelionAvatar from "@/components/AurelionAvatar";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, HeartHandshake, Sparkles } from "lucide-react";
 import Navigation from "../components/navigation";
 import EvidenceLimitations from "../components/EvidenceLimitations";
 import FeatureState from "../components/FeatureState";
+import AurelionPlanetaryMatcher from "../components/AurelionPlanetaryMatcher";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import { buildCompatibilityProfilePayload } from "../lib/compatibilityProfilePayload";
 import { connectionComparableSunSign, findConnectionById, loadConnections, placementLabel } from "../lib/connectionRepository";
@@ -166,6 +167,11 @@ export default function CompatibilityPersonPage() {
       .map(({ key, sign, house }) => ({ key, sign, house })),
     friendPlacements,
   );
+  const aurelionMatchSignals = friendChartComparison.matches.map((match) => ({
+    key: match.key,
+    label: placementLabel(match.key as Parameters<typeof placementLabel>[0]),
+    score: match.score,
+  }));
 
   const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
     const label = placementComparisonLine(yours, theirs).label;
@@ -281,9 +287,18 @@ export default function CompatibilityPersonPage() {
         </header>
 
         {initialConnection && friendPlacements.length > 0 ? (
-          <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
+          <>
+            <div className="mt-8">
+              <AurelionPlanetaryMatcher
+                profile={profile}
+                partnerName={initialConnection.name}
+                matchSignals={aurelionMatchSignals}
+                compact
+              />
+            </div>
+            <section className="mt-4 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
-              <AureonAvatar />
+              <AurelionAvatar />
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
@@ -367,7 +382,8 @@ export default function CompatibilityPersonPage() {
                 This friend has saved placements, but none overlap with your currently verified planet-and-house placements. Soul Codex will not invent the missing side just to fill the comparison.
               </p>
             )}
-          </section>
+            </section>
+          </>
         ) : null}
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">
