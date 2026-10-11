@@ -52,17 +52,22 @@ test("deterministic server narration includes trusted HD and excludes forged evi
   assert.doesNotMatch(await generateDailyGuidance(forged), /Reflector/);
 });
 
-test("canonical creation and both assessment routes wire HD storage and narration", () => {
+test("canonical creation stores verified HD while narration uses entitlement-projected inputs", () => {
   const source = readFileSync("server/routes.ts", "utf8");
   const creation = source.slice(source.indexOf('app.post("/api/profiles",'), source.indexOf('app.get("/api/profiles/:id",'));
   assert.match(creation, /calculateProfileHumanDesign\(birthData\)/);
-  assert.match(creation, /synthesizeArchetype\(astrologyData, numerologyData, \{\}, humanDesignData\)/);
+  assert.match(creation, /projectInterpretationInputsForTier\([\s\S]*entitlement\.tier[\s\S]*numerologyData[\s\S]*humanDesignData/);
+  assert.match(creation, /synthesizeArchetype\([\s\S]*interpretationInputs\.numerologyData[\s\S]*interpretationInputs\.humanDesignData/);
   assert.match(creation, /storage.createProfile\(\{[\s\S]*humanDesignData/);
-  assert.equal((creation.match(/humanDesignData,/g) ?? []).length, 3);
+  assert.match(creation, /humanDesignData:\s*interpretationInputs\.humanDesignData/);
+  assert.match(creation, /numerologyData:\s*interpretationInputs\.numerologyData/);
+
   for (const assessment of ["enneagram", "mbti"]) {
     const start = source.indexOf(`app.post("/api/profiles/:id/${assessment}"`);
     const section = source.slice(start, source.indexOf("\n  app.", start + 1));
-    assert.match(section, /updatedPersonalityData, profile.humanDesignData/);
-    assert.equal((section.match(/humanDesignData: profile.humanDesignData/g) ?? []).length, 2);
+    assert.match(section, /projectInterpretationInputsForTier\([\s\S]*entitlement\.tier[\s\S]*profile\.numerologyData[\s\S]*profile\.humanDesignData/);
+    assert.match(section, /synthesizeArchetype\([\s\S]*interpretationInputs\.numerologyData[\s\S]*updatedPersonalityData[\s\S]*interpretationInputs\.humanDesignData/);
+    assert.equal((section.match(/humanDesignData:\s*interpretationInputs\.humanDesignData/g) ?? []).length, 2);
+    assert.equal((section.match(/numerologyData:\s*interpretationInputs\.numerologyData/g) ?? []).length, 2);
   }
 });
