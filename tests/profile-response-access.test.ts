@@ -114,7 +114,8 @@ test("Free profile response replaces stored Plus prose with a Free-safe synthesi
   assert.notEqual(out.archetypeData.title, profile.archetypeData.title);
   assert.doesNotMatch(out.biography, /Reflector|2\/5|Expression 4|Premium/i);
   assert.doesNotMatch(out.dailyGuidance, /Lunar Authority|Premium/i);
-  assert.doesNotMatch(JSON.stringify(out.archetypeData), /Premium|legacy-card|Reflector|2\/5/i);\n  assert.deepEqual(out.archetypeData.shadows, []);
+  assert.doesNotMatch(JSON.stringify(out.archetypeData), /Premium|legacy-card|Reflector|2\/5/i);
+  assert.deepEqual(out.archetypeData.shadows, []);
   assert.equal(out.depthInterpretation, null);
   assert.equal(out.synthesis, null);
   assert.match(out.biography, /Life Path 9|symbolic reflection profile/i);
