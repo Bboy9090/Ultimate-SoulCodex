@@ -7,9 +7,13 @@ import { synthesizeArchetype } from "../services/archetype";
 import { generateBiography, generateDailyGuidance } from "../services/openai-service";
 import type { Profile } from "@shared/schema";
 import { calculateNumerology } from "../services/numerology";
+import type { IStorage } from "../storage";
+import { resolveProductEntitlementForUser } from "../lib/product-entitlement";
+import { projectInterpretationInputsForTier } from "../lib/profile-interpretation-access";
+import { projectProfileResponseForTier } from "../lib/profile-response-access";
 
 export function storedProfileVerificationHandler(dependencies: {
-  storage: { getProfile(id: string): Promise<Profile | undefined>; updateProfile(id: string, updates: Partial<Profile>): Promise<Profile> };
+  storage: Pick<IStorage, "getProfile" | "updateProfile" | "getUser" | "getLatestEntitlementGrant">;
   requireDurableFeature(res: Response): boolean;
   calculateAstrology?: typeof calculateVerifiedAstrology;
 }) {
@@ -24,6 +28,8 @@ export function storedProfileVerificationHandler(dependencies: {
       if (!profile || !profileBelongsToActor(profile, {
         userId: (req as any).session?.userId ?? null, sessionId: (req as any).sessionID ?? null,
       })) return res.status(404).json({ message: "Profile not found" });
+      const userId = (req as any).session?.userId ?? null;
+      const entitlement = await resolveProductEntitlementForUser(dependencies.storage as IStorage, userId);
       const birthDate = new Date(profile.birthDate).toISOString().slice(0, 10);
       const input = {
         birthDate, birthTime: profile.birthTime ?? undefined, timezone: profile.timezone ?? undefined,
@@ -35,9 +41,16 @@ export function storedProfileVerificationHandler(dependencies: {
         longitude: input.longitude?.trim() ? Number(input.longitude) : undefined,
       });
       const numerologyData = calculateNumerology(profile.fullBirthName ?? undefined, birthDate);
-      const archetypeData = synthesizeArchetype(astrologyData, numerologyData, profile.personalityData, humanDesignData);
+      const interpretationInputs = projectInterpretationInputsForTier(entitlement.tier, numerologyData, humanDesignData);
+      const archetypeData = synthesizeArchetype(
+        astrologyData,
+        interpretationInputs.numerologyData,
+        profile.personalityData,
+        interpretationInputs.humanDesignData,
+      );
       const narrative = { name: profile.name, archetypeTitle: archetypeData.title, astrologyData,
-        humanDesignData, numerologyData, personalityData: profile.personalityData, archetype: archetypeData };
+        humanDesignData: interpretationInputs.humanDesignData, numerologyData: interpretationInputs.numerologyData,
+        personalityData: profile.personalityData, archetype: archetypeData };
       const biography = await generateBiography(narrative);
       const dailyGuidance = await generateDailyGuidance(narrative);
       // Re-check ownership after external calculation before committing a write.
@@ -48,9 +61,10 @@ export function storedProfileVerificationHandler(dependencies: {
       if (["birthDate", "birthTime", "timezone", "latitude", "longitude", "fullBirthName", "name", "personalityData", "archetypeData", "numerologyData"].some((key) => JSON.stringify((current as any)[key]) !== JSON.stringify((profile as any)[key]))) {
         return res.status(409).json({ message: "Birth details changed during verification. Retry using the saved details." });
       }
-      return res.json(await dependencies.storage.updateProfile(profile.id, {
+      const updatedProfile = await dependencies.storage.updateProfile(profile.id, {
         astrologyData, humanDesignData, numerologyData, archetypeData: { ...(profile.archetypeData as any), ...archetypeData }, biography, dailyGuidance,
-      }));
+      });
+      return res.json(projectProfileResponseForTier(updatedProfile as any, entitlement.tier));
     } catch (error) {
       if (error instanceof ProfileHumanDesignError) return res.status(422).json({ message: error.message, code: "human_design_unresolved" });
       console.error("[StoredProfileVerification] failed:", error);
