@@ -15,9 +15,10 @@ import Navigation from "@/components/navigation";
 import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import type { PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
-import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 type Placement = PlacementLike & {
@@ -136,6 +137,9 @@ function NumberRow({ label, value }: { label: string; value: unknown }) {
 
 export default function SystemsDetailsPage() {
   const { profile, status } = useActiveProfile();
+  const { tier } = useProductAccess();
+  const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
 
   if (!profile) {
     return (
@@ -168,16 +172,17 @@ export default function SystemsDetailsPage() {
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
   const humanDesignRange = humanDesign.status === "range_analyzed" && humanDesign.components ? humanDesign.components : null;
+  const visibleHdKeys = new Set(canSeeHumanDesignDepth ? ["type", "strategy", "authority", "profile"] : ["type"]);
   const stableHdEntries = humanDesignRange
-    ? Object.entries(humanDesignRange).filter(([, value]: any) =>
+    ? Object.entries(humanDesignRange).filter(([key, value]: any) =>
+        visibleHdKeys.has(key) &&
         value?.evidenceState === "stable_across_range" &&
         value?.rangeEvidence?.resolutionMinutes === 1 &&
         value?.rangeEvidence?.testedValues === 1440)
     : [];
   const conditionalHdEntries = humanDesignRange
-    ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
+    ? Object.entries(humanDesignRange).filter(([key, value]: any) => visibleHdKeys.has(key) && value?.evidenceState === "conditional")
     : [];
-  const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);
@@ -276,11 +281,21 @@ export default function SystemsDetailsPage() {
               <NumberRow label="Life Path" value={profile.lifePathNumber ?? numerology.lifePath} />
               <NumberRow label="Birthday" value={numerology.birthday} />
               <NumberRow label="Expression" value={numerology.expression} />
-              <NumberRow label="Soul Urge" value={numerology.soulUrge} />
-              <NumberRow label="Personality" value={numerology.personality} />
-              <NumberRow label="Maturity" value={numerology.maturity} />
+              {canSeeFullNumerology ? (
+                <>
+                  <NumberRow label="Soul Urge" value={numerology.soulUrge} />
+                  <NumberRow label="Personality" value={numerology.personality} />
+                  <NumberRow label="Maturity" value={numerology.maturity} />
+                </>
+              ) : null}
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
+            {!canSeeFullNumerology ? (
+              <div className="mt-4 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4 text-sm leading-6 text-[var(--sc-stone)]">
+                <strong className="text-[var(--sc-ivory)]">Free preview:</strong> Expression stays visible when a complete birth name supports it. Soul Codex+ expands the same name calculation into Soul Urge, Personality, and Maturity.
+                <Link href="/pricing" className="ml-2 font-semibold text-[var(--sc-gold-bright)] no-underline">Open deeper name numerology</Link>
+              </div>
+            ) : null}
             <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path and Birthday are deterministic from birth date. Expression, Soul Urge, Personality Number, and Maturity require the explicit full birth name and remain unavailable when it is missing. Personal Year is a date-based changing cycle and is kept out of the permanent Codex fingerprint.</p>
             <div className="mt-4 rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
               <strong className="text-[var(--sc-ivory)]">Why another app might show a different Life Path:</strong> systems can differ in date normalization, reduction order, and treatment of master numbers. Soul Codex preserves 11, 22, and 33 where the current formula defines them instead of silently reducing them.
@@ -297,16 +312,24 @@ export default function SystemsDetailsPage() {
             </div>
             {humanDesignVerified ? (
               <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
-                  <NumberRow label="Strategy" value={humanDesign.strategy} />
-                  <NumberRow label="Authority" value={humanDesign.authority} />
-                  <NumberRow label="Profile" value={humanDesign.profile} />
-                  <NumberRow label="Definition" value={humanDesign.definition} />
+                  {canSeeHumanDesignDepth ? (
+                    <>
+                      <NumberRow label="Strategy" value={humanDesign.strategy} />
+                      <NumberRow label="Authority" value={humanDesign.authority} />
+                      <NumberRow label="Profile" value={humanDesign.profile} />
+                    </>
+                  ) : null}
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
+                {!canSeeHumanDesignDepth ? (
+                  <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4 text-sm leading-6 text-[var(--sc-stone)]">
+                    <strong className="text-[var(--sc-ivory)]">Free verified preview:</strong> Type stays visible. Soul Codex+ expands the verified core into Strategy, Authority, and Profile.
+                    <Link href="/pricing" className="ml-2 font-semibold text-[var(--sc-gold-bright)] no-underline">Open Human Design depth</Link>
+                  </div>
+                ) : null}
+                <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]">
+                  Definition, centers, channels, gates, and gate-line detail remain outside the current product surface until that deeper Human Design layer completes its own qualification.
                 </div>
               </div>
             ) : stableHdEntries.length > 0 || conditionalHdEntries.length > 0 ? (

@@ -155,6 +155,8 @@ export default function ProfilePage() {
   const moon = getSynthesisAstrologySign(astrology, "moon");
   const rising = getSynthesisAstrologySign(astrology, "rising");
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
+  const canSeeNameNumerologyPreview = tierAllowsCapability(tier, "name_numerology_preview");
+  const canSeeHumanDesignPreview = tierAllowsCapability(tier, "human_design_preview");
   const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
   const canUsePremiumExports = tierAllowsCapability(tier, "premium_exports");
@@ -218,15 +220,20 @@ export default function ProfilePage() {
               <p className="sc-eyebrow">Your Core Numbers</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Life Path · Expression · Soul Urge</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
-                Life Path {numerology.lifePath ?? "—"} · {canSeeFullNumerology ? `Expression ${numerology.expression ?? "—"} · Soul Urge ${numerology.soulUrge ?? "—"} · Personality ${numerology.personality ?? "—"} · Maturity ${numerology.maturity ?? "—"}` : "Expression + Soul Urge + Personality + Maturity · Soul Codex+"}
+                Life Path {numerology.lifePath ?? "—"} · {canSeeNameNumerologyPreview && numerology.expression != null ? `Expression ${numerology.expression}` : "Expression unavailable"} · {canSeeFullNumerology ? `Soul Urge ${numerology.soulUrge ?? "—"} · Personality ${numerology.personality ?? "—"} · Maturity ${numerology.maturity ?? "—"}` : "Soul Urge + Personality + Maturity · Soul Codex+"}
               </p>
             </summary>
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
               <p>The number calculations are deterministic when the required birth data is present. Their meanings remain symbolic reflection, not verified psychology.</p>
               {!canSeeFullNumerology && (
-                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
-                  Unlock full name numerology with Soul Codex+
-                </Link>
+                <>
+                  <p>{numerology.expression != null
+                    ? "Free shows your verified Expression number as the core name-based preview. Soul Codex+ expands the same name evidence into Soul Urge, Personality, and Maturity."
+                    : "Expression is unavailable because the required full birth name is missing or unsupported. Soul Codex does not turn a data gap into a paywall."}</p>
+                  <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
+                    Open deeper name numerology
+                  </Link>
+                </>
               )}
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
@@ -240,7 +247,9 @@ export default function ProfilePage() {
                 {humanDesignVerified
                   ? canSeeHumanDesignDepth
                     ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
-                    : "Verified · deeper Human Design in Soul Codex+"
+                    : canSeeHumanDesignPreview
+                      ? `${humanDesign.type ?? "Type unresolved"} · Strategy + Authority + Profile · Soul Codex+`
+                      : "Verified"
                   : "Not verified yet"}
               </p>
             </summary>
@@ -248,11 +257,13 @@ export default function ProfilePage() {
               <p>{humanDesignVerified
                 ? canSeeHumanDesignDepth
                   ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
-                  : "Human Design is verified for this profile. Soul Codex+ unlocks the verified Type, Strategy, Authority, and Profile. Centers and channels are not sold here until their premium surface is fully qualified."
+                  : canSeeHumanDesignPreview
+                    ? "Your verified Human Design Type remains visible on Free. Soul Codex+ expands the same verified core into Strategy, Authority, and Profile. Centers and channels are not sold here until their premium surface is fully qualified."
+                    : "Human Design is verified, but no interpretive preview is available."
                 : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
               {humanDesignVerified && !canSeeHumanDesignDepth && (
                 <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
-                  Unlock Human Design depth
+                  Open Human Design Strategy, Authority & Profile
                 </Link>
               )}
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>

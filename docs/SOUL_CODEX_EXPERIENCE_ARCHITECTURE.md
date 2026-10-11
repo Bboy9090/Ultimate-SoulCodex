@@ -163,10 +163,16 @@ Free must remain useful enough to establish trust. Do not deliberately degrade c
 
 ### Paid — Soul Codex+
 
-The current paid promise includes only capabilities marked live in the central product-access registry:
+The current access promise is layered through the central product-access registry:
 
-- full governed numerology including Expression, Soul Urge, Personality, and Maturity when a complete birth name is available;
-- verified Human Design Type, Strategy, Authority, and Profile;
+Free includes:
+- deterministic date numerology plus a verified Expression preview when a complete birth name is available;
+- verified Human Design Type as the bounded Human Design preview when the trust contract passes;
+- evidence, uncertainty, and missing-data receipts.
+
+Soul Codex+ expands those same verified systems:
+- Soul Urge, Personality, and Maturity beyond the free Expression preview;
+- Human Design Strategy, Authority, and Profile beyond the free verified Type preview;
 - richer Daily synthesis with up to five qualified current influences;
 - the evidence-aware downloadable natal PDF report.
 

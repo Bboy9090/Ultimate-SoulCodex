@@ -142,6 +142,7 @@ export interface CrossSystemInsight {
   kind: "reinforcement" | "tension" | "different-jobs" | "experiment";
   text: string;
   systems: Array<"Astrology" | "Numerology" | "Human Design">;
+  depth?: "free" | "plus";
 }
 
 export interface UltimateCodexSynthesis {
@@ -151,7 +152,9 @@ export interface UltimateCodexSynthesis {
   codexId: string | null;
   fingerprint: string | null;
   identitySignature: string;
+  freeIdentitySignature: string;
   derivedArchetype: string | null;
+  freeDerivedArchetype: string | null;
   dominantElement: string | null;
   dominantModality: string | null;
   placements: UltimateCodexPlacement[];
@@ -163,7 +166,7 @@ export interface UltimateCodexSynthesis {
   tensions: string[];
   integrationMoves: string[];
   crossSystemInsights: CrossSystemInsight[];
-  systemSummary: Array<{ system: string; status: string; detail: string }>;
+  systemSummary: Array<{ system: string; status: string; detail: string; freeDetail?: string }>;
   unresolved: string[];
   evidenceSignature: string[];
 }
@@ -569,6 +572,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
   const moonIdentity = moonPlacement ? `${moonPlacement.sign} Moon` : null;
   const risingIdentity = risingPoint ? `${risingPoint.sign} Rising` : null;
   const humanDesignIdentity = hdType ? `${hdType}${hdProfile ? ` ${hdProfile}` : ""}` : null;
+  const freeHumanDesignIdentity = hdType ? hdType : null;
   const numerologyIdentity = lifePath ? `Life Path ${lifePath}` : null;
   const signConcentrations = stelliums
     .filter((cluster) => cluster.kind === "sign")
@@ -587,18 +591,29 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     ? identityParts.join(" · ")
     : "Core identity summary unavailable from current evidence";
 
-  const derivedArchetypeParts = unique([
+  const freeIdentityParts = unique([
     astrologyIdentity,
     moonIdentity,
     risingIdentity,
-    humanDesignIdentity,
+    freeHumanDesignIdentity,
     numerologyIdentity,
     ...signConcentrations,
-  ]).slice(0, 4);
+  ]);
+  const freeIdentitySignature = freeIdentityParts.length
+    ? freeIdentityParts.join(" · ")
+    : "Core identity summary unavailable from current evidence";
+
+  const derivedArchetypeParts = identityParts.slice(0, 4);
   const derivedArchetype =
     coverage === "insufficient" || derivedArchetypeParts.length < 2
       ? null
       : derivedArchetypeParts.join(" · ");
+
+  const freeDerivedArchetypeParts = freeIdentityParts.slice(0, 4);
+  const freeDerivedArchetype =
+    coverage === "insufficient" || freeDerivedArchetypeParts.length < 2
+      ? null
+      : freeDerivedArchetypeParts.join(" · ");
 
   const resonances: string[] = [];
   if (dominantElement && lifePath && LIFE_PATH_AXIS[lifePath]) {
@@ -719,6 +734,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         ...(dominantModality === "Cardinal" || dominantElement === "Fire" ? ["Astrology" as const] : []),
         ...([1, 8].includes(lifePath ?? -1) ? ["Numerology" as const] : []),
       ],
+      depth: "plus",
     });
   }
 
@@ -763,6 +779,7 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
       kind: "experiment",
       text: `For one low-stakes decision, try ${hdAuthority} as an optional ritual and compare the result with your usual process. Treat the outcome as lived evidence, not proof of Human Design.`,
       systems: ["Human Design"],
+      depth: "plus",
     });
   }
 
@@ -821,15 +838,24 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
         maturity ? `Maturity ${maturity}` : null,
         personalYear ? `Personal Year ${personalYear} (current cycle; excluded from stable fingerprint)` : null,
       ]).join(" · ") || "No governed number available.",
+      freeDetail: unique([
+        lifePath ? `LP ${lifePath}` : null,
+        birthday ? `Birthday ${birthday}` : null,
+        expression ? `Expression ${expression}` : null,
+        personalYear ? `Personal Year ${personalYear} (current cycle)` : null,
+      ]).join(" · ") || "No governed number available.",
     },
     {
       system: "Human Design",
       status: verifiedHd ? "verified core" : hdEvidenceMode === "stable_across_range" ? "stable across full-day range" : "unresolved",
       detail: verifiedHd
-        ? unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")
+        ? unique([hdType, hdStrategy, hdAuthority, hdProfile]).join(" · ")
         : hdEvidenceMode === "stable_across_range"
-          ? `${unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")} · only invariant components are admitted; conditional components remain excluded.`
+          ? `${unique([hdType, hdStrategy, hdAuthority, hdProfile]).join(" · ")} · only invariant components are admitted; conditional components remain excluded.`
           : "Excluded from synthesis until verified or stable across the full unknown-time range.",
+      freeDetail: hdType
+        ? `${hdType} · verified/stable Type preview; Strategy, Authority, and Profile expand in Soul Codex+`
+        : "Excluded from synthesis until verified or stable across the full unknown-time range.",
     },
     {
       system: "Personality assessments",
@@ -886,7 +912,9 @@ export function buildUltimateCodexSynthesis(profile: AnyRecord): UltimateCodexSy
     codexId,
     fingerprint,
     identitySignature,
+    freeIdentitySignature,
     derivedArchetype,
+    freeDerivedArchetype,
     dominantElement,
     dominantModality,
     placements,
