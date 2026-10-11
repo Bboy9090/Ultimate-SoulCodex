@@ -1,0 +1,23 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const systems = readFileSync(new URL("../client/src/pages/SystemsDetailsPage.tsx", import.meta.url), "utf8");
+const offline = readFileSync(new URL("../client/src/pages/offline-profile.tsx", import.meta.url), "utf8");
+
+test("Systems inspector passes current entitlement into combined synthesis", () => {
+  assert.match(systems, /useProductAccess\(\)/);
+  assert.match(systems, /tierAllowsCapability\(tier, "full_name_numerology"\)/);
+  assert.match(systems, /tierAllowsCapability\(tier, "human_design_depth"\)/);
+  assert.match(systems, /buildUltimateCodexSynthesis\(profile, \{[\s\S]*fullNameNumerology: canSeeFullNumerology[\s\S]*humanDesignCore: canSeeHumanDesignDepth/);
+  assert.match(systems, /canSeeFullNumerology \? numerology\.expression : "Soul Codex\+"/);
+  assert.match(systems, /humanDesignVerified && canSeeHumanDesignDepth/);
+});
+
+test("Offline profile passes current entitlement into cached-profile synthesis", () => {
+  assert.match(offline, /useProductAccess\(\)/);
+  assert.match(offline, /tierAllowsCapability\(tier, "full_name_numerology"\)/);
+  assert.match(offline, /tierAllowsCapability\(tier, "human_design_depth"\)/);
+  assert.match(offline, /buildUltimateCodexSynthesis\(reconciledProfile \?\? \{\}, \{[\s\S]*fullNameNumerology: canSeeFullNumerology[\s\S]*humanDesignCore: canSeeHumanDesignDepth/);
+  assert.match(offline, /canSeeFullNumerology \? numerology\.expression : "Soul Codex\+"/);
+});
