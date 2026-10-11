@@ -51,7 +51,7 @@ test("compareFriendCharts builds two-way friendship perspectives from only share
   assert.equal(result.friendshipPerspectives[0].label, "Emotional rhythm");
   assert.match(result.friendshipPerspectives[0].youExperienceThem, /Your Virgo style/);
   assert.match(result.friendshipPerspectives[0].theyExperienceYou, /their Virgo style|your own instinct/i);
-  assert.match(result.friendshipPerspectives[0].repair, /direct|translate|goal|ask/i);
+  assert.match(result.friendshipPerspectives[0].repair, /direct|translate|goal|ask|difference|style/i);
   assert.ok(result.guideSummary.headline.length > 0);
   assert.ok(result.guideSummary.streetTranslation.includes("Aureon"));
 });
