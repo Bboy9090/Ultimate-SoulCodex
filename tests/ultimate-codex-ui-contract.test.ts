@@ -25,7 +25,8 @@ test("natal chart exposes planets houses degrees cusps and aspects without sampl
   assert.match(natal, /A cusp sign describes the symbolic style of a house/);
   assert.match(natal, /verified major aspect/);
   assert.match(natal, /degree unavailable/);
-  assert.match(natal, /Your interactive soul guide/);
+  assert.match(natal, /Explore your chart/);
+  assert.match(natal, /<AureonAvatar \/>/);
   assert.match(natal, /Planet · what/);
   assert.match(natal, /Sign · how/);
   assert.match(natal, /House · where/);
