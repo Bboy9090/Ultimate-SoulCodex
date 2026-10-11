@@ -314,6 +314,70 @@ export default function CompatibilityPersonPage() {
                     </div>
                   </div>
                 </div>
+                <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-5" data-testid="friend-deep-reading">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Aureon · deeper friendship read</p>
+                      <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">{friendChartComparison.guideSummary.headline}</h3>
+                    </div>
+                    <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1 text-xs font-semibold text-[var(--sc-gold-bright)]">
+                      Evidence: {friendChartComparison.friendshipCoverage.matched}/4 friendship placements
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-[var(--sc-ivory-soft)]">{friendChartComparison.guideSummary.streetTranslation}</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className="rounded-xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-teal)]">Best shared lane</p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{friendChartComparison.guideSummary.strength}</p>
+                    </div>
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-[.12em] text-amber-400">Watch point</p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{friendChartComparison.guideSummary.watchPoint}</p>
+                    </div>
+                  </div>
+                </section>
+
+                {friendChartComparison.friendshipPerspectives.length ? (
+                  <section className="space-y-3" data-testid="friend-two-way-perspectives">
+                    <div>
+                      <p className="sc-eyebrow">Two-way perspective</p>
+                      <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">How the friendship can feel from each side</h3>
+                      <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">
+                        These interpretations use only Moon, Mercury, Venus, and Jupiter placements saved on both charts. They are symbolic reflections, not claims about either person's private thoughts.
+                      </p>
+                    </div>
+                    {friendChartComparison.friendshipPerspectives.map((insight) => (
+                      <article key={insight.key} className="rounded-2xl border border-[var(--sc-line)] bg-black/10 p-4">
+                        <h4 className="font-serif text-xl text-[var(--sc-ivory)]">{insight.label}</h4>
+                        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                          <div className="rounded-xl border border-[rgba(217,182,111,.18)] bg-[rgba(217,182,111,.035)] p-4">
+                            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">How you may experience {initialConnection.name}</p>
+                            <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{insight.youExperienceThem}</p>
+                          </div>
+                          <div className="rounded-xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.035)] p-4">
+                            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-teal)]">How {initialConnection.name} may experience you</p>
+                            <p className="mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{insight.theyExperienceYou}</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 grid gap-3 md:grid-cols-3">
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-stone)]">Strength</p>
+                            <p className="mt-1 text-xs leading-5 text-[var(--sc-ivory-soft)]">{insight.strength}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-stone)]">Friction</p>
+                            <p className="mt-1 text-xs leading-5 text-[var(--sc-ivory-soft)]">{insight.watchPoint}</p>
+                          </div>
+                          <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--sc-stone)]">Repair move</p>
+                            <p className="mt-1 text-xs leading-5 text-[var(--sc-ivory-soft)]">{insight.repair}</p>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </section>
+                ) : null}
+
                 <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
                   <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Connection pattern</p>
                   <div className="mt-3 flex flex-wrap gap-2">
