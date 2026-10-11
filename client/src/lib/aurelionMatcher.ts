@@ -40,7 +40,9 @@ function cleanDegree(value: unknown): number | undefined {
 }
 
 function placementSource(profile: any, key: AurelionPlanetKey): any {
-  return profile?.verifiedAstrology?.planets?.[key]
+  return profile?.verifiedAstrologyData?.planets?.[key]
+    ?? profile?.verifiedAstrologyData?.[key]
+    ?? profile?.verifiedAstrology?.planets?.[key]
     ?? profile?.astrologyData?.planets?.[key]
     ?? profile?.astrology?.planets?.[key]
     ?? profile?.astrologyData?.[key]
@@ -50,7 +52,8 @@ function placementSource(profile: any, key: AurelionPlanetKey): any {
 
 function planetaryHouse(profile: any, key: AurelionPlanetKey): number | undefined {
   return cleanHouse(
-    profile?.verifiedAstrology?.planetaryHouses?.[key]
+    profile?.verifiedAstrologyData?.planetaryHouses?.[key]
+      ?? profile?.verifiedAstrology?.planetaryHouses?.[key]
       ?? profile?.astrologyData?.planetaryHouses?.[key]
       ?? profile?.astrology?.planetaryHouses?.[key],
   );
