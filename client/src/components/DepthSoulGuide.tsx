@@ -1,5 +1,8 @@
 import AureonAvatar from "@/components/AureonAvatar";
 import { useMemo, useState } from "react";
+import { tierAllowsCapability } from "@shared/product-access";
+import { Link } from "wouter";
+import { useProductAccess } from "@/hooks/useProductAccess";
 import {
   buildDepthSoulGuideViewModel,
   type DepthInterpretationV1,
@@ -182,6 +185,8 @@ export default function DepthSoulGuide({
   const [showTrace, setShowTrace] = useState(false);
   const [evidenceOpen, setEvidenceOpen] = useState(defaultEvidenceOpen);
   const [reflectionLens] = useState(() => readReflectionLens());
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
   const lensCopy = REFLECTION_LENS_COPY[reflectionLens];
 
   const supportedPrimaryCount = model.primary.filter((layer) => !layer.unavailable).length;
@@ -297,12 +302,35 @@ export default function DepthSoulGuide({
       <div className="depth-guide-section-heading">
         <div>
           <p className="depth-guide-kicker">Go deeper</p>
-          <h3>Open only the layers that matter right now.</h3>
+          <h3>{deeperInterpretationUnlocked ? "Open only the layers that matter right now." : "Your core reading is complete. Plus opens the deeper layers."}</h3>
         </div>
         <span>{model.disclosures.length} deeper groups</span>
       </div>
 
-      <div className="depth-guide-disclosures" aria-label="Deeper interpretation layers">
+      {!deeperInterpretationUnlocked ? (
+        <div className="depth-guide-disclosure depth-guide-disclosure-open" data-testid="depth-guide-plus-gate">
+          <div className="depth-guide-disclosure-panel">
+            <article className="depth-guide-layer-card">
+              <div className="depth-guide-layer-heading">
+                <div>
+                  <p className="depth-guide-eyebrow">Free clarity · Plus depth</p>
+                  <h3>The brief reading stays useful on its own.</h3>
+                </div>
+              </div>
+              <p className="depth-guide-layer-summary">
+                Free keeps your Core Pattern, Main Contradiction, What To Do With It, confidence, evidence, and missing-data receipts.
+              </p>
+              <p className="depth-guide-layer-explanation">
+                Soul Codex+ expands the same evidence into deeper relationship impact, shadow patterns, decision impact, repeated tensions, and cross-layer explanation. Plus adds depth; it does not buy certainty and it never unlocks guessed data.
+              </p>
+              <Link href="/pricing" className="depth-guide-secondary-button">
+                See what Plus expands
+              </Link>
+            </article>
+          </div>
+        </div>
+      ) : (
+        <div className="depth-guide-disclosures" aria-label="Deeper interpretation layers">
         {model.disclosures.map((group) => {
           const open = openGroups.has(group.id);
           const panelId = `depth-guide-panel-${group.id}`;
@@ -340,6 +368,7 @@ export default function DepthSoulGuide({
           );
         })}
       </div>
+      )}
 
       <div className={`depth-guide-disclosure depth-guide-evidence-disclosure${evidenceOpen ? " depth-guide-disclosure-open" : ""}`}>
         <button

@@ -23,6 +23,10 @@ test("every Free promise has a concrete implementation surface", () => {
 });
 
 test("every live Plus promise has a concrete implementation surface", () => {
+  assert.equal(SOUL_CODEX_CAPABILITIES.interpretation_depth.availability, "live");
+  const depthGuide = readFileSync(new URL("../client/src/components/DepthSoulGuide.tsx", import.meta.url), "utf8");
+  assert.match(depthGuide, /Free clarity · Plus depth/);
+  assert.match(depthGuide, /relationship impact, shadow patterns, decision impact/);
   assert.equal(SOUL_CODEX_CAPABILITIES.full_name_numerology.availability, "live");
   for (const field of ["Expression", "Soul Urge", "Personality", "Maturity"]) {
     assert.ok(profile.includes(field), `missing live numerology field: ${field}`);

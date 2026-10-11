@@ -6,6 +6,7 @@ export type SoulCodexCapability =
   | "date_numerology"
   | "evidence_provenance"
   | "diamond_closure"
+  | "interpretation_depth"
   | "basic_connections"
   | "basic_compatibility"
   | "full_natal_chart"
@@ -34,6 +35,12 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   date_numerology: { minimumTier: "free", availability: "live", label: "Date-based numerology" },
   evidence_provenance: { minimumTier: "free", availability: "live", label: "Evidence and provenance" },
   diamond_closure: { minimumTier: "free", availability: "live", label: "Diamond Way closure" },
+  interpretation_depth: {
+    minimumTier: "plus",
+    availability: "live",
+    label: "Deeper interpretation layers",
+    upgradeReason: "Keep the clear core reading free, then unlock the deeper contradictions, relationship impact, shadow patterns, decision impact, and cross-layer explanation already supported by the evidence model.",
+  },
   basic_connections: { minimumTier: "free", availability: "live", label: "Basic Connections" },
   basic_compatibility: { minimumTier: "free", availability: "live", label: "Basic compatibility" },
 
