@@ -290,7 +290,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const snapshot = buildPublicProfileProjection(profile, selection);
+      const entitlement = await resolveProductEntitlementForUser(storage, req.session?.userId ?? null);
+      const snapshot = buildPublicProfileProjection(profile, selection, entitlement.tier);
       if (Object.keys(snapshot.fields).length === 0) {
         return res.status(422).json({ message: "None of the selected fields are currently eligible for public sharing." });
       }
