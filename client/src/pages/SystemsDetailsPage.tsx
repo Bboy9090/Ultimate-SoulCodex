@@ -172,6 +172,7 @@ export default function SystemsDetailsPage() {
   const ultimateCodex = buildUltimateCodexSynthesis(profile, {
     fullNameNumerology: canSeeFullNumerology,
     humanDesignCore: canSeeHumanDesignDepth,
+    humanDesignDetails: false,
   });
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
