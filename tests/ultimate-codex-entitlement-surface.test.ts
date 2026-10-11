@@ -21,3 +21,12 @@ test("Offline profile passes current entitlement into cached-profile synthesis",
   assert.match(offline, /buildUltimateCodexSynthesis\(reconciledProfile \?\? \{\}, \{[\s\S]*fullNameNumerology: canSeeFullNumerology[\s\S]*humanDesignCore: canSeeHumanDesignDepth/);
   assert.match(offline, /canSeeFullNumerology \? numerology\.expression : "Soul Codex\+"/);
 });
+
+
+test("Offline profile projects legacy cached biography and guidance by interpretation tier", () => {
+  assert.match(offline, /canSeeInterpretationDepth/);
+  assert.match(offline, /visibleDailyGuidance = canSeeInterpretationDepth \? profile\.dailyGuidance : freeGuidance/);
+  assert.match(offline, /visibleBiography = canSeeInterpretationDepth[\s\S]*profile\.biography[\s\S]*ultimateCodex\.identitySignature/);
+  assert.match(offline, /\{visibleBiography\}/);
+  assert.doesNotMatch(offline, />\{profile\.biography\}<\/p>/);
+});
