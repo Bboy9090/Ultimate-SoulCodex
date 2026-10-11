@@ -12,6 +12,8 @@ import { shouldOfferVerification, verificationOutcome, type VerificationAttempt 
 import { apiFetch, publicApiErrorMessage } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 
 const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
@@ -34,6 +36,7 @@ function splitDailyGuidance(value: string): { headline: string; detail: string }
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
+  const { tier } = useProductAccess();
   const queryClient = useQueryClient();
   const [verificationAttempt, setVerificationAttempt] = useState<VerificationAttempt>("idle");
   const [verificationFailure, setVerificationFailure] = useState<{ profileId: string; message: string } | null>(null);
