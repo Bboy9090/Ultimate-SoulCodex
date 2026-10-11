@@ -138,3 +138,15 @@ test("public shared card distinguishes offline failure from revoked or invalid l
   assert.match(page, /deliberately not cached with private app data/);
   assert.match(page, /This link may have been revoked, mistyped, or never created/);
 });
+
+
+test("archetype title sharing follows the current interpretation entitlement", async () => {
+  const [routes, modal] = await Promise.all([
+    readFile(routesUrl, "utf8"),
+    readFile(shareModalUrl, "utf8"),
+  ]);
+
+  assert.match(routes, /buildPublicProfileProjection\(profile, selection, entitlement\.tier\)/);
+  assert.match(modal, /tierAllowsCapability\(tier, "interpretation_depth"\)/);
+  assert.match(modal, /option\.id !== "archetypeTitle" \|\| canShareArchetypeTitle/);
+});
