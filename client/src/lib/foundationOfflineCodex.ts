@@ -229,7 +229,7 @@ function makeId() {
  */
 export function generateFoundationOfflineCodexProfile(
   input: BirthData,
-  options: { id?: string; generatedAt?: string; currentYear?: number } = {},
+  options: { id?: string; generatedAt?: string; currentYear?: number; includeNameNumerology?: boolean } = {},
 ): OfflineCodexProfile {
   const generatedAt = options.generatedAt ?? new Date().toISOString();
   const currentYear = options.currentYear ?? new Date(generatedAt).getUTCFullYear();
@@ -242,10 +242,11 @@ export function generateFoundationOfflineCodexProfile(
   const lifePath = calcLifePath(input.birthDate);
   const birthday = calcBirthday(input.birthDate);
   const fullBirthName = input.fullBirthName?.trim() || null;
-  const expression = fullBirthName ? calcExpression(fullBirthName) : null;
-  const soulUrge = fullBirthName ? calcSoulUrge(fullBirthName) : null;
-  const personality = fullBirthName ? calcPersonality(fullBirthName) : null;
-  const maturity = fullBirthName ? calcMaturity(input.birthDate, fullBirthName) : null;
+  const includeNameNumerology = options.includeNameNumerology ?? true;
+  const expression = includeNameNumerology && fullBirthName ? calcExpression(fullBirthName) : null;
+  const soulUrge = includeNameNumerology && fullBirthName ? calcSoulUrge(fullBirthName) : null;
+  const personality = includeNameNumerology && fullBirthName ? calcPersonality(fullBirthName) : null;
+  const maturity = includeNameNumerology && fullBirthName ? calcMaturity(input.birthDate, fullBirthName) : null;
   const yearNumber = calcPersonalYear(input.birthDate, currentYear);
   const pathPattern = numerologyPatternFor(lifePath);
   const expressionPattern = numerologyPatternFor(expression);
@@ -279,18 +280,26 @@ export function generateFoundationOfflineCodexProfile(
     interpretations: {
       lifePath: `Life Path ${lifePath}: deterministic number, symbolic interpretation.`,
       birthday: `Birthday ${birthday}: deterministic day-of-birth reduction, symbolic interpretation.`,
-      expression: expression === null
-        ? "Expression unavailable: full birth name was not supplied."
-        : `Expression ${expression}: deterministic full-birth-name number, symbolic interpretation.`,
-      soulUrge: soulUrge === null
-        ? "Soul Urge unavailable: full birth name was not supplied."
-        : `Soul Urge ${soulUrge}: deterministic full-birth-name vowel calculation, symbolic interpretation.`,
-      personality: personality === null
-        ? "Personality Number unavailable: full birth name was not supplied."
-        : `Personality ${personality}: deterministic full-birth-name consonant calculation, symbolic interpretation.`,
-      maturity: maturity === null
-        ? "Maturity Number unavailable: full birth name was not supplied."
-        : `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
+      expression: !includeNameNumerology
+        ? "Expression is reserved for Soul Codex+ depth in this local reading."
+        : expression === null
+          ? "Expression unavailable: full birth name was not supplied."
+          : `Expression ${expression}: deterministic full-birth-name number, symbolic interpretation.`,
+      soulUrge: !includeNameNumerology
+        ? "Soul Urge is reserved for Soul Codex+ depth in this local reading."
+        : soulUrge === null
+          ? "Soul Urge unavailable: full birth name was not supplied."
+          : `Soul Urge ${soulUrge}: deterministic full-birth-name vowel calculation, symbolic interpretation.`,
+      personality: !includeNameNumerology
+        ? "Personality Number is reserved for Soul Codex+ depth in this local reading."
+        : personality === null
+          ? "Personality Number unavailable: full birth name was not supplied."
+          : `Personality ${personality}: deterministic full-birth-name consonant calculation, symbolic interpretation.`,
+      maturity: !includeNameNumerology
+        ? "Maturity Number is reserved for Soul Codex+ depth in this local reading."
+        : maturity === null
+          ? "Maturity Number unavailable: full birth name was not supplied."
+          : `Maturity ${maturity}: deterministic Life Path plus Expression reduction, symbolic interpretation.`,
       personalYear: `Personal Year ${yearNumber}: reflective theme for ${currentYear}, not a guaranteed prediction.`,
     },
   };
@@ -316,7 +325,11 @@ export function generateFoundationOfflineCodexProfile(
       "Rising sign is unavailable in local mode until exact birth time, coordinates, timezone, and independent astronomy verification are available.",
       "Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable in local mode.",
       "Human Design is unavailable without its separate calculation and evidence contract.",
-      ...(fullBirthName ? [] : ["Expression, Soul Urge, Personality Number, and Maturity are unavailable until the full birth name is supplied."]),
+      ...(!includeNameNumerology
+        ? ["Expression, Soul Urge, Personality Number, and Maturity are stored behind Soul Codex+ depth and are not used in this Free local synthesis."]
+        : fullBirthName
+          ? []
+          : ["Expression, Soul Urge, Personality Number, and Maturity are unavailable until the full birth name is supplied."]),
       "Mirror behavioral answers are not yet available in the active create-profile flow.",
     ],
   });
@@ -358,7 +371,7 @@ export function generateFoundationOfflineCodexProfile(
     numerologyData,
     personalityData: {},
     archetypeData,
-    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} ${sunSign ? `The local ${sunSign} Sun is calculated from ephemeris geometry and retained only as a display candidate; it does not influence synthesis without governed evidence.` : "The Sun remains unresolved locally because a unique instant or full-day stable sign could not be established."} Time-sensitive astronomy remains absent rather than approximated.`,
+    biography: `${input.name.trim()}'s local Codex begins with deterministic numerology only. Life Path ${lifePath}, Birthday ${birthday}, and Personal Year ${yearNumber} are date-based calculations. ${!includeNameNumerology ? "Name-based numerology remains outside this Free local synthesis and can be expanded with Soul Codex+." : fullBirthName ? `Expression ${expression}, Soul Urge ${soulUrge}, Personality ${personality}, and Maturity ${maturity} use the supplied full birth name.` : "Name-based numerology is unavailable because a full birth name was not supplied."} ${sunSign ? `The local ${sunSign} Sun is calculated from ephemeris geometry and retained only as a display candidate; it does not influence synthesis without governed evidence.` : "The Sun remains unresolved locally because a unique instant or full-day stable sign could not be established."} Time-sensitive astronomy remains absent rather than approximated.`,
     dailyGuidance: [pathPattern.action, expressionPattern?.action, soulUrgePattern?.action].filter((value): value is string => Boolean(value)).join(" "),
     depthInterpretation,
     localOnly: true,
