@@ -359,11 +359,12 @@ function aspectText(aspect: { planet1: string; planet2: string; aspect: string; 
 export type UltimateCodexAccess = {
   fullNameNumerology?: boolean;
   humanDesignCore?: boolean;
+  humanDesignDetails?: boolean;
 };
 
 export function buildUltimateCodexSynthesis(
   profile: AnyRecord,
-  access: UltimateCodexAccess = { fullNameNumerology: true, humanDesignCore: true },
+  access: UltimateCodexAccess = { fullNameNumerology: true, humanDesignCore: true, humanDesignDetails: true },
 ): UltimateCodexSynthesis {
   const astrology = (profile?.verifiedAstrologyData ?? profile?.astrologyData ?? {}) as AnyRecord;
   const numerology = (profile?.numerologyData ?? {}) as AnyRecord;
@@ -483,18 +484,25 @@ export function buildUltimateCodexSynthesis(
   const hdStrategy = verifiedHd && typeof hd.strategy === "string" ? hd.strategy.trim() : stableHdComponent("strategy");
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : stableHdComponent("authority");
   const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : stableHdComponent("profile");
-  const hdDefinition = verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : stableHdComponent("definition");
-  const hdCenters = verifiedHd
-    ? normalizeHumanDesignCenters(hd.centers)
-    : { defined: (stableHdComponent("centers") ?? "").split("|").filter(Boolean), undefined: [] };
-  const hdChannels = verifiedHd
-    ? humanDesignDefinedChannels(hd.channels).map(humanDesignChannelLabel)
-    : (stableHdComponent("channels") ?? "").split("|").filter(Boolean);
-  const hdGates = verifiedHd && Array.isArray(hd.activatedGates)
-    ? hd.activatedGates.map(String)
-    : (stableHdComponent("gates") ?? "").split(",").filter(Boolean);
+  const includeHdDetails = access.humanDesignDetails !== false;
+  const hdDefinition = includeHdDetails && verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : includeHdDetails ? stableHdComponent("definition") : null;
+  const hdCenters = includeHdDetails
+    ? verifiedHd
+      ? normalizeHumanDesignCenters(hd.centers)
+      : { defined: (stableHdComponent("centers") ?? "").split("|").filter(Boolean), undefined: [] }
+    : { defined: [], undefined: [] };
+  const hdChannels = includeHdDetails
+    ? verifiedHd
+      ? humanDesignDefinedChannels(hd.channels).map(humanDesignChannelLabel)
+      : (stableHdComponent("channels") ?? "").split("|").filter(Boolean)
+    : [];
+  const hdGates = includeHdDetails
+    ? verifiedHd && Array.isArray(hd.activatedGates)
+      ? hd.activatedGates.map(String)
+      : (stableHdComponent("gates") ?? "").split(",").filter(Boolean)
+    : [];
   const hdActivationSignature: string[] = [];
-  if (verifiedHd) {
+  if (includeHdDetails && verifiedHd) {
     for (const side of ["conscious", "unconscious"] as const) {
       const rows = hd?.activations?.[side];
       if (!rows || typeof rows !== "object") continue;
