@@ -15,6 +15,8 @@ test("explicit stored verification checks ownership and updates the same existin
     storage: {
       getProfile: async (id) => id === stored.id ? stored : undefined,
       updateProfile: async (id, updates) => { assert.equal(id, "owned-profile"); writes++; stored = { ...stored, ...updates }; return stored; },
+      getUser: async (id) => id === "owner" ? ({ id } as any) : undefined,
+      getLatestEntitlementGrant: async () => undefined,
     },
     requireDurableFeature: () => true,
     // External astronomy is isolated here; actual HD and trust are calculated.
@@ -39,14 +41,15 @@ test("explicit stored verification checks ownership and updates the same existin
   const verified = await request("owner");
   assert.equal(verified.statusCode, 200);
   assert.equal(verified.body.id, "owned-profile");
-  assert.equal(verified.body.humanDesignData.status, "verified");
-  assert.equal(verified.body.humanDesignData.type, "Reflector");
-  assert.equal(verified.body.humanDesignData.profile, "2/5");
+  assert.equal(verified.body.humanDesignData.status, "verified_locked");
+  assert.equal(verified.body.humanDesignData.type, undefined);
+  assert.equal(verified.body.humanDesignData.profile, undefined);
   assert.equal(verified.body.numerologyData.lifePath, 9);
   assert.match(verified.body.archetypeData.description, /Saved assessed peacemaker tendency/);
   assert.equal(writes, 1);
-  assert.match(verified.body.biography, /Reflector/);
-  assert.match(verified.body.dailyGuidance, /Lunar Authority/);
+  assert.doesNotMatch(verified.body.biography, /Reflector|Lunar Authority/);
+  assert.equal(stored.humanDesignData.status, "verified");
+  assert.equal(stored.humanDesignData.type, "Reflector");
   assert.match(verified.headers["Cache-Control"], /no-store/);
 });
 
