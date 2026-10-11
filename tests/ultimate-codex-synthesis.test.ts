@@ -309,3 +309,55 @@ test("cross-system synthesis does not over-attribute single-system evidence", ()
     "single-system natal hard aspects must remain in the natal tension ledger rather than being mislabeled as cross-system evidence",
   );
 });
+
+
+test("Free Ultimate Codex does not recompute paid name numerology or Human Design from cached profile data", () => {
+  const result = buildUltimateCodexSynthesis(profile(), {
+    fullNameNumerology: false,
+    humanDesignCore: false,
+  });
+
+  assert.ok(result.evidenceSignature.includes("num:lp:9"));
+  assert.ok(result.evidenceSignature.includes("num:birthday:8"));
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:expression:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:soul:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:personality:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("num:maturity:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:")), false);
+  assert.doesNotMatch(result.identitySignature, /Reflector|2\/5/);
+  assert.match(result.identitySignature, /Life Path 9/);
+  assert.match(result.identitySignature, /Virgo Sun/);
+});
+
+test("explicit Plus Ultimate Codex access preserves the current full synthesis", () => {
+  const defaultResult = buildUltimateCodexSynthesis(profile());
+  const plusResult = buildUltimateCodexSynthesis(profile(), {
+    fullNameNumerology: true,
+    humanDesignCore: true,
+  });
+
+  assert.equal(plusResult.fingerprint, defaultResult.fingerprint);
+  assert.equal(plusResult.codexNumber, defaultResult.codexNumber);
+  assert.deepEqual(plusResult.evidenceSignature, defaultResult.evidenceSignature);
+  assert.match(plusResult.identitySignature, /Reflector 2\/5/);
+  assert.ok(plusResult.evidenceSignature.some((value) => value.startsWith("num:expression:")));
+});
+
+
+test("qualified Plus HD core excludes unqualified bodygraph detail from Codex identity", () => {
+  const result = buildUltimateCodexSynthesis(profile(), {
+    fullNameNumerology: true,
+    humanDesignCore: true,
+    humanDesignDetails: false,
+  });
+
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":type:Reflector")));
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":authority:Lunar Authority")));
+  assert.ok(result.evidenceSignature.some((value) => value.includes(":profile:2/5")));
+  assert.equal(result.evidenceSignature.some((value) => value.includes(":definition:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:center:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:channel:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:gate:")), false);
+  assert.equal(result.evidenceSignature.some((value) => value.startsWith("hd:activation:")), false);
+  assert.match(result.identitySignature, /Reflector 2\/5/);
+});
