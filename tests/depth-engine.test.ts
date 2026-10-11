@@ -110,5 +110,21 @@ describe("Depth Engine", () => {
     expect(source).toContain("How other people may experience it");
     expect(source).toContain("Reflection check");
     expect(source).toContain("buildDepthChapters(model, fits)");
+    expect(source).toContain('tierAllowsCapability(tier, "interpretation_depth")');
+    expect(source).toContain('useState<ReadingDepth>("quick")');
+    expect(source).toContain("Quick insight · Free");
+    expect(source).toContain("reading-depth-plus-gate");
+    expect(source).toContain("Quick insight is a complete Free reading");
+    expect(source).toContain("Open Standard + Deep Dive");
+  });
+
+  it("keeps the grounded action outside the paid Standard/Deep layers", () => {
+    const source = fs.readFileSync("client/src/components/ClarityReadingExperience.tsx", "utf8");
+    const actionIndex = source.indexOf("One grounded move");
+    const standardIndex = source.indexOf("{showStandard && (");
+    expect(actionIndex).toBeGreaterThan(-1);
+    expect(standardIndex).toBeGreaterThan(actionIndex);
+    expect(source).toContain("Evidence Trace");
+    expect(source).toContain("Does this fit your experience?");
   });
 });
