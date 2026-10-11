@@ -1,4 +1,4 @@
-import AureonAvatar from "@/components/AureonAvatar";
+import AurelionAvatar from "@/components/AurelionAvatar";
 import { useMemo, useState } from "react";
 import {
   buildDepthSoulGuideViewModel,
@@ -205,7 +205,7 @@ export default function DepthSoulGuide({
     <section className="depth-guide" aria-labelledby="depth-guide-title">
       <header className="depth-guide-hero">
         <div className="depth-guide-hero-copy">
-          <AureonAvatar />
+          <AurelionAvatar />
           <div className="depth-guide-title-row">
             <div className="depth-guide-title-icon" aria-hidden="true">
               <span className="depth-guide-orbit" />

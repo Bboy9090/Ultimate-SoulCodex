@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import AurelionAvatar from "./AurelionAvatar";
 import { ArrowRight, Orbit, Radar, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import {
@@ -15,31 +16,6 @@ type Props = {
   compareHref?: string;
   compact?: boolean;
 };
-
-function AurelionGlyph() {
-  return (
-    <svg viewBox="0 0 120 120" className="mx-auto h-14 w-14" role="img" aria-label="Aurelion alien watcher glyph">
-      <defs>
-        <radialGradient id="aurelion-head" cx="50%" cy="38%" r="62%">
-          <stop offset="0%" stopColor="rgba(164,255,234,.95)" />
-          <stop offset="100%" stopColor="rgba(53,117,124,.72)" />
-        </radialGradient>
-      </defs>
-      <path
-        d="M60 9c24 0 39 17 39 42 0 30-18 53-39 60-21-7-39-30-39-60C21 26 36 9 60 9Z"
-        fill="url(#aurelion-head)"
-        stroke="rgba(217,182,111,.72)"
-        strokeWidth="2"
-      />
-      <path d="M34 48c8-10 18-13 25-8-3 13-12 22-25 20-4-4-4-8 0-12Z" fill="rgba(4,12,19,.95)" />
-      <path d="M86 48c-8-10-18-13-25-8 3 13 12 22 25 20 4-4 4-8 0-12Z" fill="rgba(4,12,19,.95)" />
-      <ellipse cx="47" cy="50" rx="4" ry="8" fill="rgba(114,216,197,.9)" />
-      <ellipse cx="73" cy="50" rx="4" ry="8" fill="rgba(114,216,197,.9)" />
-      <path d="M51 82c6 3 12 3 18 0" fill="none" stroke="rgba(5,19,24,.8)" strokeWidth="2" strokeLinecap="round" />
-      <circle cx="60" cy="18" r="3" fill="rgba(217,182,111,.9)" />
-    </svg>
-  );
-}
 
 function placementLine(placement: AurelionPlacement): string {
   const house = placement.house ? ` · House ${placement.house}` : "";
@@ -102,8 +78,7 @@ export default function AurelionPlanetaryMatcher({
 
             <div className="absolute inset-[33%] grid place-items-center rounded-full border border-[rgba(114,216,197,.28)] bg-[radial-gradient(circle,rgba(114,216,197,.18),rgba(11,18,28,.96)_68%)] shadow-[0_0_42px_rgba(114,216,197,.12)]">
               <div className="aurelion-pulse text-center">
-                <AurelionGlyph />
-                <div className="mt-1 text-[10px] font-bold uppercase tracking-[.18em] text-[var(--sc-teal)]">Aurelion</div>
+                <AurelionAvatar />
               </div>
             </div>
 
