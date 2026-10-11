@@ -30,3 +30,13 @@ test("Offline profile projects legacy cached biography and guidance by interpret
   assert.match(offline, /\{visibleBiography\}/);
   assert.doesNotMatch(offline, />\{profile\.biography\}<\/p>/);
 });
+
+
+test("Free offline profile does not render cached Plus depth interpretation", () => {
+  assert.match(offline, /canSeeInterpretationDepth \? \(/);
+  assert.match(offline, /<DepthSoulGuide interpretation=\{profile\.depthInterpretation\} \/>/);
+  assert.match(offline, /data-testid="free-offline-diamond-clarity"/);
+  assert.match(offline, /Open the full Free reading/);
+  assert.match(offline, /\{ultimateCodex\.identitySignature\}/);
+  assert.match(offline, /\{freeGuidance\}/);
+});
