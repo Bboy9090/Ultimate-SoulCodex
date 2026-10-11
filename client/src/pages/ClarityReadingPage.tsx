@@ -4,10 +4,13 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 import Navigation from "@/components/navigation";
 import ClarityReadingExperience from "@/components/ClarityReadingExperience";
 import { buildClarityReadingModel } from "@/lib/clarityReadingModel";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 import type { Profile } from "@shared/schema";
 
 export default function ClarityReadingPage() {
   const { id } = useParams();
+  const { tier } = useProductAccess();
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
@@ -48,7 +51,10 @@ export default function ClarityReadingPage() {
     );
   }
 
-  const model = buildClarityReadingModel(profile as any);
+  const model = buildClarityReadingModel(profile as any, {
+    fullNameNumerology: tierAllowsCapability(tier, "full_name_numerology"),
+    humanDesignCore: tierAllowsCapability(tier, "human_design_depth"),
+  });
 
   return (
     <div className="sc-app-shell">
