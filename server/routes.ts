@@ -40,6 +40,7 @@ import {
 } from "./lib/public-profile-projection";
 import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { projectInterpretationInputsForTier } from "./lib/profile-interpretation-access";
+import { projectProfileResponseForTier } from "./lib/profile-response-access";
 import { tierAllowsCapability } from "@shared/product-access";
 import { registerBillingRoutes } from "./billing";
 
@@ -230,7 +231,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         dailyGuidance,
       });
       if (!authenticatedUserId && req.session) req.session.profileCreated = true;
-      res.status(201).json(profile);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(201).json(projectProfileResponseForTier(profile as any, entitlement.tier));
     } catch (error) {
       console.error("Error creating profile:", error);
       if (error instanceof ProfileHumanDesignError) return res.status(422).json({ message: error.message, code: "human_design_unresolved" });
@@ -242,7 +244,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const profile = await storage.getProfile(req.params.id);
       if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
-      res.json(profile);
+      const entitlement = await resolveProductEntitlementForUser(storage, req.session?.userId ?? null);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.json(projectProfileResponseForTier(profile as any, entitlement.tier));
     } catch (error) {
       console.error("Error getting profile:", error);
       res.status(500).json({ message: "Failed to get profile" });
@@ -388,7 +392,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         biography,
         dailyGuidance,
       });
-      res.json(updatedProfile);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.json(projectProfileResponseForTier(updatedProfile as any, entitlement.tier));
     } catch (error) {
       console.error("Error processing Enneagram assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
@@ -441,7 +446,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         biography,
         dailyGuidance,
       });
-      res.json(updatedProfile);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.json(projectProfileResponseForTier(updatedProfile as any, entitlement.tier));
     } catch (error) {
       console.error("Error processing MBTI assessment:", error);
       res.status(500).json({ message: "Failed to process assessment" });
