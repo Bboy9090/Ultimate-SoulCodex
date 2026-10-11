@@ -12,6 +12,8 @@ import { personalAtlasPlacements } from "../lib/personalAstrologyAtlas";
 import { personalPlacementMeaning, type AtlasSign } from "../lib/astrologyAtlas";
 import { compareFriendCharts } from "../lib/friendChartCompatibility";
 import { apiFetch } from "../lib/queryClient";
+import { useProductAccess } from "../hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 
 const SIGNS = [
   "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
@@ -139,6 +141,8 @@ function apiErrorMessage(status: number, payload: any) {
 
 export default function CompatibilityPersonPage() {
   const { profile, isLoading: profileLoading, isCorrupted, reason: profileError } = useActiveProfile();
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
   const compatibilityProfile = useMemo(() => buildCompatibilityProfilePayload(profile), [profile]);
   const initial = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search);
   const initialConnection = findConnectionById(loadConnections(), initial.get("connection"));
@@ -166,6 +170,10 @@ export default function CompatibilityPersonPage() {
       .map(({ key, sign, house }) => ({ key, sign, house })),
     friendPlacements,
   );
+
+  const visibleFriendshipPerspectives = deeperInterpretationUnlocked
+    ? friendChartComparison.friendshipPerspectives
+    : friendChartComparison.friendshipPerspectives.slice(0, 1);
 
   const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
     const label = placementComparisonLine(yours, theirs).label;
@@ -337,7 +345,7 @@ export default function CompatibilityPersonPage() {
                   </div>
                 </section>
 
-                {friendChartComparison.friendshipPerspectives.length ? (
+                {visibleFriendshipPerspectives.length ? (
                   <section className="space-y-3" data-testid="friend-two-way-perspectives">
                     <div>
                       <p className="sc-eyebrow">Two-way perspective</p>
@@ -346,7 +354,7 @@ export default function CompatibilityPersonPage() {
                         These interpretations use only Moon, Mercury, Venus, and Jupiter placements saved on both charts. They are symbolic reflections, not claims about either person's private thoughts.
                       </p>
                     </div>
-                    {friendChartComparison.friendshipPerspectives.map((insight) => (
+                    {visibleFriendshipPerspectives.map((insight) => (
                       <article key={insight.key} className="rounded-2xl border border-[var(--sc-line)] bg-black/10 p-4">
                         <h4 className="font-serif text-xl text-[var(--sc-ivory)]">{insight.label}</h4>
                         <div className="mt-3 grid gap-3 lg:grid-cols-2">
@@ -375,6 +383,19 @@ export default function CompatibilityPersonPage() {
                         </div>
                       </article>
                     ))}
+                  </section>
+                ) : null}
+
+                {!deeperInterpretationUnlocked && friendChartComparison.friendshipPerspectives.length > visibleFriendshipPerspectives.length ? (
+                  <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-5" data-testid="friend-plus-depth-gate">
+                    <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Free clarity · Plus depth</p>
+                    <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">You have the core friendship read. Plus opens the rest of the two-way layers.</h3>
+                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
+                      Free keeps the strongest shared lane, the main watch point, and one two-way perspective. Soul Codex+ expands the remaining emotional, communication, affection, and growth perspectives when those placements exist on both charts.
+                    </p>
+                    <Link href="/pricing" className="mt-4 inline-flex text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
+                      Open deeper relationship layers
+                    </Link>
                   </section>
                 ) : null}
 
