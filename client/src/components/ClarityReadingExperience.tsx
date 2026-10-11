@@ -22,6 +22,8 @@ import {
   type ReadingFit,
 } from "@/lib/depthEngine";
 import { getProfilePath } from "@/lib/clarityNavigation";
+import { tierAllowsCapability } from "@shared/product-access";
+import { useProductAccess } from "@/hooks/useProductAccess";
 
 type ClarityReadingExperienceProps = {
   profileId: string;
@@ -82,13 +84,13 @@ function DepthChapterCard({
 
         <p className="relative mb-4 leading-7 text-[var(--sc-ivory-soft)]">{chapter.observation}</p>
 
+        <section className="relative mt-5 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
+          <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#c9f2e6]"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> One grounded move</h3>
+          <p className="leading-7 text-[var(--sc-ivory)]">{chapter.practicalTakeaway || chapter.action}</p>
+        </section>
+
         {showStandard && (
           <>
-            <section className="relative mt-5 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
-              <h3 className="mb-2 flex items-center gap-2 font-semibold text-[#c9f2e6]"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> One grounded move</h3>
-              <p className="leading-7 text-[var(--sc-ivory)]">{chapter.practicalTakeaway || chapter.action}</p>
-            </section>
-
             <details className="group relative mt-4 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-4">
               <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-[var(--sc-ivory-soft)] outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)]">
                 Plain language and real-life examples
@@ -165,7 +167,10 @@ function DepthChapterCard({
 }
 
 export default function ClarityReadingExperience({ profileId, profileName, model, offline = false }: ClarityReadingExperienceProps) {
-  const [depth, setDepth] = useState<ReadingDepth>("standard");
+  const { tier } = useProductAccess();
+  const deeperInterpretationUnlocked = tierAllowsCapability(tier, "interpretation_depth");
+  const [depth, setDepth] = useState<ReadingDepth>("quick");
+  const [upgradePrompt, setUpgradePrompt] = useState<Exclude<ReadingDepth, "quick"> | null>(null);
   const [fits, setFits] = useState<FitMap>(() => {
     if (typeof window === "undefined") return {};
     try {
@@ -177,6 +182,12 @@ export default function ClarityReadingExperience({ profileId, profileName, model
   const chapters = useMemo(() => buildDepthChapters(model, fits), [model, fits]);
 
   const changeDepth = (nextDepth: ReadingDepth) => {
+    if (nextDepth !== "quick" && !deeperInterpretationUnlocked) {
+      setUpgradePrompt(nextDepth);
+      setDepth("quick");
+      return;
+    }
+    setUpgradePrompt(null);
     setDepth(nextDepth);
   };
 
@@ -224,12 +235,44 @@ export default function ClarityReadingExperience({ profileId, profileName, model
       <section aria-label="Reading depth" className="mb-6 rounded-2xl border border-[var(--sc-line)] bg-white/[0.035] p-4">
         <p className="mb-3 text-sm font-semibold text-[var(--sc-ivory-soft)]">Choose how far to go</p>
         <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label="Choose reading depth">
-          {(["quick", "standard", "deep"] as ReadingDepth[]).map((option) => (
-            <button key={option} type="button" onClick={() => changeDepth(option)} aria-pressed={depth === option} className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold capitalize transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${depth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}>
-              {option === "quick" ? "Quick insight" : option === "standard" ? "Standard reading" : "Deep dive"}
-            </button>
-          ))}
+          {(["quick", "standard", "deep"] as ReadingDepth[]).map((option) => {
+            const locked = option !== "quick" && !deeperInterpretationUnlocked;
+            const label = option === "quick"
+              ? "Quick insight · Free"
+              : option === "standard"
+                ? `Standard reading${locked ? " · Plus" : ""}`
+                : `Deep dive${locked ? " · Plus" : ""}`;
+            return (
+              <button
+                key={option}
+                type="button"
+                onClick={() => changeDepth(option)}
+                aria-pressed={depth === option}
+                aria-label={locked ? `${label}. Opens Soul Codex Plus upgrade information.` : label}
+                className={`min-h-11 rounded-xl border px-4 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--sc-gold)] ${depth === option ? "border-[var(--sc-line-gold)] bg-[linear-gradient(145deg,rgba(217,182,111,.18),rgba(154,116,220,.06))] text-[var(--sc-gold-bright)] shadow-[0_8px_24px_rgba(217,182,111,.12)]" : locked ? "border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] text-[var(--sc-gold-bright)]" : "border-[var(--sc-line)] bg-white/[0.02] text-[var(--sc-stone)] hover:bg-white/[0.05]"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
+        {!deeperInterpretationUnlocked ? (
+          <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4" data-testid="reading-depth-plus-gate">
+            <p className="m-0 text-sm leading-6 text-[var(--sc-stone)]">
+              Quick insight is a complete Free reading: the core observation, one grounded move, feedback, and Evidence Trace stay open. Standard adds examples, strength/tradeoff, and misread context. Deep Dive adds relationship, stress, and reflection layers.
+            </p>
+            {upgradePrompt ? (
+              <p className="mt-2 text-sm font-semibold text-[var(--sc-ivory)]">
+                {upgradePrompt === "standard" ? "Standard reading" : "Deep Dive"} is part of Soul Codex+ depth.
+              </p>
+            ) : null}
+            <Link href="/pricing" className="mt-3 inline-flex text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">
+              Open Standard + Deep Dive
+            </Link>
+          </div>
+        ) : (
+          <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Soul Codex+ depth is active. Choose the amount of supported interpretation you want right now.</p>
+        )}
       </section>
 
       <section aria-label="Human-depth reading chapters" className="mb-6 grid gap-5">
