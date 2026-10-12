@@ -13,6 +13,7 @@ const home = readFileSync(new URL("../client/src/pages/home.tsx", import.meta.ur
 const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
 const identity = readFileSync(new URL("../client/src/pages/profile.tsx", import.meta.url), "utf8");
 const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
+const connections = readFileSync(new URL("../client/src/pages/ConnectionsPage.tsx", import.meta.url), "utf8");
 
 test("motion system keeps user reduced-motion preference authoritative", () => {
   assert.match(app, /<MotionConfig reducedMotion="user">/);
@@ -36,9 +37,14 @@ test("shared motion primitives provide reveal, stagger, and interactive behavior
 });
 
 test("Aureon responds to the active experience rather than staying static", () => {
-  assert.match(aureon, /"observing" \| "explaining" \| "comparing" \| "confirming"/);
+  assert.match(aureon, /"observing" \| "focusing" \| "explaining" \| "comparing" \| "confirming" \| "warning"/);
   assert.match(natal, /AureonAvatar state=\{selection \? "explaining" : "observing"\}/);
-  assert.match(compatibility, /AureonAvatar state="comparing"/);
+  assert.match(compatibility, /AureonAvatar state=\{selectedDimension \? "explaining" : "comparing"\}/);
+  assert.match(compatibility, /const aureonState: AureonState/);
+  assert.match(compatibility, /\? "warning"/);
+  assert.match(compatibility, /\? "focusing"/);
+  assert.match(compatibility, /\? "explaining"/);
+  assert.match(compatibility, /\? "confirming"/);
 });
 
 test("button motion remains tap-driven and haptic while honoring reduced motion", () => {
@@ -62,4 +68,18 @@ test("Timeline influence exploration is tap-selectable and persists focus", () =
   assert.match(timeline, /aria-pressed=\{selectedInfluenceIndex === index\}/);
   assert.match(timeline, /setSelectedInfluenceIndex/);
   assert.match(timeline, /Focused influence/);
+});
+
+
+test("Compatibility dimensions and Connections adopt interactive motion", () => {
+  assert.match(compatibility, /SoulStagger/);
+  assert.match(compatibility, /SoulInteractive/);
+  assert.match(compatibility, /selectedDimension/);
+  assert.match(compatibility, /aria-pressed=\{selectedDimension === dimension.key\}/);
+  assert.match(compatibility, /Focused relationship signal/);
+  assert.match(connections, /SoulReveal/);
+  assert.match(connections, /SoulStagger/);
+  assert.match(connections, /SoulInteractive/);
+  assert.match(connections, /role="list"/);
+  assert.match(connections, /role="listitem"/);
 });
