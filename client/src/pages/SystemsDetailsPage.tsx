@@ -326,8 +326,7 @@ export default function SystemsDetailsPage() {
                 ) : (
                   <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
                     <p className="text-sm font-semibold text-[var(--sc-ivory)]">Verified Human Design core stays Free.</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Soul Codex+ opens qualified Definition, centers, channels, activated gates, and deeper Human Design synthesis without changing the verification standard.</p>
-                    <Link href="/pricing" className="mt-3 inline-flex text-sm font-semibold text-[var(--sc-gold-bright)] no-underline">Open deeper Human Design</Link>
+                    <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Definition, centers, channels, activated gates, and deeper Human Design synthesis remain roadmap-only until their own evidence contract and regression gate are qualified.</p>
                   </div>
                 )}
               </div>
