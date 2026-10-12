@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import Navigation from "@/components/navigation";
+import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import DiamondClosure from "../components/DiamondClosure";
 import { useActiveProfile } from "../hooks/useActiveProfile";
 import {
@@ -139,6 +140,7 @@ export default function Home() {
       <Navigation />
 
       <main className="sc-page">
+        <SoulReveal>
         <section className="grid items-center gap-10 pb-10 pt-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-14 lg:pb-14 lg:pt-10">
           <div className="max-w-[820px]">
             <div className="sc-eyebrow mb-5">
@@ -197,8 +199,9 @@ export default function Home() {
             </div>
           </div>
         </section>
+        </SoulReveal>
 
-        <div className="mb-5">
+        <SoulReveal className="mb-5" delay={0.04}>
           <DiamondClosure
             clarity={dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
             depth="Today combines only the timing and profile signals that have enough evidence to be shown. Symbolic meaning stays separate from verified calculation."
@@ -206,8 +209,9 @@ export default function Home() {
             nextHref="/timeline"
             nextLabel="Open Today"
           />
-        </div>
+        </SoulReveal>
 
+        <SoulReveal>
         <section className="mb-5 grid gap-4 lg:grid-cols-[1.15fr_.85fr]" aria-label="Daily and social context">
           <div className="sc-panel p-5 sm:p-6">
             <div className="mb-4 flex items-end justify-between gap-3">
@@ -285,10 +289,13 @@ export default function Home() {
             </Link>
           </div>
         </section>
+        </SoulReveal>
 
-        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Soul Codex four core questions">
+        <SoulStagger className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Soul Codex four core questions">
           {destinations.map(({ href, icon: Icon, label, title, description, accent }) => (
-            <Link key={label} href={href} className="sc-panel sc-card-link flex min-h-[238px] flex-col p-5 text-[var(--sc-ivory)] no-underline sm:p-5.5">
+            <SoulStaggerItem key={label}>
+            <SoulInteractive>
+            <Link href={href} className="sc-panel sc-card-link flex min-h-[238px] flex-col p-5 text-[var(--sc-ivory)] no-underline sm:p-5.5">
               <span className={`mb-8 grid h-10 w-10 place-items-center rounded-xl border ${accentClass[accent]}`}>
                 <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />
               </span>
@@ -299,9 +306,12 @@ export default function Home() {
                 Open {label} <ArrowRight className="h-3.5 w-3.5" />
               </span>
             </Link>
+            </SoulInteractive>
+            </SoulStaggerItem>
           ))}
-        </section>
+        </SoulStagger>
 
+        <SoulReveal>
         <section className="mt-5 grid gap-4 rounded-[1.35rem] border border-white/[0.065] bg-white/[0.018] p-5 sm:grid-cols-[auto_1fr] sm:items-start sm:p-6">
           <div className="sc-icon-well">
             <ShieldCheck className="h-[18px] w-[18px] text-[var(--sc-teal)]" strokeWidth={1.8} />
@@ -316,6 +326,7 @@ export default function Home() {
             </Link>
           </div>
         </section>
+        </SoulReveal>
       </main>
     </div>
   );
