@@ -17,6 +17,7 @@ test("free keeps core clarity capabilities", () => {
     "diamond_closure",
     "basic_connections",
     "basic_compatibility",
+    "full_natal_chart",
   ] as const) {
     assert.equal(tierAllowsCapability("free", capability), true);
   }
@@ -40,7 +41,6 @@ test("live Plus capabilities gate depth rather than accuracy", () => {
 
 test("planned Plus capabilities cannot be unlocked or sold yet", () => {
   for (const capability of [
-    "full_natal_chart",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
