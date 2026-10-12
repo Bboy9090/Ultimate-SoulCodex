@@ -43,7 +43,7 @@ test("explicit stored verification checks ownership and updates the same existin
   assert.equal(verified.body.id, "owned-profile");
   assert.equal(verified.body.humanDesignData.status, "verified");
   assert.equal(verified.body.humanDesignData.type, "Reflector");
-  assert.equal(verified.body.humanDesignData.strategy, "Wait a lunar cycle");
+  assert.equal(verified.body.humanDesignData.strategy, "To Wait a Lunar Cycle");
   assert.equal(verified.body.humanDesignData.authority, "Lunar Authority");
   assert.equal(verified.body.humanDesignData.profile, "2/5");
   assert.equal(verified.body.humanDesignData.definition, undefined);
