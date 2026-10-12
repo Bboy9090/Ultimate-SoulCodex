@@ -5,6 +5,13 @@ import { projectProfileResponseForTier } from "../server/lib/profile-response-ac
 const profile = {
   id: "profile-1",
   name: "Bobby",
+  astrologyData: {},
+  personalityData: {},
+  archetypeData: { title: "Stored Plus Archetype", description: "stored plus description", guidance: "stored plus guidance", shadows: ["stored shadow"] },
+  biography: "stored plus biography secret",
+  dailyGuidance: "stored plus guidance secret",
+  depthInterpretation: { secret: "paid depth" },
+  synthesis: { secret: "paid synthesis" },
   numerologyData: {
     status: "resolved",
     lifePath: 9,
@@ -79,4 +86,23 @@ test("projection does not mutate the stored profile object", () => {
   assert.equal(profile.numerologyData.expression, 4);
   assert.equal(profile.humanDesignData.type, "Reflector");
   assert.equal(profile.humanDesignData.status, "verified");
+});
+
+
+test("Free profile response regenerates shallow prose from allowed projected inputs", () => {
+  const out = projectProfileResponseForTier(profile, "free");
+  assert.notEqual(out.biography, "stored plus biography secret");
+  assert.notEqual(out.dailyGuidance, "stored plus guidance secret");
+  assert.equal(out.depthInterpretation, null);
+  assert.equal(out.synthesis, null);
+  assert.deepEqual(out.archetypeData.shadows, []);
+  assert.doesNotMatch(JSON.stringify(out.archetypeData), /stored shadow|Stored Plus Archetype|paid depth|paid synthesis/);
+});
+
+test("Plus profile response preserves stored interpretation depth", () => {
+  const out = projectProfileResponseForTier(profile, "plus");
+  assert.equal(out.biography, "stored plus biography secret");
+  assert.equal(out.dailyGuidance, "stored plus guidance secret");
+  assert.deepEqual(out.depthInterpretation, { secret: "paid depth" });
+  assert.deepEqual(out.synthesis, { secret: "paid synthesis" });
 });
