@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildPublicProfileProjection } from "../server/lib/public-profile-projection";
 import type { Profile } from "@shared/schema";
@@ -162,7 +163,7 @@ test("comparison chart shares only verified sign-and-house rows selected by the 
 });
 
 
-test("Free public projection cannot publish a stored Plus archetype title", () => {
+test("Free public projection can publish the core archetype title without deeper interpretation", () => {
   const projection = buildPublicProfileProjection(profile, {
     fields: ["displayName", "lifePath", "archetypeTitle"],
     displayName: "Bobby",
@@ -173,6 +174,14 @@ test("Free public projection cannot publish a stored Plus archetype title", () =
     fields: {
       displayName: "Bobby",
       lifePath: 9,
+      archetypeTitle: "The Builder",
     },
   });
+});
+
+
+test("share modal exposes the core archetype title without an interpretation-depth gate", () => {
+  const shareModal = readFileSync(new URL("../client/src/components/ShareModal.tsx", import.meta.url), "utf8");
+  assert.match(shareModal, /id: "archetypeTitle"/);
+  assert.doesNotMatch(shareModal, /canShareArchetypeTitle|interpretation_depth/);
 });
