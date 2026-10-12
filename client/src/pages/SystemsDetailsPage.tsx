@@ -15,6 +15,8 @@ import Navigation from "@/components/navigation";
 import UltimateCodexPanel from "@/components/UltimateCodexPanel";
 import type { PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
@@ -136,6 +138,7 @@ function NumberRow({ label, value }: { label: string; value: unknown }) {
 
 export default function SystemsDetailsPage() {
   const { profile, status } = useActiveProfile();
+  const { tier } = useProductAccess();
 
   if (!profile) {
     return (
@@ -164,7 +167,13 @@ export default function SystemsDetailsPage() {
   const risingPlacement = (astrology.rising ?? placements.rising) as Placement | undefined;
   const numerology = (profile.numerologyData ?? profile.personalNumbers ?? {}) as Record<string, any>;
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
-  const ultimateCodex = buildUltimateCodexSynthesis(profile);
+  const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const ultimateCodex = buildUltimateCodexSynthesis(profile, {
+    fullNameNumerology: canSeeFullNumerology,
+    humanDesignCore: canSeeHumanDesignDepth,
+    humanDesignDetails: false,
+  });
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
   const humanDesignRange = humanDesign.status === "range_analyzed" && humanDesign.components ? humanDesign.components : null;
@@ -275,10 +284,10 @@ export default function SystemsDetailsPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <NumberRow label="Life Path" value={profile.lifePathNumber ?? numerology.lifePath} />
               <NumberRow label="Birthday" value={numerology.birthday} />
-              <NumberRow label="Expression" value={numerology.expression} />
-              <NumberRow label="Soul Urge" value={numerology.soulUrge} />
-              <NumberRow label="Personality" value={numerology.personality} />
-              <NumberRow label="Maturity" value={numerology.maturity} />
+              <NumberRow label="Expression" value={canSeeFullNumerology ? numerology.expression : "Soul Codex+"} />
+              <NumberRow label="Soul Urge" value={canSeeFullNumerology ? numerology.soulUrge : "Soul Codex+"} />
+              <NumberRow label="Personality" value={canSeeFullNumerology ? numerology.personality : "Soul Codex+"} />
+              <NumberRow label="Maturity" value={canSeeFullNumerology ? numerology.maturity : "Soul Codex+"} />
               <NumberRow label="Personal Year" value={numerology.personalYear} />
             </div>
             <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">Life Path and Birthday are deterministic from birth date. Expression, Soul Urge, Personality Number, and Maturity require the explicit full birth name and remain unavailable when it is missing. Personal Year is a date-based changing cycle and is kept out of the permanent Codex fingerprint.</p>
@@ -295,7 +304,7 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">Human Design stays a supporting layer unless its calculation contract is verified. It should add explanatory depth, not become another unsupported headline.</p>
               </div>
             </div>
-            {humanDesignVerified ? (
+            {humanDesignVerified && canSeeHumanDesignDepth ? (
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
@@ -308,6 +317,12 @@ export default function SystemsDetailsPage() {
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
                   <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
                 </div>
+              </div>
+            ) : !canSeeHumanDesignDepth ? (
+              <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
+                <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design verification status: {humanDesignStatus}</p>
+                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Verification and provenance remain visible on Free. Soul Codex+ opens the qualified Type, Strategy, Authority, and Profile interpretation layer.</p>
+                <Link href="/pricing" className="mt-3 inline-flex text-sm font-semibold text-[var(--sc-gold-bright)] no-underline">Open Human Design depth</Link>
               </div>
             ) : stableHdEntries.length > 0 || conditionalHdEntries.length > 0 ? (
               <div className="space-y-4">
