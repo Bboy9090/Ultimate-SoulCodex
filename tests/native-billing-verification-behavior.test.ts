@@ -69,9 +69,85 @@ test("active Google subscription becomes effective at purchase time, not future 
     );
 
     assert.equal(verified.accessStatus, "active");
+    assert.equal(verified.environment, "production");
+    assert.equal(verified.diagnosticMetadata.testPurchase, false);
     assert.equal(verified.occurredAt.toISOString(), startTime);
     assert.equal(verified.expiresAt?.toISOString(), expiryTime);
     assert.equal(call, 2);
+  } finally {
+    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
+    else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
+    else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
+    if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
+    else process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = previous.productId;
+  }
+});
+
+
+test("Google license-tester subscription evidence is classified as sandbox", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+  const previous = {
+    serviceAccount: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON,
+    packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
+    productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
+  };
+
+  process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = JSON.stringify({
+    client_email: "billing-test@example.iam.gserviceaccount.com",
+    private_key: pem,
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+  process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+  process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+  const fakeFetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url === "https://oauth2.googleapis.com/token") {
+      return new Response(JSON.stringify({ access_token: "test-access-token" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (url.includes("/purchases/subscriptionsv2/tokens/")) {
+      return new Response(JSON.stringify({
+        testPurchase: {},
+        startTime: "2026-10-03T12:00:00.000Z",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+        latestOrderId: "GPA.TEST-1234",
+        externalAccountIdentifiers: {
+          obfuscatedExternalAccountId: "11111111-1111-4111-8111-111111111111",
+        },
+        lineItems: [{
+          productId: "soul_codex_plus_monthly",
+          expiryTime: "2026-11-03T12:00:00.000Z",
+        }],
+      }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    throw new Error(`unexpected fetch: ${url}`);
+  }) as typeof fetch;
+
+  try {
+    const verified = await verifyGoogleBillingEvidence(
+      "11111111-1111-4111-8111-111111111111",
+      {
+        platform: "android",
+        productId: "soul_codex_plus_monthly",
+        transactionId: "GPA.TEST-1234",
+        purchaseToken: "license-tester-purchase-token-123456789",
+      },
+      new Date("2026-10-03T12:01:00.000Z"),
+      fakeFetch,
+    );
+
+    assert.equal(verified.environment, "sandbox");
+    assert.equal(verified.diagnosticMetadata.testPurchase, true);
+    assert.equal(verified.accessStatus, "active");
   } finally {
     if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
