@@ -7,7 +7,7 @@ const foundationFeatures = [
   "One active profile with your supported Big 3",
   "Life Path and date-based numerology",
   "Verified natal chart geometry: qualified planets, houses, aspects, Midheaven, Nodes, and Chiron",
-  "Qualified Human Design depth: Definition, centers, channels, activated gates, and deeper synthesis",
+  "Verified Human Design Type, Strategy, Authority, and Profile",
   "A limited daily synthesis with up to three qualified influences",
   "Basic Connections and one bounded relationship comparison",
   "Why am I seeing this? evidence and uncertainty",
@@ -18,7 +18,7 @@ const livePremiumFeatures = [
   "Everything in Free",
   "Deeper interpretation layers across supported Identity readings: relationship impact, shadow patterns, decision impact, repeated tensions, and cross-layer explanation",
   "Full governed numerology: Expression, Soul Urge, Personality, and Maturity when a complete birth name is available",
-  "Verified Human Design Type, Strategy, Authority, and Profile",
+  "Qualified Human Design depth: Definition, centers, channels, activated gates, and deeper synthesis",
   "Daily synthesis with up to five qualified current influences",
   "Evidence-aware downloadable natal PDF report",
 ];
