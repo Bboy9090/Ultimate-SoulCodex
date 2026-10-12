@@ -54,6 +54,7 @@ export default function ClarityReadingPage() {
   const model = buildClarityReadingModel(profile as any, {
     fullNameNumerology: tierAllowsCapability(tier, "full_name_numerology"),
     humanDesignCore: tierAllowsCapability(tier, "human_design_depth"),
+    interpretationDepth: tierAllowsCapability(tier, "interpretation_depth"),
   });
 
   return (
