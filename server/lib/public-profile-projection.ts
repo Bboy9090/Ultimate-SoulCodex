@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Profile } from "@shared/schema";
-import { tierAllowsCapability, type SoulCodexTier } from "@shared/product-access";
+import type { SoulCodexTier } from "@shared/product-access";
 
 export type PublicShareField =
   | "displayName"
@@ -118,7 +118,7 @@ function verifiedComparisonChart(container: unknown): PublicComparisonPlacement[
 export function buildPublicProfileProjection(
   profile: Profile,
   selection: PublicShareSelection,
-  tier: SoulCodexTier = "free",
+  _tier: SoulCodexTier = "free",
 ): PublicProfileProjection {
   const requested = new Set(selection.fields);
   const fields: PublicProfileProjection["fields"] = {};
@@ -147,7 +147,7 @@ export function buildPublicProfileProjection(
     if (value !== undefined) fields.lifePath = value;
   }
 
-  if (requested.has("archetypeTitle") && tierAllowsCapability(tier, "interpretation_depth")) {
+  if (requested.has("archetypeTitle")) {
     const value = safeArchetypeTitle(profile);
     if (value) fields.archetypeTitle = value;
   }
