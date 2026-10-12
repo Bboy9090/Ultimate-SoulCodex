@@ -19,9 +19,14 @@ test("Xcode Cloud archive scheme is shared and targets the production app", () =
 });
 
 
-test("Xcode Cloud release signing uses the proven App Store provisioning contract", () => {
-  assert.match(
-    project,
-    /504EC3181FED79650016851F \/\* Release \*\/ = \{[\s\S]*?CODE_SIGN_STYLE = Manual;[\s\S]*?DEVELOPMENT_TEAM = 86NUJ8M3B8;[\s\S]*?PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;[\s\S]*?PROVISIONING_PROFILE_SPECIFIER = "SoulCodex App Store";/,
-  );
+test("Xcode Cloud release signing uses automatic team-managed archive signing", () => {
+  const release = project.match(
+    /504EC3181FED79650016851F \/\* Release \*\/ = \{[\s\S]*?buildSettings = \{([\s\S]*?)\n\t\t\t\};/,
+  )?.[1] ?? "";
+  assert.match(release, /CODE_SIGN_IDENTITY = "Apple Development";/);
+  assert.match(release, /CODE_SIGN_STYLE = Automatic;/);
+  assert.match(release, /DEVELOPMENT_TEAM = 86NUJ8M3B8;/);
+  assert.match(release, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
+  assert.doesNotMatch(release, /PROVISIONING_PROFILE_SPECIFIER/);
+  assert.doesNotMatch(release, /Apple Distribution/);
 });
