@@ -53,3 +53,10 @@ test("Systems Plus Human Design surface is limited to the qualified core", () =>
   assert.doesNotMatch(systems, /Activated gates:/);
   assert.match(systems, /not part of the current Soul Codex\+ promise yet/);
 });
+
+
+test("Offline Profile withholds unqualified Human Design bodygraph detail", () => {
+  assert.doesNotMatch(offline, /<HumanDesignBodygraph/);
+  assert.match(offline, /human-design-bodygraph-deferred/);
+  assert.match(offline, /Definition, Centers, Channels, Gates, and activation detail are intentionally withheld/);
+});
