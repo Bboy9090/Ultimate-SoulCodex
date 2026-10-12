@@ -2,13 +2,15 @@ import portrait from "@/assets/aureon-celestial-elder.png";
 import { motion, useReducedMotion } from "framer-motion";
 import "./AureonAvatar.css";
 
-export type AureonState = "observing" | "explaining" | "comparing" | "confirming";
+export type AureonState = "observing" | "focusing" | "explaining" | "comparing" | "confirming" | "warning";
 
 const STATE_LABEL: Record<AureonState, string> = {
   observing: "observing",
+  focusing: "focusing",
   explaining: "explaining",
   comparing: "comparing",
   confirming: "confirmed",
+  warning: "warning",
 };
 
 /** Approved Celestial Elder artwork. Presentation only; never a source of chart evidence. */
@@ -31,15 +33,19 @@ export default function AureonAvatar({
     >
       <motion.div
         className="aureon-avatar-portrait"
-        animate={reducedMotion ? undefined : state === "explaining"
-          ? { y: [0, -2, 0], scale: [1, 1.015, 1] }
-          : state === "comparing"
-            ? { rotate: [0, -1.5, 1.5, 0] }
-            : state === "confirming"
-              ? { scale: [1, 1.035, 1] }
-              : { y: [0, -1.5, 0] }}
+        animate={reducedMotion ? undefined : state === "focusing"
+          ? { scale: [1, 1.025, 1], y: [0, -2.5, 0] }
+          : state === "explaining"
+            ? { y: [0, -2, 0], scale: [1, 1.015, 1] }
+            : state === "comparing"
+              ? { rotate: [0, -1.5, 1.5, 0] }
+              : state === "confirming"
+                ? { scale: [1, 1.035, 1] }
+                : state === "warning"
+                  ? { x: [0, -1.5, 1.5, 0], scale: [1, 1.01, 1] }
+                  : { y: [0, -1.5, 0] }}
         transition={reducedMotion ? undefined : {
-          duration: state === "comparing" ? 3.2 : 4.6,
+          duration: state === "focusing" ? 2.4 : state === "warning" ? 2.8 : state === "comparing" ? 3.2 : 4.6,
           repeat: Infinity,
           ease: "easeInOut",
         }}
