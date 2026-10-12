@@ -45,10 +45,9 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   basic_compatibility: { minimumTier: "free", availability: "live", label: "Basic compatibility" },
 
   full_natal_chart: {
-    minimumTier: "plus",
-    availability: "planned",
-    label: "Full natal chart",
-    upgradeReason: "Unlock all qualified planets, houses, aspects, angles, Nodes, and Chiron.",
+    minimumTier: "free",
+    availability: "live",
+    label: "Verified natal chart geometry",
   },
   full_name_numerology: {
     minimumTier: "plus",
