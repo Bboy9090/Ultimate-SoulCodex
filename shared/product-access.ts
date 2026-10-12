@@ -63,9 +63,9 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   },
   human_design_depth: {
     minimumTier: "plus",
-    availability: "live",
+    availability: "planned",
     label: "Human Design depth",
-    upgradeReason: "Unlock qualified Definition, centers, channels, activated gates, and deeper Human Design synthesis while keeping verified Type, Strategy, Authority, and Profile free.",
+    upgradeReason: "Definition, centers, channels, activated gates, and deeper Human Design synthesis stay outside the paid promise until their own evidence boundary and regression gate are independently qualified.",
   },
   advanced_daily: {
     minimumTier: "plus",
