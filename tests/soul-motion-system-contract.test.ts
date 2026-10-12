@@ -37,9 +37,14 @@ test("shared motion primitives provide reveal, stagger, and interactive behavior
 });
 
 test("Aureon responds to the active experience rather than staying static", () => {
-  assert.match(aureon, /"observing" \| "explaining" \| "comparing" \| "confirming"/);
+  assert.match(aureon, /"observing" \| "focusing" \| "explaining" \| "comparing" \| "confirming" \| "warning"/);
   assert.match(natal, /AureonAvatar state=\{selection \? "explaining" : "observing"\}/);
-  assert.match(compatibility, /AureonAvatar state="comparing"/);
+  assert.match(compatibility, /AureonAvatar state=\{selectedDimension \? "explaining" : "comparing"\}/);
+  assert.match(compatibility, /const aureonState: AureonState/);
+  assert.match(compatibility, /\? "warning"/);
+  assert.match(compatibility, /\? "focusing"/);
+  assert.match(compatibility, /\? "explaining"/);
+  assert.match(compatibility, /\? "confirming"/);
 });
 
 test("button motion remains tap-driven and haptic while honoring reduced motion", () => {
