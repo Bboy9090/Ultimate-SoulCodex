@@ -18,6 +18,7 @@ test("free keeps core clarity capabilities", () => {
     "basic_connections",
     "basic_compatibility",
     "full_natal_chart",
+    "human_design_core",
   ] as const) {
     assert.equal(tierAllowsCapability("free", capability), true);
   }
