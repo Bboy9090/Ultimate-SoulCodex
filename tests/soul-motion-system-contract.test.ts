@@ -13,6 +13,7 @@ const home = readFileSync(new URL("../client/src/pages/home.tsx", import.meta.ur
 const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
 const identity = readFileSync(new URL("../client/src/pages/profile.tsx", import.meta.url), "utf8");
 const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
+const connections = readFileSync(new URL("../client/src/pages/ConnectionsPage.tsx", import.meta.url), "utf8");
 
 test("motion system keeps user reduced-motion preference authoritative", () => {
   assert.match(app, /<MotionConfig reducedMotion="user">/);
@@ -62,4 +63,18 @@ test("Timeline influence exploration is tap-selectable and persists focus", () =
   assert.match(timeline, /aria-pressed=\{selectedInfluenceIndex === index\}/);
   assert.match(timeline, /setSelectedInfluenceIndex/);
   assert.match(timeline, /Focused influence/);
+});
+
+
+test("Compatibility dimensions and Connections adopt interactive motion", () => {
+  assert.match(compatibility, /SoulStagger/);
+  assert.match(compatibility, /SoulInteractive/);
+  assert.match(compatibility, /selectedDimension/);
+  assert.match(compatibility, /aria-pressed=\{selectedDimension === dimension.key\}/);
+  assert.match(compatibility, /Focused relationship signal/);
+  assert.match(connections, /SoulReveal/);
+  assert.match(connections, /SoulStagger/);
+  assert.match(connections, /SoulInteractive/);
+  assert.match(connections, /role="list"/);
+  assert.match(connections, /role="listitem"/);
 });
