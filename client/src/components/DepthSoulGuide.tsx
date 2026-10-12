@@ -210,7 +210,7 @@ export default function DepthSoulGuide({
     <section className="depth-guide" aria-labelledby="depth-guide-title">
       <header className="depth-guide-hero">
         <div className="depth-guide-hero-copy">
-          <AureonAvatar />
+          <AureonAvatar state="explaining" />
           <div className="depth-guide-title-row">
             <div className="depth-guide-title-icon" aria-hidden="true">
               <span className="depth-guide-orbit" />
