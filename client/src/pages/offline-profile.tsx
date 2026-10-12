@@ -15,7 +15,6 @@ import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
 import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
 
-const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
 
 function DeepChartFallback({ label }: { label: string }) {
