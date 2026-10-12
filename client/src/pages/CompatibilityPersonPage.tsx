@@ -1,4 +1,5 @@
 import AureonAvatar from "@/components/AureonAvatar";
+import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, HeartHandshake, Sparkles } from "lucide-react";
@@ -151,6 +152,7 @@ export default function CompatibilityPersonPage() {
   const [result, setResult] = useState<PersonComparisonResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedDimension, setSelectedDimension] = useState<(typeof DIMENSIONS)[number]["key"] | null>(null);
   const dimensionScores = result?.dimensions ?? null;
 
   const yourPlacements = useMemo(
@@ -275,6 +277,7 @@ export default function CompatibilityPersonPage() {
           <ArrowLeft size={16} /> Back to Compatibility
         </Link>
 
+        <SoulReveal>
         <header className="mt-7 max-w-4xl">
           <div className="sc-eyebrow">Compare a person</div>
           <h1 className="mt-4 font-serif text-[clamp(3rem,7vw,5.5rem)] font-medium leading-[.97] tracking-[-.04em] text-[var(--sc-ivory)]">
@@ -287,8 +290,10 @@ export default function CompatibilityPersonPage() {
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
           </p>
         </header>
+        </SoulReveal>
 
         {initialConnection && friendPlacements.length > 0 ? (
+          <SoulReveal>
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
               <AureonAvatar state="comparing" />
@@ -453,8 +458,10 @@ export default function CompatibilityPersonPage() {
               </p>
             )}
           </section>
+          </SoulReveal>
         ) : null}
 
+        <SoulReveal>
         <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)]">
           <form onSubmit={submit} className="sc-panel p-6" aria-label="Compare a person">
             <div className="flex items-center gap-3">
@@ -545,20 +552,41 @@ export default function CompatibilityPersonPage() {
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four dimensions are the privacy-minimized Sun-sign foundation. The chart resonance above is a separate local comparison of saved placements and reports its own coverage.</p>
                 </section>
 
-                <section className="grid gap-3 sm:grid-cols-2" aria-label="Compatibility dimensions">
+                <SoulStagger className="grid gap-3 sm:grid-cols-2" aria-label="Compatibility dimensions">
                   {DIMENSIONS.map((dimension) => (
-                    <article className="sc-panel min-w-0 p-5" key={dimension.key}>
-                      <div className="flex items-start justify-between gap-4">
-                        <h3 className="m-0 font-serif text-lg font-semibold">{dimension.label}</h3>
-                        <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic model band ${symbolicBand(dimensionScores[dimension.key])}`}>
-                          {symbolicBand(dimensionScores[dimension.key])}
-                        </span>
-                      </div>
-                      <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>
-                      <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{dimension.detail}</p>
-                    </article>
+                    <SoulStaggerItem key={dimension.key}>
+                      <SoulInteractive>
+                        <button
+                          type="button"
+                          aria-pressed={selectedDimension === dimension.key}
+                          onClick={() => setSelectedDimension((current) => current === dimension.key ? null : dimension.key)}
+                          className={`sc-panel min-w-0 w-full p-5 text-left ${selectedDimension === dimension.key ? "border-[var(--sc-gold)] bg-[rgba(217,182,111,.06)]" : ""}`}
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <h3 className="m-0 font-serif text-lg font-semibold">{dimension.label}</h3>
+                            <span className="rounded-full border border-[rgba(217,182,111,.22)] px-2.5 py-1 text-sm font-semibold text-[var(--sc-gold-bright)]" aria-label={`${dimension.label} symbolic model band ${symbolicBand(dimensionScores[dimension.key])}`}>
+                              {symbolicBand(dimensionScores[dimension.key])}
+                            </span>
+                          </div>
+                          <p className="mb-0 mt-3 text-base leading-7 text-[var(--sc-ivory-soft)]">{dimensionPunchline(dimension.key, dimensionScores[dimension.key])}</p>
+                          <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{dimension.detail}</p>
+                        </button>
+                      </SoulInteractive>
+                    </SoulStaggerItem>
                   ))}
-                </section>
+                </SoulStagger>
+                {selectedDimension ? (() => {
+                  const dimension = DIMENSIONS.find((item) => item.key === selectedDimension);
+                  if (!dimension) return null;
+                  const score = dimensionScores[selectedDimension];
+                  return (
+                    <div className="rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4" aria-live="polite">
+                      <p className="m-0 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">Focused relationship signal</p>
+                      <h3 className="mt-2 font-serif text-xl text-[var(--sc-ivory)]">{dimension.label} · {symbolicBand(score)}</h3>
+                      <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{dimensionPunchline(selectedDimension, score)}</p>
+                    </div>
+                  );
+                })() : null}
 
                 <details className="sc-panel p-5">
                   <summary className="cursor-pointer text-sm font-semibold text-[var(--sc-ivory)]">Inspect exact symbolic model values</summary>
@@ -598,6 +626,7 @@ export default function CompatibilityPersonPage() {
             ) : null}
           </div>
         </section>
+        </SoulReveal>
       </main>
     </div>
   );
