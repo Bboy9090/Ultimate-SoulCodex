@@ -403,6 +403,19 @@
     border-radius: calc(1.1rem - 1px);
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    .sc-orbital-seal { animation: sc-orbital-breathe 6s ease-in-out infinite; }
+    .sc-orbit-dot { animation: sc-orbit-signal 2.8s ease-in-out infinite; }
+    @keyframes sc-orbital-breathe {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3px) scale(1.012); }
+    }
+    @keyframes sc-orbit-signal {
+      0%, 100% { opacity: .62; transform: scale(.88); }
+      50% { opacity: 1; transform: scale(1.18); }
+    }
+  }
+
   .scroll-down { transform: translateY(-100%); }
   .scroll-up { transform: translateY(0); }
 }

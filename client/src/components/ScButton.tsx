@@ -1,5 +1,5 @@
 import React from "react";
-import { motion, HTMLMotionProps } from "framer-motion";
+import { motion, HTMLMotionProps, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { triggerHapticFeedback } from "../lib/haptics";
 
@@ -18,6 +18,7 @@ const ScButton: React.FC<ScButtonProps> = ({
   disabled,
   ...props
 }) => {
+  const reducedMotion = useReducedMotion();
   const baseStyles = "relative inline-flex items-center justify-center font-sans font-semibold tracking-tight transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none rounded-xl overflow-hidden";
   
   const variants = {
@@ -36,8 +37,9 @@ const ScButton: React.FC<ScButtonProps> = ({
   return (
     <motion.button
       {...props}
-      whileHover={!disabled && !loading ? { scale: 1.02, y: -2 } : undefined}
-      whileTap={{ scale: 0.98, y: 0 }}
+      whileHover={!reducedMotion && !disabled && !loading ? { scale: 1.02, y: -2 } : undefined}
+      whileTap={!reducedMotion && !disabled && !loading ? { scale: 0.98, y: 0 } : undefined}
+      transition={{ duration: reducedMotion ? 0 : 0.18, ease: [0.22, 1, 0.36, 1] }}
       className={cn(baseStyles, variants[variant], sizes[size], className)}
       disabled={disabled || loading}
       onClick={(e) => {

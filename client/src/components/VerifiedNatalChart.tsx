@@ -285,7 +285,7 @@ export default function VerifiedNatalChart({
           <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <AureonAvatar />
+                <AureonAvatar state={selection ? "explaining" : "observing"} />
                 <p className="sc-eyebrow">Tap the chart · Meet your placements</p>
                 <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Explore your chart</h3>
               </div>
