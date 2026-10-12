@@ -20,6 +20,8 @@ test("every Free promise has a concrete implementation surface", () => {
   assert.match(diamondClosure, /Next move/);
   assert.match(compatibility, /bounded symbolic comparison/i);
   assert.match(compatibilityRoute, /foundation-compatibility-v2/);
+  assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.minimumTier, "free");
+  assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.availability, "live");
 });
 
 test("every live Plus promise has a concrete implementation surface", () => {
@@ -49,7 +51,6 @@ test("every live Plus promise has a concrete implementation surface", () => {
 
 test("planned capabilities are visibly excluded from the current paid promise", () => {
   for (const capability of [
-    "full_natal_chart",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
