@@ -15,7 +15,6 @@ import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
 import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
 
-const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
 
 function DeepChartFallback({ label }: { label: string }) {
@@ -350,7 +349,7 @@ export default function OfflineProfilePage() {
                 <p className="sc-eyebrow">Verified Human Design core</p>
                 <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Decision architecture snapshot</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                  The verified core is summarized here. Open the bodygraph below for definition, centers, channels, gates, and activation detail.
+                  The verified core is summarized here. Definition, Centers, Channels, Gates, and activation detail are intentionally withheld until those deeper bodygraph surfaces are independently qualified.
                 </p>
               </div>
               <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> verified core</span>
@@ -367,9 +366,12 @@ export default function OfflineProfilePage() {
         )}
 
         {verifiedHumanDesign && (
-          <Suspense fallback={<DeepChartFallback label="Human Design bodygraph" />}>
-            <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />
-          </Suspense>
+          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="human-design-bodygraph-deferred">
+            <p className="sc-eyebrow">Human Design bodygraph</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+              Definition, Centers, Channels, Gates, and activation detail are intentionally withheld from the current Soul Codex+ promise until those deeper bodygraph surfaces are independently qualified.
+            </p>
+          </section>
         )}
 
         {verifiedFullNatal && verifiedAstrology && (
