@@ -165,7 +165,7 @@ test("production profile UI and endpoint are wired to the canonical report path"
   assert.match(downloadButton, /\/api\/pdf\/profile\/\$\{encodeURIComponent\(profileId\)\}/);
   assert.match(downloadButton, /signature !== "%PDF"/);
   assert.match(routes, /app\.get\("\/api\/pdf\/profile\/:id"/);
-  assert.match(routes, /buildNatalReportInput\(profile\)/);
+  assert.match(routes, /buildNatalReportInput\(profile, \{[\s\S]*premiumAccess: tierAllowsCapability\(entitlement\.tier, "premium_exports"\)/);
   assert.doesNotMatch(routes, /authToken !== profileId/);
   assert.match(routes, /requestOwnsProfile\(req, profile\)/);
 });
@@ -194,4 +194,16 @@ test("natal report withholds internally incoherent Human Design even with valid-
 
   const report = buildNatalReportInput(profile);
   assert.deepEqual(report.humanDesign, {});
+});
+
+
+test("legacy profile premium flag cannot authorize report premium mode", () => {
+  const legacy = evidenceProfile();
+  legacy.isPremium = true;
+
+  const freeReport = buildNatalReportInput(legacy);
+  const plusReport = buildNatalReportInput(legacy, { premiumAccess: true });
+
+  assert.equal(freeReport.isPremium, false);
+  assert.equal(plusReport.isPremium, true);
 });
