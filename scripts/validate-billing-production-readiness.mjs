@@ -63,12 +63,14 @@ function providerReadiness(env = process.env) {
   };
 
   const legacyNativeEnabled = truthy(env.SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED);
+  const iosFlagExplicit = env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED !== undefined;
+  const androidFlagExplicit = env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED !== undefined;
   const iosEnabled =
-    env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED === undefined
+    !iosFlagExplicit
       ? legacyNativeEnabled
       : truthy(env.SOUL_CODEX_PLUS_IOS_BILLING_ENABLED);
   const androidEnabled =
-    env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED === undefined
+    !androidFlagExplicit
       ? legacyNativeEnabled
       : truthy(env.SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED);
   const iosConfigured = apple.configured && apple.productionOnly;
@@ -87,12 +89,20 @@ function providerReadiness(env = process.env) {
     androidActivationSafe: !androidEnabled || androidConfigured,
     nativeActivationSafe:
       (!iosEnabled || iosConfigured) && (!androidEnabled || androidConfigured),
-    fullyConfigured: stripe.configured && webAuth.configured && nativeConfigured,
+    platformFlagsExplicit: iosFlagExplicit && androidFlagExplicit,
+    fullyConfigured:
+      stripe.configured &&
+      webAuth.configured &&
+      nativeConfigured &&
+      iosFlagExplicit &&
+      androidFlagExplicit,
     flags: {
       webCheckoutEnabled: stripe.enabled,
       iosBillingEnabled: iosEnabled,
       androidBillingEnabled: androidEnabled,
       legacyNativeBillingEnabled: legacyNativeEnabled,
+      iosFlagExplicit,
+      androidFlagExplicit,
     },
   };
 }
