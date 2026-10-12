@@ -8,9 +8,10 @@ const bodygraph = readFileSync("client/src/components/HumanDesignBodygraph.tsx",
 const panel = readFileSync("client/src/components/UltimateCodexPanel.tsx", "utf8");
 const systems = readFileSync("client/src/pages/SystemsDetailsPage.tsx", "utf8");
 
-test("Identity keeps governed charts visible while technical fusion moves to Systems", () => {
+test("Identity keeps governed natal evidence visible while technical fusion moves to Systems", () => {
   assert.match(offline, /VerifiedNatalChart/);
-  assert.match(offline, /HumanDesignBodygraph/);
+  assert.doesNotMatch(offline, /<HumanDesignBodygraph/);
+  assert.match(offline, /human-design-bodygraph-deferred/);
   assert.doesNotMatch(offline, /<UltimateCodexPanel/);
   assert.match(offline, /View underlying systems/);
   assert.match(offline, /buildUltimateCodexSynthesis/);
