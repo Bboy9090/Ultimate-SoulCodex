@@ -1,8 +1,22 @@
 .aureon-avatar { display: inline-flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: .35rem; margin: 0 0 .75rem; }
-.aureon-avatar-portrait { width: 80px; height: 80px; overflow: hidden; border-radius: 22px; border: 1px solid #d8b978; background: #725477; box-shadow: 0 0 18px #bd98d633; }
+.aureon-avatar-portrait { position: relative; width: 80px; height: 80px; overflow: hidden; border-radius: 22px; border: 1px solid #d8b978; background: #725477; box-shadow: 0 0 18px #bd98d633; }
 .aureon-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.aureon-avatar figcaption { color: var(--sc-ivory, #faf4e8); font-size: .75rem; letter-spacing: .08em; }
+.aureon-avatar figcaption { display: flex; flex-direction: column; align-items: center; gap: .1rem; color: var(--sc-ivory, #faf4e8); font-size: .75rem; letter-spacing: .08em; }
+.aureon-avatar-state { color: var(--sc-stone, #a69cab); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; }
+.aureon-avatar-signal { position: absolute; right: 7px; bottom: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--sc-gold-bright, #efd08d); box-shadow: 0 0 12px rgba(239,208,141,.58); }
+.aureon-avatar--explaining .aureon-avatar-portrait { border-color: rgba(114,216,197,.58); box-shadow: 0 0 22px rgba(114,216,197,.18); }
+.aureon-avatar--explaining .aureon-avatar-signal { background: var(--sc-teal, #72d8c5); }
+.aureon-avatar--comparing .aureon-avatar-portrait { border-color: rgba(154,116,220,.6); box-shadow: 0 0 24px rgba(154,116,220,.22); }
+.aureon-avatar--comparing .aureon-avatar-signal { background: var(--sc-violet, #9a74dc); }
+.aureon-avatar--confirming .aureon-avatar-portrait { border-color: rgba(239,208,141,.72); box-shadow: 0 0 26px rgba(217,182,111,.24); }
+.aureon-avatar--compact .aureon-avatar-portrait { width: 58px; height: 58px; border-radius: 17px; }
+.aureon-avatar--compact figcaption { font-size: .68rem; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .aureon-avatar-portrait { animation: aureon-arrive 2s ease-out 1; }
-  @keyframes aureon-arrive { from { box-shadow: 0 0 28px #edc87788; } to { box-shadow: 0 0 18px #bd98d633; } }
+  .aureon-avatar-signal { animation: aureon-signal 2.6s ease-in-out infinite; }
+  @keyframes aureon-signal { 0%,100% { opacity: .55; transform: scale(.86); } 50% { opacity: 1; transform: scale(1.12); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aureon-avatar-signal { animation: none; }
 }
