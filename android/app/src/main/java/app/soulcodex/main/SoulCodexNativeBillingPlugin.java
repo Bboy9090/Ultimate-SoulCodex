@@ -148,6 +148,12 @@ public class SoulCodexNativeBillingPlugin extends Plugin implements PurchasesUpd
             return;
         }
 
+        String accountToken = call.getString("appAccountToken");
+        if (accountToken == null || accountToken.trim().isEmpty()) {
+            call.reject("A valid account binding is required before purchase", "native_billing_account_binding_required");
+            return;
+        }
+
         withReadyClient(call, () ->
             billingClient.queryProductDetailsAsync(
                 detailsParams(Collections.singletonList(productId)),
@@ -179,10 +185,7 @@ public class SoulCodexNativeBillingPlugin extends Plugin implements PurchasesUpd
                         BillingFlowParams.newBuilder()
                             .setProductDetailsParamsList(Collections.singletonList(productParams));
 
-                    String accountToken = call.getString("appAccountToken");
-                    if (accountToken != null && !accountToken.isEmpty()) {
-                        flowBuilder.setObfuscatedAccountId(accountToken);
-                    }
+                    flowBuilder.setObfuscatedAccountId(accountToken);
 
                     Activity activity = getActivity();
                     if (activity == null) {

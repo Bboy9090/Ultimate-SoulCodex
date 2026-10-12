@@ -403,6 +403,7 @@ export async function verifyGoogleBillingEvidence(
 
   const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
   const providerTransactionId = purchase.latestOrderId || evidence.transactionId;
+  const googleEnvironment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
 
   if (
     purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
@@ -433,7 +434,7 @@ export async function verifyGoogleBillingEvidence(
     providerTransactionId,
     productId: evidence.productId,
     plan,
-    environment: "production",
+    environment: googleEnvironment,
     eventType: "subscription_verified",
     occurredAt,
     verificationState: "verified",
@@ -444,6 +445,8 @@ export async function verifyGoogleBillingEvidence(
     evidenceDigest: sha256Hex(evidence.purchaseToken),
     diagnosticMetadata: {
       source: "google_play_developer_api",
+      environment: googleEnvironment,
+      testPurchase: Boolean(purchase.testPurchase),
       state: purchase.subscriptionState ?? "unknown",
       acknowledged:
         purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ||

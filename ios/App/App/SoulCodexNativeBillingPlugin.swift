@@ -50,12 +50,13 @@ public class SoulCodexNativeBillingPlugin: CAPPlugin, CAPBridgedPlugin {
                     return
                 }
 
-                var options = Set<Product.PurchaseOption>()
-                if let rawToken = call.getString("appAccountToken"),
-                   let token = UUID(uuidString: rawToken) {
-                    options.insert(.appAccountToken(token))
+                guard let rawToken = call.getString("appAccountToken"),
+                      let token = UUID(uuidString: rawToken) else {
+                    call.reject("A valid account binding is required before purchase", "native_billing_account_binding_required")
+                    return
                 }
 
+                let options: Set<Product.PurchaseOption> = [.appAccountToken(token)]
                 let result = try await product.purchase(options: options)
                 switch result {
                 case .success(let verification):
