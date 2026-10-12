@@ -82,7 +82,7 @@ The Stripe catalog is re-read server-side before checkout; inactive, wrong-caden
 2. Create Google monthly and annual products.
 3. Connect the Google Play service account and verify Developer API access.
 4. Create Stripe monthly and annual recurring Prices plus webhook endpoint.
-5. Enter the real production values in Railway while web, iOS, and Android billing flags remain `false`.
+5. Enter the real production values in Railway while web, iOS, and Android billing flags remain `false`. Set the iOS and Android platform-specific flags explicitly; strict production readiness must not rely on the legacy umbrella native-billing fallback.
 6. Run `npm run billing:preflight:strict` against the production variable set.
 7. Run sandbox/TestFlight/internal-test purchase, restore, renewal, cancellation, expiry, refund/revocation, and reinstall/second-device tests per provider.
 8. Update live App Store Connect / Play privacy and subscription disclosures to match the 4.1 packet.
