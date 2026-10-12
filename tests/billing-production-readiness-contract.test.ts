@@ -32,6 +32,10 @@ test("billing readiness preflight covers all production provider boundaries", ()
   assert.match(source, /SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED/);
   assert.match(source, /iosActivationSafe/);
   assert.match(source, /androidActivationSafe/);
+  assert.match(source, /iosFlagExplicit/);
+  assert.match(source, /androidFlagExplicit/);
+  assert.match(source, /platformFlagsExplicit/);
+  assert.match(source, /fullyConfigured:[\s\S]*iosFlagExplicit[\s\S]*androidFlagExplicit/);
   assert.match(source, /process\.exit\(2\)/);
   assert.match(source, /--require-all/);
 });

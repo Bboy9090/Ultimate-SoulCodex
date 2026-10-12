@@ -8,8 +8,8 @@ The existing Soul Codex pricing plan sets Premium at:
 
 | Plan | Price | Renewal |
 |---|---:|---|
-| Soul Codex+ Monthly | $9.99 USD | Monthly |
-| Soul Codex+ Annual | $89.99 USD | Annual |
+| Soul Codex+ Monthly | $5.99 USD | Monthly |
+| Soul Codex+ Annual | $59.99 USD | Annual |
 
 No free trial is enabled by this 4.1 RC unless it is separately configured, disclosed, and requalified.
 
@@ -61,8 +61,8 @@ Do not enable `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED` until the Developer API 
 
 Create one recurring Price for each cadence:
 
-- Monthly: $9.99 USD every 1 month
-- Annual: $89.99 USD every 1 year
+- Monthly: $5.99 USD every 1 month
+- Annual: $59.99 USD every 1 year
 
 Then configure Railway with the real values returned by Stripe:
 
@@ -82,7 +82,7 @@ The Stripe catalog is re-read server-side before checkout; inactive, wrong-caden
 2. Create Google monthly and annual products.
 3. Connect the Google Play service account and verify Developer API access.
 4. Create Stripe monthly and annual recurring Prices plus webhook endpoint.
-5. Enter the real production values in Railway while web, iOS, and Android billing flags remain `false`.
+5. Enter the real production values in Railway while web, iOS, and Android billing flags remain `false`. Set the iOS and Android platform-specific flags explicitly; strict production readiness must not rely on the legacy umbrella native-billing fallback.
 6. Run `npm run billing:preflight:strict` against the production variable set.
 7. Run sandbox/TestFlight/internal-test purchase, restore, renewal, cancellation, expiry, refund/revocation, and reinstall/second-device tests per provider.
 8. Update live App Store Connect / Play privacy and subscription disclosures to match the 4.1 packet.

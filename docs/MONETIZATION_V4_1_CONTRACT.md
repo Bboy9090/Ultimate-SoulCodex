@@ -61,7 +61,7 @@ Current phase:
 - Durable billing subjects, immutable provider transaction events, entitlement grants, and redacted verification receipts are the intended authorization source.
 - Signed Stripe subscription lifecycle verification may populate the ledger only for configured monthly/annual price IDs.
 - Legacy one-time Stripe checkout remains retired.
-- Native StoreKit 2 and Google Play Billing purchase initiation and restore are not yet active.
+- Native StoreKit 2 and Google Play Billing purchase initiation and restore are implemented behind disabled platform flags. They are not production-enabled until provider sandbox/TestFlight/internal-test purchase, restore, lifecycle, reinstall/second-device, and server-verification qualification passes.
 - Web monthly/annual checkout plumbing exists behind `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=false` by default.
 - Web checkout requires an authenticated session and never accepts profile IDs as purchase credentials.
 - Browser sign-in is not yet activated in the canonical web experience, so the web checkout flag must remain off in production until browser authentication is qualified.
