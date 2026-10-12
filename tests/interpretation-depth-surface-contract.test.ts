@@ -26,5 +26,5 @@ test("dedicated reading keeps Quick and Standard free while locking Deep Dive to
 
 test("online clarity reading builds its model from entitled numerology and Human Design inputs", () => {
   assert.match(clarityReadingPage, /fullNameNumerology: tierAllowsCapability\(tier, "full_name_numerology"\)/);
-  assert.match(clarityReadingPage, /humanDesignCore: tierAllowsCapability\(tier, "human_design_depth"\)/);
+  assert.match(clarityReadingPage, /humanDesignCore: tierAllowsCapability\(tier, "human_design_core"\)/);
 });
