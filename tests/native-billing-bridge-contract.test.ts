@@ -38,6 +38,10 @@ test("iOS uses StoreKit 2 verified evidence and current entitlements", () => {
   assert.match(swift, /jwsRepresentation/);
   assert.match(swift, /Transaction\.currentEntitlements/);
   assert.match(swift, /AppStore\.sync/);
+  assert.match(swift, /native_billing_account_binding_required/);
+  assert.match(swift, /UUID\(uuidString: rawToken\)/);
+  assert.match(swift, /\.appAccountToken\(token\)/);
+  assert.doesNotMatch(swift, /if let rawToken = call\.getString\("appAccountToken"\)[\s\S]*options\.insert/s);
   assert.doesNotMatch(swift, /isPremium/);
   assert.match(storyboard, /SoulCodexBridgeViewController/);
   assert.match(project, /SoulCodexNativeBillingPlugin\.swift in Sources/);
@@ -52,6 +56,9 @@ test("Android uses Play Billing 9.1 and returns purchase tokens for server verif
   assert.match(java, /launchBillingFlow/);
   assert.match(java, /queryPurchasesAsync/);
   assert.match(java, /purchaseToken/);
+  assert.match(java, /native_billing_account_binding_required/);
+  assert.match(java, /setObfuscatedAccountId\(accountToken\)/);
+  assert.match(java, /accountToken == null \|\| accountToken\.trim\(\)\.isEmpty\(\)/);
   assert.doesNotMatch(java, /acknowledgePurchase\(/);
   assert.doesNotMatch(java, /isPremium/);
 });
