@@ -19,7 +19,6 @@ import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
 import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVerification";
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
-import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 type Placement = PlacementLike & {
@@ -186,7 +185,6 @@ export default function SystemsDetailsPage() {
   const conditionalHdEntries = humanDesignRange
     ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
     : [];
-  const humanDesignCenters = normalizeHumanDesignCenters(humanDesign.centers);
 
   const latitude = textValue(profile.latitude);
   const longitude = textValue(profile.longitude);
@@ -306,16 +304,14 @@ export default function SystemsDetailsPage() {
             </div>
             {humanDesignVerified && canSeeHumanDesignDepth ? (
               <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
                   <NumberRow label="Strategy" value={humanDesign.strategy} />
                   <NumberRow label="Authority" value={humanDesign.authority} />
                   <NumberRow label="Profile" value={humanDesign.profile} />
-                  <NumberRow label="Definition" value={humanDesign.definition} />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
+                <div className="rounded-2xl border border-[var(--sc-line)] bg-white/[0.02] p-4 text-xs leading-6 text-[var(--sc-stone)]">
+                  Definition, Centers, Channels, Gates, and deeper bodygraph interaction layers are not part of the current Soul Codex+ promise yet. They stay withheld until those paid surfaces are independently qualified.
                 </div>
               </div>
             ) : !canSeeHumanDesignDepth ? (
