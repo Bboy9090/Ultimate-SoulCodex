@@ -9,8 +9,8 @@ test("4.1 store catalog handoff freezes the intended cross-store identifiers and
   assert.match(handoff, /app\.soulcodex\.plus\.annual/);
   assert.match(handoff, /soul_codex_plus_monthly/);
   assert.match(handoff, /soul_codex_plus_annual/);
-  assert.match(handoff, /\$9\.99 USD/);
-  assert.match(handoff, /\$89\.99 USD/);
+  assert.match(handoff, /\$5\.99 USD/);
+  assert.match(handoff, /\$59\.99 USD/);
   assert.match(handoff, /every 1 month/);
   assert.match(handoff, /every 1 year/);
 });
