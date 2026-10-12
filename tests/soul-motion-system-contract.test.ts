@@ -9,6 +9,8 @@ const aureon = readFileSync(new URL("../client/src/components/AureonAvatar.tsx",
 const aureonCss = readFileSync(new URL("../client/src/components/AureonAvatar.css", import.meta.url), "utf8");
 const natal = readFileSync(new URL("../client/src/components/VerifiedNatalChart.tsx", import.meta.url), "utf8");
 const compatibility = readFileSync(new URL("../client/src/pages/CompatibilityPersonPage.tsx", import.meta.url), "utf8");
+const home = readFileSync(new URL("../client/src/pages/home.tsx", import.meta.url), "utf8");
+const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
 
 test("motion system keeps user reduced-motion preference authoritative", () => {
   assert.match(app, /<MotionConfig reducedMotion="user">/);
@@ -16,6 +18,7 @@ test("motion system keeps user reduced-motion preference authoritative", () => {
   assert.match(button, /useReducedMotion\(\)/);
   assert.match(aureon, /useReducedMotion\(\)/);
   assert.match(aureonCss, /prefers-reduced-motion: reduce/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
 });
 
 test("shared motion primitives provide reveal, stagger, and interactive behavior", () => {
@@ -25,6 +28,9 @@ test("shared motion primitives provide reveal, stagger, and interactive behavior
   assert.match(motion, /SoulInteractive/);
   assert.match(motion, /whileInView="visible"/);
   assert.match(motion, /whileTap/);
+  assert.match(home, /SoulReveal/);
+  assert.match(home, /SoulStagger/);
+  assert.match(home, /SoulInteractive/);
 });
 
 test("Aureon responds to the active experience rather than staying static", () => {
