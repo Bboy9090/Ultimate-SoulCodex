@@ -18,6 +18,7 @@ test("free keeps core clarity capabilities", () => {
     "basic_connections",
     "basic_compatibility",
     "full_natal_chart",
+    "human_design_core",
   ] as const) {
     assert.equal(tierAllowsCapability("free", capability), true);
   }
@@ -27,7 +28,6 @@ test("live Plus capabilities gate depth rather than accuracy", () => {
   for (const capability of [
     "interpretation_depth",
     "full_name_numerology",
-    "human_design_depth",
     "advanced_daily",
     "premium_exports",
   ] as const) {
@@ -41,6 +41,7 @@ test("live Plus capabilities gate depth rather than accuracy", () => {
 
 test("planned Plus capabilities cannot be unlocked or sold yet", () => {
   for (const capability of [
+    "human_design_depth",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",

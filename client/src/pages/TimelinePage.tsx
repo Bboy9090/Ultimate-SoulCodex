@@ -68,7 +68,7 @@ export default function TimelinePage() {
   const [, navigate] = useLocation();
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
   const { tier } = useProductAccess();
-  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
   const todayDate = localTimelineDate(new Date());
@@ -106,7 +106,7 @@ export default function TimelinePage() {
     const astrology = (profile?.astrologyData ?? {}) as Record<string, any>;
     const humanDesign = (profile?.humanDesignData ?? {}) as Record<string, any>;
     const fullNatalVerified = hasVerifiedFullNatalChart(astrology);
-    const hdVerified = canSeeHumanDesignDepth && hasVerifiedHumanDesignTrust(humanDesign);
+    const hdVerified = canSeeHumanDesignCore && hasVerifiedHumanDesignTrust(humanDesign);
     const houses = fullNatalVerified
       ? Object.values(astrology.planetaryHouses ?? {})
           .filter((value): value is number => Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12)
@@ -131,7 +131,7 @@ export default function TimelinePage() {
       hdAuthority: humanDesign.authority as string | undefined,
       hdProfile: humanDesign.profile as string | undefined,
     };
-  }, [profile, canSeeHumanDesignDepth]);
+  }, [profile, canSeeHumanDesignCore]);
 
   const dateLabel = now.toLocaleDateString("en-US", {
     weekday: "long",

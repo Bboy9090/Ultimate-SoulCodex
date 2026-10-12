@@ -63,12 +63,16 @@ test("Free profile response preserves date numerology while withholding paid nam
   assert.deepEqual(Object.keys(out.numerologyData.interpretations).sort(), ["birthday", "lifePath", "personalYear"]);
 });
 
-test("Free profile response keeps Human Design provenance but withholds interpretive values", () => {
+test("Free profile response keeps verified Human Design core while withholding deeper bodygraph values", () => {
   const out = projectProfileResponseForTier(profile, "free");
-  assert.equal(out.humanDesignData.status, "verified_locked");
+  assert.equal(out.humanDesignData.status, "verified");
   assert.equal(out.humanDesignData.engine, "soulcodex-hd-geocentric-v1");
   assert.equal(out.humanDesignData.verificationReceiptId, "receipt");
-  for (const key of ["type", "strategy", "authority", "profile", "definition", "centers", "channels", "activatedGates"]) {
+  assert.equal(out.humanDesignData.type, "Reflector");
+  assert.equal(out.humanDesignData.strategy, "Wait a lunar cycle");
+  assert.equal(out.humanDesignData.authority, "Lunar Authority");
+  assert.equal(out.humanDesignData.profile, "2/5");
+  for (const key of ["definition", "centers", "channels", "activatedGates"]) {
     assert.equal(out.humanDesignData[key], undefined, key);
   }
 });

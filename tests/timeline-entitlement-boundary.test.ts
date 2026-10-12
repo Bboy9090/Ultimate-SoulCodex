@@ -4,10 +4,10 @@ import test from "node:test";
 
 const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
 
-test("Timeline admits Human Design context only with current HD depth entitlement", () => {
-  assert.match(timeline, /tierAllowsCapability\(tier, "human_design_depth"\)/);
-  assert.match(timeline, /hdVerified = canSeeHumanDesignDepth && hasVerifiedHumanDesignTrust\(humanDesign\)/);
-  assert.match(timeline, /\[profile, canSeeHumanDesignDepth\]/);
+test("Timeline admits verified Human Design core on Free", () => {
+  assert.match(timeline, /tierAllowsCapability\(tier, "human_design_core"\)/);
+  assert.match(timeline, /hdVerified = canSeeHumanDesignCore && hasVerifiedHumanDesignTrust\(humanDesign\)/);
+  assert.match(timeline, /\[profile, canSeeHumanDesignCore\]/);
   assert.match(timeline, /if \(profileContext\.hdVerified\)/);
   assert.match(timeline, /profileContext\.hdVerified \? \(/);
 });

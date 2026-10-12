@@ -7,6 +7,30 @@ function cloneRecord(value: unknown): AnyRecord {
   return value && typeof value === "object" ? { ...(value as AnyRecord) } : {};
 }
 
+function hdCoreView(value: unknown): AnyRecord {
+  const hd = cloneRecord(value);
+  const coreKeys = [
+    "status",
+    "type",
+    "strategy",
+    "authority",
+    "profile",
+    "engine",
+    "source",
+    "calculatedAt",
+    "inputTimestampUtc",
+    "verificationReceiptId",
+    "independentSource",
+    "verifiedAt",
+    "reason",
+  ];
+  const projected: AnyRecord = {};
+  for (const key of coreKeys) {
+    if (hd[key] !== undefined) projected[key] = hd[key];
+  }
+  return projected;
+}
+
 function hdEvidenceOnly(value: unknown): AnyRecord {
   const hd = cloneRecord(value);
   const evidenceKeys = [
@@ -60,7 +84,9 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
 
   projected.humanDesignData = tierAllowsCapability(tier, "human_design_depth")
     ? cloneRecord(profile.humanDesignData)
-    : hdEvidenceOnly(profile.humanDesignData);
+    : tierAllowsCapability(tier, "human_design_core")
+      ? hdCoreView(profile.humanDesignData)
+      : hdEvidenceOnly(profile.humanDesignData);
 
   if (!tierAllowsCapability(tier, "interpretation_depth")) {
     const freeArchetype = synthesizeArchetype(

@@ -168,10 +168,11 @@ export default function SystemsDetailsPage() {
   const numerology = (profile.numerologyData ?? profile.personalNumbers ?? {}) as Record<string, any>;
   const humanDesign = (profile.humanDesignData ?? {}) as Record<string, any>;
   const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
   const ultimateCodex = buildUltimateCodexSynthesis(profile, {
     fullNameNumerology: canSeeFullNumerology,
-    humanDesignCore: canSeeHumanDesignDepth,
+    humanDesignCore: canSeeHumanDesignCore,
     humanDesignDetails: false,
   });
   const humanDesignStatus = textValue(humanDesign.status) ?? "unverified";
@@ -304,25 +305,30 @@ export default function SystemsDetailsPage() {
                 <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">Human Design stays a supporting layer unless its calculation contract is verified. It should add explanatory depth, not become another unsupported headline.</p>
               </div>
             </div>
-            {humanDesignVerified && canSeeHumanDesignDepth ? (
+            {humanDesignVerified && canSeeHumanDesignCore ? (
               <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <NumberRow label="Type" value={humanDesign.type ?? profile.humanDesignType} />
                   <NumberRow label="Strategy" value={humanDesign.strategy} />
                   <NumberRow label="Authority" value={humanDesign.authority} />
                   <NumberRow label="Profile" value={humanDesign.profile} />
-                  <NumberRow label="Definition" value={humanDesign.definition} />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
-                  <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
-                </div>
-              </div>
-            ) : !canSeeHumanDesignDepth ? (
-              <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
-                <p className="text-sm font-semibold text-[var(--sc-ivory)]">Human Design verification status: {humanDesignStatus}</p>
-                <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Verification and provenance remain visible on Free. Soul Codex+ opens the qualified Type, Strategy, Authority, and Profile interpretation layer.</p>
-                <Link href="/pricing" className="mt-3 inline-flex text-sm font-semibold text-[var(--sc-gold-bright)] no-underline">Open Human Design depth</Link>
+                {canSeeHumanDesignDepth ? (
+                  <>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <NumberRow label="Definition" value={humanDesign.definition} />
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Centers</strong><br />Defined: {humanDesignCenters.defined.join(", ") || "None"}<br />Open/undefined: {humanDesignCenters.undefined.join(", ") || "None"}</div>
+                      <div className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-4 text-xs leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Bodygraph detail</strong><br />Channels: {humanDesignListLabel(humanDesign.channels, "channel")}<br />Activated gates: {humanDesignListLabel(humanDesign.activatedGates, "gate")}</div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
+                    <p className="text-sm font-semibold text-[var(--sc-ivory)]">Verified Human Design core stays Free.</p>
+                    <p className="mt-1 text-xs leading-5 text-[var(--sc-stone)]">Definition, centers, channels, activated gates, and deeper Human Design synthesis remain roadmap-only until their own evidence contract and regression gate are qualified.</p>
+                  </div>
+                )}
               </div>
             ) : stableHdEntries.length > 0 || conditionalHdEntries.length > 0 ? (
               <div className="space-y-4">

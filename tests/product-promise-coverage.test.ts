@@ -22,6 +22,11 @@ test("every Free promise has a concrete implementation surface", () => {
   assert.match(compatibilityRoute, /foundation-compatibility-v2/);
   assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.minimumTier, "free");
   assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.availability, "live");
+  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_core.minimumTier, "free");
+  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_core.availability, "live");
+  for (const field of ["Type", "Strategy", "Authority", "Profile"]) {
+    assert.ok(profile.includes(field), `missing Free Human Design core field: ${field}`);
+  }
 });
 
 test("every live Plus promise has a concrete implementation surface", () => {
@@ -32,11 +37,6 @@ test("every live Plus promise has a concrete implementation surface", () => {
   assert.equal(SOUL_CODEX_CAPABILITIES.full_name_numerology.availability, "live");
   for (const field of ["Expression", "Soul Urge", "Personality", "Maturity"]) {
     assert.ok(profile.includes(field), `missing live numerology field: ${field}`);
-  }
-
-  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_depth.availability, "live");
-  for (const field of ["Type", "Strategy", "Authority", "Profile"]) {
-    assert.ok(profile.includes(field), `missing live Human Design field: ${field}`);
   }
 
   assert.equal(SOUL_CODEX_CAPABILITIES.advanced_daily.availability, "live");
@@ -51,6 +51,7 @@ test("every live Plus promise has a concrete implementation surface", () => {
 
 test("planned capabilities are visibly excluded from the current paid promise", () => {
   for (const capability of [
+    "human_design_depth",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
@@ -62,6 +63,7 @@ test("planned capabilities are visibly excluded from the current paid promise", 
 
   assert.match(pricing, /Roadmap · not sold yet/);
   assert.match(pricing, /Planned, not included in the current paid promise/);
+  assert.match(pricing, /Human Design Definition, centers, channels, activated gates, and deeper interaction synthesis/);
   assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
 });
 

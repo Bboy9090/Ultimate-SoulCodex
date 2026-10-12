@@ -43,12 +43,26 @@ export function projectInterpretationInputsForTier(
 
   const humanDesignData = tierAllowsCapability(tier, "human_design_depth")
     ? humanDesign
-    : {
-        status: humanDesign.status === "verified" ? "verified_locked" : humanDesign.status ?? "unresolved",
-        reason: humanDesign.status === "verified"
-          ? "Verified Human Design core is stored but excluded from Free interpretation synthesis."
-          : humanDesign.reason,
-      };
+    : tierAllowsCapability(tier, "human_design_core")
+      ? {
+          status: humanDesign.status ?? "unresolved",
+          type: humanDesign.type,
+          strategy: humanDesign.strategy,
+          authority: humanDesign.authority,
+          profile: humanDesign.profile,
+          engine: humanDesign.engine,
+          source: humanDesign.source,
+          calculatedAt: humanDesign.calculatedAt,
+          inputTimestampUtc: humanDesign.inputTimestampUtc,
+          verificationReceiptId: humanDesign.verificationReceiptId,
+          independentSource: humanDesign.independentSource,
+          verifiedAt: humanDesign.verifiedAt,
+          reason: humanDesign.reason,
+        }
+      : {
+          status: humanDesign.status === "verified" ? "verified_locked" : humanDesign.status ?? "unresolved",
+          reason: humanDesign.reason,
+        };
 
   return { numerologyData, humanDesignData };
 }
