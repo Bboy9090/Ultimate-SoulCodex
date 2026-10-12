@@ -47,6 +47,39 @@ The strict production preflight currently requires the following configuration t
 
 Because those names are absent, `billing:preflight:strict` cannot truthfully qualify the full production billing surface today.
 
+## Distribution artifact status
+
+The native release artifacts are ahead of billing qualification:
+
+### iOS
+
+The checked-in distribution signing receipt proves:
+
+- version/build: `4.1.0 / 4000011`
+- bundle: `app.soulcodex.ios`
+- automatic App Store Connect export: PASS
+- signed IPA export: PASS
+- distribution signing authority: PASS
+- `get-task-allow=false`
+- `beta-reports-active=true`
+- strict deep codesign verification: PASS
+
+This proves an App Store/TestFlight-capable IPA can be produced. It does **not** prove App Store Connect ingestion, TestFlight processing, StoreKit product availability, purchase, restore, or lifecycle behavior.
+
+### Android
+
+The latest exact-head Store Candidate run proves:
+
+- signed release AAB: PASS
+- AAB signature verification: PASS
+- debug APK smoke artifact: PASS
+- Google Play publishing credential detected by CI: **NO**
+- production Play publish attempted: **NO**
+
+The job's recorded handoff state is `play_credentials_available=false` / `production_publish_ready=false`.
+
+Therefore Android packaging is qualified, but Play Console publishing and Google Play Developer API verification remain blocked.
+
 ## Current decision
 
 **BLOCKED — do not commit/enable the staged billing patch as a production billing launch.**
