@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import TimelineIntelligence from "../components/TimelineIntelligence";
+import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import DiamondClosure from "../components/DiamondClosure";
 import FeatureState from "../components/FeatureState";
@@ -199,6 +200,11 @@ export default function TimelinePage() {
   const visibleInfluences = currentInfluences.slice(0, influenceLimit);
   const hiddenInfluenceCount = Math.max(0, currentInfluences.length - visibleInfluences.length);
   const advancedDaily = tierAllowsCapability(tier, "advanced_daily");
+  const aureonTimelineState: AureonState = selectedInfluenceIndex !== null
+    ? "explaining"
+    : visibleInfluences.length > 0
+      ? "confirming"
+      : "observing";
 
   if (isLoading) {
     return (
@@ -221,6 +227,7 @@ export default function TimelinePage() {
     return (
       <main className="sc-page !pt-8">
         <section className="sc-panel sc-panel-gold mx-auto max-w-3xl p-8 text-center sm:p-10">
+          <AureonAvatar state="warning" compact />
           <CircleDot className="mx-auto h-10 w-10 text-[var(--sc-gold)]" />
           <div className="sc-eyebrow mt-5">Personal cycles</div>
           <h1 className="mt-4 font-serif text-4xl font-semibold tracking-tight sm:text-5xl">Timeline needs a saved birth date.</h1>
@@ -257,8 +264,10 @@ export default function TimelinePage() {
 
       <SoulReveal>
       <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your chart today">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 gap-4">
+            <AureonAvatar state={aureonTimelineState} compact />
+            <div>
             <div className="sc-eyebrow">Today</div>
             <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--sc-ivory)]">Your chart today</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--sc-stone)]">
@@ -266,6 +275,8 @@ export default function TimelinePage() {
                 ? `${phase.label} is the larger numerology theme. The useful move is to read the strongest qualified signals together without treating any symbolic layer as a forecast.`
                 : "Soul Codex is showing only the current influences supported by the data available for this profile."}
             </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]" aria-live="polite">{selectedInfluenceIndex !== null ? "Aureon is explaining the influence you selected." : "Aureon confirms the qualified signals currently available."}</p>
+            </div>
           </div>
           <span className="sc-trust-chip">{visibleInfluences.length} current influence{visibleInfluences.length === 1 ? "" : "s"}</span>
         </div>
