@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import TimelineIntelligence from "../components/TimelineIntelligence";
+import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import DiamondClosure from "../components/DiamondClosure";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
@@ -233,6 +234,7 @@ export default function TimelinePage() {
 
   return (
     <main className="sc-page !pt-8">
+      <SoulReveal>
       <header className="grid items-center gap-8 pb-8 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div>
           <div className="sc-eyebrow">{dateLabel}</div>
@@ -250,7 +252,9 @@ export default function TimelinePage() {
           </div>
         ) : null}
       </header>
+      </SoulReveal>
 
+      <SoulReveal>
       <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your chart today">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -265,15 +269,19 @@ export default function TimelinePage() {
           <span className="sc-trust-chip">{visibleInfluences.length} current influence{visibleInfluences.length === 1 ? "" : "s"}</span>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        <SoulStagger className="mt-6 grid gap-3 md:grid-cols-2">
           {visibleInfluences.map((influence, index) => (
-            <article key={`${influence.label}-${index}`} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+            <SoulStaggerItem key={`${influence.label}-${index}`}>
+            <SoulInteractive>
+            <article className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
               <div className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Influence {index + 1}</div>
               <h3 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{influence.label}</h3>
               <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{influence.detail}</p>
             </article>
+            </SoulInteractive>
+            </SoulStaggerItem>
           ))}
-        </div>
+        </SoulStagger>
 
         {!advancedDaily && hiddenInfluenceCount > 0 ? (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
@@ -286,8 +294,10 @@ export default function TimelinePage() {
           </div>
         ) : null}
       </section>
+      </SoulReveal>
 
       {phase && personalYear ? (
+        <SoulReveal>
         <section className="sc-panel sc-panel-gold p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -303,6 +313,7 @@ export default function TimelinePage() {
             </p>
           ) : null}
         </section>
+        </SoulReveal>
       ) : null}
 
       {(profileContext.hdVerified || profileContext.rising || profileContext.midheaven || profileContext.dominantHouse) ? (
