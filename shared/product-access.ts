@@ -11,6 +11,7 @@ export type SoulCodexCapability =
   | "basic_compatibility"
   | "full_natal_chart"
   | "full_name_numerology"
+  | "human_design_core"
   | "human_design_depth"
   | "advanced_daily"
   | "advanced_transits"
@@ -55,11 +56,16 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
     label: "Full name numerology",
     upgradeReason: "Unlock Expression, Soul Urge, Personality, and Maturity when a complete birth name is available.",
   },
+  human_design_core: {
+    minimumTier: "free",
+    availability: "live",
+    label: "Verified Human Design core",
+  },
   human_design_depth: {
     minimumTier: "plus",
     availability: "live",
-    label: "Human Design core",
-    upgradeReason: "Unlock verified Type, Strategy, Authority, and Profile. Centers, channels, and deeper interaction synthesis remain planned until their paid surfaces are fully qualified.",
+    label: "Human Design depth",
+    upgradeReason: "Unlock qualified Definition, centers, channels, activated gates, and deeper Human Design synthesis while keeping verified Type, Strategy, Authority, and Profile free.",
   },
   advanced_daily: {
     minimumTier: "plus",
