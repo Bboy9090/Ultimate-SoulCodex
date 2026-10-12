@@ -12,8 +12,9 @@ import { shouldOfferVerification, verificationOutcome, type VerificationAttempt 
 import { apiFetch, publicApiErrorMessage } from "@/lib/queryClient";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { humanDesignAvailability } from "@/lib/humanDesignAvailability";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 
-const HumanDesignBodygraph = lazy(() => import("@/components/HumanDesignBodygraph"));
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
 
 function DeepChartFallback({ label }: { label: string }) {
@@ -34,6 +35,7 @@ function splitDailyGuidance(value: string): { headline: string; detail: string }
 
 export default function OfflineProfilePage() {
   const { id } = useParams();
+  const { tier } = useProductAccess();
   const queryClient = useQueryClient();
   const [verificationAttempt, setVerificationAttempt] = useState<VerificationAttempt>("idle");
   const [verificationFailure, setVerificationFailure] = useState<{ profileId: string; message: string } | null>(null);
@@ -119,12 +121,19 @@ export default function OfflineProfilePage() {
   const verifiedSouthNode = verifiedAstrology?.southNode;
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, any>;
+  const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const humanDesignState = humanDesignAvailability(reconciledProfile ?? {});
-  const verifiedHumanDesign = hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
-  const rangeHumanDesign = humanDesign.status === "range_analyzed" ? humanDesign : null;
+  const verifiedHumanDesign = canSeeHumanDesignDepth && hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
+  const rangeHumanDesign = canSeeHumanDesignDepth && humanDesign.status === "range_analyzed" ? humanDesign : null;
   const ultimateCodex = useMemo(
-    () => buildUltimateCodexSynthesis(reconciledProfile ?? {}),
-    [reconciledProfile],
+    () => buildUltimateCodexSynthesis(reconciledProfile ?? {}, {
+      fullNameNumerology: canSeeFullNumerology,
+      humanDesignCore: canSeeHumanDesignDepth,
+      humanDesignDetails: false,
+    }),
+    [reconciledProfile, canSeeFullNumerology, canSeeHumanDesignDepth],
   );
 
   if (isLoading) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--sc-gold)]" /><p className="text-[var(--sc-stone)]">Opening your Codex...</p></div></div></div>;
@@ -161,7 +170,12 @@ export default function OfflineProfilePage() {
   const needsOnlineVerification = profileNeedsOnlineVerification(reconciledProfile);
   const canRequestOnlineEvidence = Boolean(reconciledProfile.timezone?.trim());
   const readingHref = `/reading/${profile.id}`;
-  const dailyGuidance = splitDailyGuidance(profile.dailyGuidance);
+  const freeGuidance = ultimateCodex.integrationMoves[0] ?? "Choose one supported pattern and test it against one real event today.";
+  const visibleDailyGuidance = canSeeInterpretationDepth ? profile.dailyGuidance : freeGuidance;
+  const dailyGuidance = splitDailyGuidance(visibleDailyGuidance);
+  const visibleBiography = canSeeInterpretationDepth
+    ? profile.biography
+    : ultimateCodex.identitySignature;
   const identityTitle =
     ultimateCodex.derivedArchetype ??
     (ultimateCodex.coverage !== "insufficient"
@@ -315,7 +329,7 @@ export default function OfflineProfilePage() {
 
         <section className="mb-6 grid gap-4 lg:grid-cols-3">
           <div className="sc-panel p-5"><div className="mb-5 flex items-center justify-between"><div className="flex items-center gap-3"><div className="sc-icon-well"><Sparkles className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Astrology core</p><p className="text-xs text-[var(--sc-stone)]">verified where available</p></div></div></div><div className="space-y-3">{[["Sun", synthesisSun || "Unresolved", Boolean(verifiedSun)], ["Moon", synthesisMoon || "Unresolved", Boolean(verifiedMoon)], ["Rising", synthesisRising || "Unresolved", Boolean(verifiedRising)]].map(([label, value, verified]) => <div key={String(label)} className="flex items-center justify-between border-b border-[var(--sc-line)] pb-3 last:border-0 last:pb-0"><span className="text-sm text-[var(--sc-stone)]">{String(label)}</span><span className="flex items-center gap-2 text-sm font-semibold text-[var(--sc-ivory)]">{String(value)} {verified && <Check className="h-3.5 w-3.5 text-[var(--sc-teal)]" />}</span></div>)}</div></div>
-          <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{[["Life Path", numerology.lifePath], ["Birthday", numerology.birthday], ["Expression", numerology.expression], ["Soul Urge", numerology.soulUrge], ["Personality", numerology.personality], ["Maturity", numerology.maturity], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{value === undefined || value === null ? "Unresolved" : String(value)}</p>{label === "Personal Year" && <p className="mt-1 text-[10px] leading-4 text-[var(--sc-stone)]">current cycle · not part of stable Codex ID</p>}</div>)}</div></div>
+          <div className="sc-panel p-5"><div className="mb-5 flex items-center gap-3"><div className="sc-icon-well"><Infinity className="h-5 w-5" /></div><div><p className="font-semibold text-[var(--sc-ivory)]">Core numbers</p><p className="text-xs text-[var(--sc-stone)]">numerology layer</p></div></div><div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{[["Life Path", numerology.lifePath], ["Birthday", numerology.birthday], ["Expression", canSeeFullNumerology ? numerology.expression : "Soul Codex+"], ["Soul Urge", canSeeFullNumerology ? numerology.soulUrge : "Soul Codex+"], ["Personality", canSeeFullNumerology ? numerology.personality : "Soul Codex+"], ["Maturity", canSeeFullNumerology ? numerology.maturity : "Soul Codex+"], ["Personal Year", numerology.personalYear]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3"><p className="text-[11px] uppercase tracking-[.12em] text-[var(--sc-stone)]">{String(label)}</p><p className="mt-1 font-serif text-2xl font-medium text-[var(--sc-gold-bright)]">{value === undefined || value === null ? "Unresolved" : String(value)}</p>{label === "Personal Year" && <p className="mt-1 text-[10px] leading-4 text-[var(--sc-stone)]">current cycle · not part of stable Codex ID</p>}</div>)}</div></div>
           <div className="sc-panel p-5" data-testid="daily-guidance-card">
             <div className="mb-4 flex items-center gap-3">
               <div className="sc-icon-well"><Compass className="h-5 w-5" /></div>
@@ -335,7 +349,7 @@ export default function OfflineProfilePage() {
                 <p className="sc-eyebrow">Verified Human Design core</p>
                 <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Decision architecture snapshot</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                  The verified core is summarized here. Open the bodygraph below for definition, centers, channels, gates, and activation detail.
+                  The verified core is summarized here. Definition, Centers, Channels, Gates, and activation detail are intentionally withheld until those deeper bodygraph surfaces are independently qualified.
                 </p>
               </div>
               <span className="sc-trust-chip"><ShieldCheck className="h-3.5 w-3.5" /> verified core</span>
@@ -352,9 +366,12 @@ export default function OfflineProfilePage() {
         )}
 
         {verifiedHumanDesign && (
-          <Suspense fallback={<DeepChartFallback label="Human Design bodygraph" />}>
-            <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />
-          </Suspense>
+          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="human-design-bodygraph-deferred">
+            <p className="sc-eyebrow">Human Design bodygraph</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+              Definition, Centers, Channels, Gates, and activation detail are intentionally withheld from the current Soul Codex+ promise until those deeper bodygraph surfaces are independently qualified.
+            </p>
+          </section>
         )}
 
         {verifiedFullNatal && verifiedAstrology && (
@@ -458,7 +475,7 @@ export default function OfflineProfilePage() {
               </div>
             </div>
           )}
-          <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{profile.biography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
+          <div className="sc-panel p-6 sm:p-8"><p className="sc-eyebrow mb-3">Local biography</p><h2 className="mb-4 font-serif text-3xl font-medium text-[var(--sc-ivory)]">The story this profile currently tells.</h2><p className="text-base leading-8 text-[var(--sc-ivory-soft)]">{visibleBiography}</p><Link href={readingHref} className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--sc-gold-bright)] no-underline hover:text-white">Read the deeper pattern <BookOpen className="h-4 w-4" /></Link></div>
         </section>
 
         <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
@@ -469,7 +486,17 @@ export default function OfflineProfilePage() {
                     ? "Unknown-time range analysis is complete. Stable-across-range placements may influence synthesis with explicit range provenance. Conditional placements remain branch-only; houses and Midheaven stay unavailable until birth time is known."
                     : "This local reading uses deterministic numerology only. The calendar Sun candidate is display-only until ephemeris verification or full-day range analysis. Time-sensitive astronomy remains unresolved rather than guessed."}</p></div></div></div>
 
-        <DepthSoulGuide interpretation={profile.depthInterpretation} />
+        {canSeeInterpretationDepth ? (
+          <DepthSoulGuide interpretation={profile.depthInterpretation} />
+        ) : (
+          <section className="sc-panel sc-panel-gold p-5 sm:p-6" data-testid="free-offline-diamond-clarity">
+            <p className="sc-eyebrow">Diamond clarity · Free</p>
+            <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Your supported core pattern</h2>
+            <p className="mt-3 text-sm leading-7 text-[var(--sc-ivory-soft)]">{ultimateCodex.identitySignature}</p>
+            <p className="mt-3 text-sm leading-7 text-[var(--sc-stone)]">{freeGuidance}</p>
+            <Link href={readingHref} className="sc-button-primary mt-5 inline-flex">Open the full Free reading</Link>
+          </section>
+        )}
       </main>
     </div>
   );
