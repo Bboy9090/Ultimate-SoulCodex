@@ -39,11 +39,6 @@ test("every live Plus promise has a concrete implementation surface", () => {
     assert.ok(profile.includes(field), `missing live numerology field: ${field}`);
   }
 
-  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_depth.availability, "live");
-  for (const field of ["Definition", "Centers", "Channels", "Activated gates"]) {
-    assert.ok(pricing.includes(field), `missing live Human Design depth promise: ${field}`);
-  }
-
   assert.equal(SOUL_CODEX_CAPABILITIES.advanced_daily.availability, "live");
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT/);
   assert.match(timeline, /See all five influences/);
@@ -56,6 +51,7 @@ test("every live Plus promise has a concrete implementation surface", () => {
 
 test("planned capabilities are visibly excluded from the current paid promise", () => {
   for (const capability of [
+    "human_design_depth",
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
@@ -67,6 +63,7 @@ test("planned capabilities are visibly excluded from the current paid promise", 
 
   assert.match(pricing, /Roadmap · not sold yet/);
   assert.match(pricing, /Planned, not included in the current paid promise/);
+  assert.match(pricing, /Human Design Definition, centers, channels, activated gates, and deeper interaction synthesis/);
   assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
 });
 
