@@ -3,6 +3,8 @@ import { Check, Copy, Loader2, Share2, ShieldCheck, Trash2, X } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiFetch } from "@/lib/queryClient";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 
 interface ShareModalProps {
   profileId: string;
@@ -43,6 +45,12 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const { toast } = useToast();
+  const { tier } = useProductAccess();
+  const canShareArchetypeTitle = tierAllowsCapability(tier, "interpretation_depth");
+  const availableFieldOptions = useMemo(
+    () => FIELD_OPTIONS.filter((option) => option.id !== "archetypeTitle" || canShareArchetypeTitle),
+    [canShareArchetypeTitle],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -270,7 +278,7 @@ export function ShareModal({ profileId, profileName, onClose }: ShareModalProps)
         {!shareToken ? (
           <>
             <div className="space-y-2">
-              {FIELD_OPTIONS.map((option) => {
+              {availableFieldOptions.map((option) => {
                 const checked = selected.has(option.id);
                 return (
                   <label key={option.id} className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--sc-line)] bg-white/[0.02] p-3">
