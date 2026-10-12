@@ -40,3 +40,16 @@ test("Free offline profile does not render cached Plus depth interpretation", ()
   assert.match(offline, /\{ultimateCodex\.identitySignature\}/);
   assert.match(offline, /\{freeGuidance\}/);
 });
+
+
+test("Systems Plus Human Design surface is limited to the qualified core", () => {
+  assert.match(systems, /NumberRow label="Type"/);
+  assert.match(systems, /NumberRow label="Strategy"/);
+  assert.match(systems, /NumberRow label="Authority"/);
+  assert.match(systems, /NumberRow label="Profile"/);
+  assert.doesNotMatch(systems, /NumberRow label="Definition"/);
+  assert.doesNotMatch(systems, />Centers</);
+  assert.doesNotMatch(systems, /Channels:/);
+  assert.doesNotMatch(systems, /Activated gates:/);
+  assert.match(systems, /not part of the current Soul Codex\+ promise yet/);
+});
