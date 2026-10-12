@@ -8,9 +8,10 @@ test("deep verified chart visualizations stay out of offline-profile first paint
   const source = await readFile(profileUrl, "utf8");
 
   assert.doesNotMatch(source, /import HumanDesignBodygraph from/);
+  assert.doesNotMatch(source, /lazy\(\(\) => import\("@\/components\/HumanDesignBodygraph"\)\)/);
+  assert.doesNotMatch(source, /<HumanDesignBodygraph/);
+  assert.doesNotMatch(source, /DeepChartFallback label="Human Design bodygraph"/);
   assert.doesNotMatch(source, /import VerifiedNatalChart from/);
-  assert.match(source, /lazy\(\(\) => import\("@\/components\/HumanDesignBodygraph"\)\)/);
   assert.match(source, /lazy\(\(\) => import\("@\/components\/VerifiedNatalChart"\)\)/);
-  assert.match(source, /<Suspense fallback=\{<DeepChartFallback label="Human Design bodygraph" \/>\}>/);
   assert.match(source, /<Suspense fallback=\{<DeepChartFallback label="verified natal wheel" \/>\}>/);
 });
