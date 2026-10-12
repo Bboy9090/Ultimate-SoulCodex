@@ -7,7 +7,7 @@ const profileUrl = new URL("../client/src/pages/offline-profile.tsx", import.met
 test("profile Human Design summary stays compact and defers bodygraph detail", async () => {
   const source = await readFile(profileUrl, "utf8");
   assert.match(source, /Decision architecture snapshot/);
-  assert.match(source, /Open the bodygraph below for definition, centers, channels, gates, and activation detail/);
+  assert.match(source, /Definition, Centers, Channels, Gates, and activation detail are intentionally withheld/);
   assert.match(source, /["Type", verifiedHumanDesign\.type]/);
   assert.match(source, /["Strategy", verifiedHumanDesign\.strategy]/);
   assert.match(source, /["Authority", verifiedHumanDesign\.authority]/);
@@ -17,8 +17,9 @@ test("profile Human Design summary stays compact and defers bodygraph detail", a
   assert.doesNotMatch(source, /humanDesignListLabel/);
 });
 
-test("detailed Human Design evidence remains available through the bodygraph", async () => {
+test("unqualified Human Design bodygraph detail remains withheld", async () => {
   const source = await readFile(profileUrl, "utf8");
-  assert.match(source, /<HumanDesignBodygraph data=\{verifiedHumanDesign as Record<string, any>\} \/>/);
-  assert.match(source, /DeepChartFallback label="Human Design bodygraph"/);
+  assert.doesNotMatch(source, /<HumanDesignBodygraph/);
+  assert.doesNotMatch(source, /DeepChartFallback label="Human Design bodygraph"/);
+  assert.match(source, /human-design-bodygraph-deferred/);
 });
