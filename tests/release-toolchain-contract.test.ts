@@ -57,7 +57,7 @@ test("iOS export remains App Store scoped with the canonical team", async () => 
   const exportOptions = await text(iosExportOptionsPath);
   assert.match(validator, /ios\/App\/ExportOptions\.plist/);
   assert.match(exportOptions, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/);
-  assert.match(exportOptions, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/);
+  assert.match(exportOptions, /<key>method<\/key>\s*<string>app-store-connect<\/string>/);
 });
 
 test("store workflow constructs and validates both Capacitor native payloads", async () => {
