@@ -68,6 +68,8 @@ export default function TimelinePage() {
   const [, navigate] = useLocation();
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
   const { tier } = useProductAccess();
+  const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
+  const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
   const todayDate = localTimelineDate(new Date());
   const todayCard = cachedTodayCard?.profileId === profile?.id && cachedTodayCard?.date === todayDate
@@ -104,7 +106,7 @@ export default function TimelinePage() {
     const astrology = (profile?.astrologyData ?? {}) as Record<string, any>;
     const humanDesign = (profile?.humanDesignData ?? {}) as Record<string, any>;
     const fullNatalVerified = hasVerifiedFullNatalChart(astrology);
-    const hdVerified = hasVerifiedHumanDesignTrust(humanDesign);
+    const hdVerified = canSeeHumanDesignDepth && hasVerifiedHumanDesignTrust(humanDesign);
     const houses = fullNatalVerified
       ? Object.values(astrology.planetaryHouses ?? {})
           .filter((value): value is number => Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 12)
@@ -129,7 +131,7 @@ export default function TimelinePage() {
       hdAuthority: humanDesign.authority as string | undefined,
       hdProfile: humanDesign.profile as string | undefined,
     };
-  }, [profile]);
+  }, [profile, canSeeHumanDesignDepth]);
 
   const dateLabel = now.toLocaleDateString("en-US", {
     weekday: "long",
@@ -295,7 +297,7 @@ export default function TimelinePage() {
             {personalMonth ? <span className="sc-trust-chip">Month {personalMonth} · {MONTH_LABELS[personalMonth]}</span> : null}
           </div>
           <p className="mb-0 mt-5 max-w-4xl text-base leading-7 text-[var(--sc-ivory-soft)]">{phase.essence}</p>
-          {profile?.archetype ? (
+          {canSeeInterpretationDepth && profile?.archetype ? (
             <p className="mb-0 mt-4 text-sm text-[var(--sc-stone)]">
               {typeof profile.archetype === "string" ? profile.archetype : (profile.archetype as any)?.name || "Your archetype"} moving through a Year {personalYear} phase
             </p>
