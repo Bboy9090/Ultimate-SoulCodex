@@ -72,6 +72,7 @@ export default function TimelinePage() {
   const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
+  const [selectedInfluenceIndex, setSelectedInfluenceIndex] = useState<number | null>(null);
   const todayDate = localTimelineDate(new Date());
   const todayCard = cachedTodayCard?.profileId === profile?.id && cachedTodayCard?.date === todayDate
     ? cachedTodayCard : null;
@@ -273,15 +274,27 @@ export default function TimelinePage() {
           {visibleInfluences.map((influence, index) => (
             <SoulStaggerItem key={`${influence.label}-${index}`}>
             <SoulInteractive>
-            <article className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+            <button
+              type="button"
+              aria-pressed={selectedInfluenceIndex === index}
+              onClick={() => setSelectedInfluenceIndex((current) => current === index ? null : index)}
+              className={`w-full rounded-2xl border p-4 text-left transition ${selectedInfluenceIndex === index ? "border-[var(--sc-gold)] bg-[rgba(217,182,111,.07)]" : "border-white/[0.07] bg-white/[0.02]"}`}
+            >
               <div className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Influence {index + 1}</div>
               <h3 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{influence.label}</h3>
               <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{influence.detail}</p>
-            </article>
+            </button>
             </SoulInteractive>
             </SoulStaggerItem>
           ))}
         </SoulStagger>
+
+        {selectedInfluenceIndex !== null && visibleInfluences[selectedInfluenceIndex] ? (
+          <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4" aria-live="polite">
+            <p className="m-0 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">Focused influence</p>
+            <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{visibleInfluences[selectedInfluenceIndex].label} · {visibleInfluences[selectedInfluenceIndex].detail}</p>
+          </div>
+        ) : null}
 
         {!advancedDaily && hiddenInfluenceCount > 0 ? (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
