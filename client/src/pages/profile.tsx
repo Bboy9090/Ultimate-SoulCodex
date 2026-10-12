@@ -247,13 +247,9 @@ export default function ProfilePage() {
               <p>{humanDesignVerified && canSeeHumanDesignCore
                 ? canSeeHumanDesignDepth
                   ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Soul Codex+ depth is active for additional qualified Human Design detail and synthesis."
-                  : "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary and stay visible on Free. Soul Codex+ opens additional qualified Human Design detail and deeper synthesis."
+                  : "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary and stay visible on Free. Deeper bodygraph fields remain roadmap-only until their own evidence contract is qualified."
                 : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
-              {humanDesignVerified && canSeeHumanDesignCore && !canSeeHumanDesignDepth && (
-                <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
-                  Open deeper Human Design
-                </Link>
-              )}
+
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
