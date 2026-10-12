@@ -1,4 +1,4 @@
-import AureonAvatar from "@/components/AureonAvatar";
+import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
@@ -154,6 +154,17 @@ export default function CompatibilityPersonPage() {
   const [error, setError] = useState("");
   const [selectedDimension, setSelectedDimension] = useState<(typeof DIMENSIONS)[number]["key"] | null>(null);
   const dimensionScores = result?.dimensions ?? null;
+  const aureonState: AureonState = error || (result && !result.available)
+    ? "warning"
+    : loading
+      ? "focusing"
+      : selectedDimension
+        ? "explaining"
+        : result?.available
+          ? "confirming"
+          : initialConnection
+            ? "comparing"
+            : "observing";
 
   const yourPlacements = useMemo(
     () => personalAtlasPlacements((((profile as any)?.verifiedAstrologyData ?? profile?.astrologyData) ?? {}) as any),
@@ -296,7 +307,7 @@ export default function CompatibilityPersonPage() {
           <SoulReveal>
           <section className="mt-8 sc-panel sc-panel-gold p-5 sm:p-6" data-testid="friend-placement-comparison">
             <div className="mb-5">
-              <AureonAvatar state="comparing" />
+              <AureonAvatar state={selectedDimension ? "explaining" : "comparing"} />
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
@@ -546,7 +557,15 @@ export default function CompatibilityPersonPage() {
             {result?.available && dimensionScores && !error ? (
               <>
                 <section className="sc-panel sc-panel-gold p-6">
-                  <div className="sc-eyebrow">Sun-sign foundation</div>
+                  <div className="mb-4 flex items-start gap-4">
+                    <AureonAvatar state={aureonState} compact />
+                    <div>
+                      <div className="sc-eyebrow">Sun-sign foundation</div>
+                      <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">
+                        Aureon shifts with the interaction: focusing while the comparison runs, explaining the dimension you select, confirming supported results, and warning when evidence is insufficient.
+                      </p>
+                    </div>
+                  </div>
                   <h2 className="mt-3 font-serif text-3xl font-semibold">{result.person.name} · {result.person.sunSign}</h2>
                   {result.evidenceLabel ? <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{result.evidenceLabel}</p> : null}
                   <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">These four dimensions are the privacy-minimized Sun-sign foundation. The chart resonance above is a separate local comparison of saved placements and reports its own coverage.</p>
