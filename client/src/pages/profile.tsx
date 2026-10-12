@@ -156,6 +156,7 @@ export default function ProfilePage() {
   const rising = getSynthesisAstrologySign(astrology, "rising");
   const humanDesignVerified = hasVerifiedHumanDesignTrust(humanDesign);
   const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
   const canUsePremiumExports = tierAllowsCapability(tier, "premium_exports");
 
@@ -237,22 +238,20 @@ export default function ProfilePage() {
               <p className="sc-eyebrow">Your Human Design</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Type · Strategy · Authority · Profile</h2>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
-                {humanDesignVerified
-                  ? canSeeHumanDesignDepth
-                    ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
-                    : "Verified · deeper Human Design in Soul Codex+"
+                {humanDesignVerified && canSeeHumanDesignCore
+                  ? `${humanDesign.type ?? "—"} · ${humanDesign.strategy ?? "—"} · ${humanDesign.authority ?? "—"} · ${humanDesign.profile ?? "—"}`
                   : "Not verified yet"}
               </p>
             </summary>
             <div className="mt-5 space-y-3 border-t border-white/[0.06] pt-4 text-sm leading-6 text-[var(--sc-stone)]">
-              <p>{humanDesignVerified
+              <p>{humanDesignVerified && canSeeHumanDesignCore
                 ? canSeeHumanDesignDepth
-                  ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Their practical meaning is still a symbolic framework to test against lived experience."
-                  : "Human Design is verified for this profile. Soul Codex+ unlocks the verified Type, Strategy, Authority, and Profile. Centers and channels are not sold here until their premium surface is fully qualified."
+                  ? "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary. Soul Codex+ depth is active for additional qualified Human Design detail and synthesis."
+                  : "Type, Strategy, Authority, and Profile passed the governed Human Design trust boundary and stay visible on Free. Soul Codex+ opens additional qualified Human Design detail and deeper synthesis."
                 : "Soul Codex will not invent Type, Strategy, Authority, or Profile when the required verification is missing."}</p>
-              {humanDesignVerified && !canSeeHumanDesignDepth && (
+              {humanDesignVerified && canSeeHumanDesignCore && !canSeeHumanDesignDepth && (
                 <Link href="/pricing" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">
-                  Unlock Human Design depth
+                  Open deeper Human Design
                 </Link>
               )}
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
