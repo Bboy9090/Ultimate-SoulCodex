@@ -4,11 +4,15 @@
 .aureon-avatar figcaption { display: flex; flex-direction: column; align-items: center; gap: .1rem; color: var(--sc-ivory, #faf4e8); font-size: .75rem; letter-spacing: .08em; }
 .aureon-avatar-state { color: var(--sc-stone, #a69cab); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; }
 .aureon-avatar-signal { position: absolute; right: 7px; bottom: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--sc-gold-bright, #efd08d); box-shadow: 0 0 12px rgba(239,208,141,.58); }
+.aureon-avatar--focusing .aureon-avatar-portrait { border-color: rgba(100,151,217,.62); box-shadow: 0 0 24px rgba(100,151,217,.2); }
+.aureon-avatar--focusing .aureon-avatar-signal { background: var(--sc-blue, #6497d9); }
 .aureon-avatar--explaining .aureon-avatar-portrait { border-color: rgba(114,216,197,.58); box-shadow: 0 0 22px rgba(114,216,197,.18); }
 .aureon-avatar--explaining .aureon-avatar-signal { background: var(--sc-teal, #72d8c5); }
 .aureon-avatar--comparing .aureon-avatar-portrait { border-color: rgba(154,116,220,.6); box-shadow: 0 0 24px rgba(154,116,220,.22); }
 .aureon-avatar--comparing .aureon-avatar-signal { background: var(--sc-violet, #9a74dc); }
 .aureon-avatar--confirming .aureon-avatar-portrait { border-color: rgba(239,208,141,.72); box-shadow: 0 0 26px rgba(217,182,111,.24); }
+.aureon-avatar--warning .aureon-avatar-portrait { border-color: rgba(239,127,131,.62); box-shadow: 0 0 24px rgba(239,127,131,.2); }
+.aureon-avatar--warning .aureon-avatar-signal { background: var(--sc-danger, #ef7f83); }
 .aureon-avatar--compact .aureon-avatar-portrait { width: 58px; height: 58px; border-radius: 17px; }
 .aureon-avatar--compact figcaption { font-size: .68rem; }
 
