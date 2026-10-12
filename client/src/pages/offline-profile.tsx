@@ -367,9 +367,12 @@ export default function OfflineProfilePage() {
         )}
 
         {verifiedHumanDesign && (
-          <Suspense fallback={<DeepChartFallback label="Human Design bodygraph" />}>
-            <HumanDesignBodygraph data={verifiedHumanDesign as Record<string, any>} />
-          </Suspense>
+          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="human-design-bodygraph-deferred">
+            <p className="sc-eyebrow">Human Design bodygraph</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">
+              Definition, Centers, Channels, Gates, and activation detail are intentionally withheld from the current Soul Codex+ promise until those deeper bodygraph surfaces are independently qualified.
+            </p>
+          </section>
         )}
 
         {verifiedFullNatal && verifiedAstrology && (
