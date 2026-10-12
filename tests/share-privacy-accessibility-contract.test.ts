@@ -67,7 +67,8 @@ test("public viewer is routed separately and fetches only the public-share endpo
 test("server public-share API stores sanitized snapshots and treats revoked links as unavailable", async () => {
   const source = await readFile(routesUrl, "utf8");
 
-  assert.match(source, /buildPublicProfileProjection\(profile, selection\)/);
+  assert.match(source, /const entitlement = await resolveProductEntitlementForUser\(storage, req\.session\?\.userId \?\? null\);/);
+  assert.match(source, /buildPublicProfileProjection\(profile, selection, entitlement\.tier\)/);
   assert.match(source, /randomBytes\(32\)\.toString\("base64url"\)/);
   assert.match(source, /createPublicProfileShare\(profile\.id, token, snapshot\)/);
   assert.match(source, /if \(!share \|\| share\.revokedAt\) return profileNotFound\(res\)/);
