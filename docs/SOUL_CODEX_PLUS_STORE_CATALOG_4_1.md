@@ -8,8 +8,8 @@ The existing Soul Codex pricing plan sets Premium at:
 
 | Plan | Price | Renewal |
 |---|---:|---|
-| Soul Codex+ Monthly | $9.99 USD | Monthly |
-| Soul Codex+ Annual | $89.99 USD | Annual |
+| Soul Codex+ Monthly | $5.99 USD | Monthly |
+| Soul Codex+ Annual | $59.99 USD | Annual |
 
 No free trial is enabled by this 4.1 RC unless it is separately configured, disclosed, and requalified.
 
@@ -61,8 +61,8 @@ Do not enable `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED` until the Developer API 
 
 Create one recurring Price for each cadence:
 
-- Monthly: $9.99 USD every 1 month
-- Annual: $89.99 USD every 1 year
+- Monthly: $5.99 USD every 1 month
+- Annual: $59.99 USD every 1 year
 
 Then configure Railway with the real values returned by Stripe:
 
