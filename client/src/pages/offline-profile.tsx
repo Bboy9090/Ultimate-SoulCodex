@@ -122,18 +122,19 @@ export default function OfflineProfilePage() {
   const verifiedChiron = verifiedAstrology?.chiron;
   const humanDesign = (reconciledProfile?.humanDesignData ?? {}) as Record<string, any>;
   const canSeeFullNumerology = tierAllowsCapability(tier, "full_name_numerology");
+  const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
   const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const humanDesignState = humanDesignAvailability(reconciledProfile ?? {});
-  const verifiedHumanDesign = canSeeHumanDesignDepth && hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
-  const rangeHumanDesign = canSeeHumanDesignDepth && humanDesign.status === "range_analyzed" ? humanDesign : null;
+  const verifiedHumanDesign = canSeeHumanDesignCore && hasVerifiedHumanDesignTrust(humanDesign) ? humanDesign : null;
+  const rangeHumanDesign = canSeeHumanDesignCore && humanDesign.status === "range_analyzed" ? humanDesign : null;
   const ultimateCodex = useMemo(
     () => buildUltimateCodexSynthesis(reconciledProfile ?? {}, {
       fullNameNumerology: canSeeFullNumerology,
-      humanDesignCore: canSeeHumanDesignDepth,
+      humanDesignCore: canSeeHumanDesignCore,
       humanDesignDetails: false,
     }),
-    [reconciledProfile, canSeeFullNumerology, canSeeHumanDesignDepth],
+    [reconciledProfile, canSeeFullNumerology, canSeeHumanDesignCore],
   );
 
   if (isLoading) return <div className="sc-app-shell"><Navigation /><div className="flex min-h-screen items-center justify-center"><div className="text-center"><Loader2 className="mx-auto mb-4 h-8 w-8 animate-spin text-[var(--sc-gold)]" /><p className="text-[var(--sc-stone)]">Opening your Codex...</p></div></div></div>;
