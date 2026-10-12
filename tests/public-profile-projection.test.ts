@@ -61,7 +61,7 @@ test("public projection emits only explicitly selected safe fields", () => {
   const projection = buildPublicProfileProjection(profile, {
     fields: ["displayName", "sunSign", "lifePath", "archetypeTitle"],
     displayName: "Bobby",
-  });
+  }, "plus");
 
   assert.deepEqual(projection, {
     version: 1,
@@ -159,4 +159,20 @@ test("comparison chart shares only verified sign-and-house rows selected by the 
   const serialized = JSON.stringify(projection);
   assert.doesNotMatch(serialized, /birthDate|birthTime|longitude|degree|evidenceArtifactId|rawEvidence/);
   assert.doesNotMatch(serialized, /venus/i);
+});
+
+
+test("Free public projection cannot publish a stored Plus archetype title", () => {
+  const projection = buildPublicProfileProjection(profile, {
+    fields: ["displayName", "lifePath", "archetypeTitle"],
+    displayName: "Bobby",
+  }, "free");
+
+  assert.deepEqual(projection, {
+    version: 1,
+    fields: {
+      displayName: "Bobby",
+      lifePath: 9,
+    },
+  });
 });
