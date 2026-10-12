@@ -375,7 +375,7 @@ export default function OfflineProfilePage() {
         {verifiedFullNatal && verifiedAstrology && (
           <div className="mb-6">
             <Suspense fallback={<DeepChartFallback label="verified natal wheel" />}>
-              <VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} />
+              <VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} interpretationDepth={canSeeInterpretationDepth} />
             </Suspense>
           </div>
         )}
