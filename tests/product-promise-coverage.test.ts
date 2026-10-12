@@ -22,6 +22,11 @@ test("every Free promise has a concrete implementation surface", () => {
   assert.match(compatibilityRoute, /foundation-compatibility-v2/);
   assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.minimumTier, "free");
   assert.equal(SOUL_CODEX_CAPABILITIES.full_natal_chart.availability, "live");
+  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_core.minimumTier, "free");
+  assert.equal(SOUL_CODEX_CAPABILITIES.human_design_core.availability, "live");
+  for (const field of ["Type", "Strategy", "Authority", "Profile"]) {
+    assert.ok(profile.includes(field), `missing Free Human Design core field: ${field}`);
+  }
 });
 
 test("every live Plus promise has a concrete implementation surface", () => {
@@ -35,8 +40,8 @@ test("every live Plus promise has a concrete implementation surface", () => {
   }
 
   assert.equal(SOUL_CODEX_CAPABILITIES.human_design_depth.availability, "live");
-  for (const field of ["Type", "Strategy", "Authority", "Profile"]) {
-    assert.ok(profile.includes(field), `missing live Human Design field: ${field}`);
+  for (const field of ["Definition", "Centers", "Channels", "Activated gates"]) {
+    assert.ok(pricing.includes(field), `missing live Human Design depth promise: ${field}`);
   }
 
   assert.equal(SOUL_CODEX_CAPABILITIES.advanced_daily.availability, "live");
