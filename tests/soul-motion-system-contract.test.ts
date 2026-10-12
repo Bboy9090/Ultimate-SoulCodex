@@ -83,3 +83,17 @@ test("Compatibility dimensions and Connections adopt interactive motion", () => 
   assert.match(connections, /role="list"/);
   assert.match(connections, /role="listitem"/);
 });
+
+
+test("Aureon actively reacts inside Identity and Timeline", () => {
+  assert.match(identity, /activeIdentityLayer/);
+  assert.match(identity, /const aureonIdentityState: AureonState/);
+  assert.match(identity, /AureonAvatar state=\{aureonIdentityState\}/);
+  assert.match(identity, /onToggle=\{\(event\) => setActiveIdentityLayer/);
+  assert.match(identity, /\? "warning"/);
+  assert.match(identity, /\? "explaining"/);
+  assert.match(timeline, /const aureonTimelineState: AureonState/);
+  assert.match(timeline, /AureonAvatar state=\{aureonTimelineState\}/);
+  assert.match(timeline, /AureonAvatar state="warning" compact/);
+  assert.match(timeline, /selectedInfluenceIndex !== null/);
+});
