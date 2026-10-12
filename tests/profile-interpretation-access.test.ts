@@ -50,13 +50,17 @@ test("Free synthesis keeps date numerology but removes paid name numerology", ()
   assert.deepEqual(Object.keys(projected.numerologyData.interpretations).sort(), ["birthday", "lifePath", "personalYear"]);
 });
 
-test("Free synthesis cannot consume verified Human Design core values", () => {
+test("Free synthesis can consume verified Human Design core but not deeper bodygraph values", () => {
   const projected = projectInterpretationInputsForTier("free", fullNumerology, verifiedHumanDesign);
-  assert.equal(projected.humanDesignData.status, "verified_locked");
-  assert.equal(projected.humanDesignData.type, undefined);
-  assert.equal(projected.humanDesignData.strategy, undefined);
-  assert.equal(projected.humanDesignData.authority, undefined);
-  assert.equal(projected.humanDesignData.profile, undefined);
+  assert.equal(projected.humanDesignData.status, "verified");
+  assert.equal(projected.humanDesignData.type, "Reflector");
+  assert.equal(projected.humanDesignData.strategy, "Wait a lunar cycle");
+  assert.equal(projected.humanDesignData.authority, "Lunar Authority");
+  assert.equal(projected.humanDesignData.profile, "2/5");
+  assert.equal(projected.humanDesignData.definition, undefined);
+  assert.equal(projected.humanDesignData.centers, undefined);
+  assert.equal(projected.humanDesignData.channels, undefined);
+  assert.equal(projected.humanDesignData.activatedGates, undefined);
 });
 
 test("Plus synthesis receives the stored qualified interpretation inputs unchanged", () => {
