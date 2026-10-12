@@ -28,6 +28,7 @@ env:
   VITE_API_URL: https://soulcodex.up.railway.app
   VITE_RELEASE_VERSION: 4.1.0
   VITE_API_CONTRACT: foundation-v4
+  CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   release-gates:
@@ -36,6 +37,11 @@ jobs:
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - name: Prove exact candidate
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
@@ -54,7 +60,7 @@ jobs:
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts
       - name: Build production Capacitor payload
         env:
-          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run build:capacitor
       - name: Reject unresolved ESM directory imports in server bundle
         shell: bash
@@ -65,18 +71,18 @@ jobs:
           fi
       - name: Validate Android release metadata
         env:
-          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run mobile:validate:android
       - name: Validate iOS release metadata
         env:
           VITE_RELEASE_VERSION: 4.1.0
-          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run mobile:validate:ios
       - name: Generate release receipt
         run: |
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
           Soul Codex store candidate
-          SHA=${GITHUB_SHA}
+          SHA=${CANDIDATE_SHA}
           Android versionName=4.1.0
           Android applicationId=soulcodex.app
           Android versionCode=4000011
@@ -106,6 +112,11 @@ jobs:
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - name: Prove exact candidate
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
@@ -121,7 +132,7 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build and sync Android
         env:
-          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: |
           npm run build:capacitor
           npx cap sync android
@@ -167,7 +178,7 @@ jobs:
           test -s "$AAB"
           jarsigner -verify "$AAB"
           sha256sum "$AAB" > AAB-SHA256.txt
-          printf '%s\n' "$GITHUB_SHA" > RELEASE-CANDIDATE-SHA.txt
+          printf '%s\n' "$CANDIDATE_SHA" > RELEASE-CANDIDATE-SHA.txt
       - name: Build unsigned qualification AAB when signing is unavailable
         if: steps.signing.outputs.available != 'true'
         working-directory: android
@@ -179,7 +190,7 @@ jobs:
         shell: bash
         run: |
           {
-            echo "SHA=${GITHUB_SHA}"
+            echo "SHA=${CANDIDATE_SHA}"
             echo "versionName=4.1.0"
             echo "versionCode=4000011"
             echo "signing_available=${{ steps.signing.outputs.available }}"
@@ -236,6 +247,11 @@ jobs:
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - name: Prove exact candidate
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
         uses: actions/setup-node@v5
         with:
@@ -245,7 +261,7 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Build and sync iOS
         env:
-          VITE_RELEASE_SHA: ${{ github.sha }}
+          VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: |
           npm run build:capacitor
           npx cap sync ios
@@ -262,7 +278,7 @@ jobs:
       - name: Record iOS qualification state
         run: |
           {
-            echo "SHA=${GITHUB_SHA}"
+            echo "SHA=${CANDIDATE_SHA}"
             echo "marketingVersion=4.1.0"
             echo "buildNumber=4000011"
             echo "bundleId=app.soulcodex.ios"
