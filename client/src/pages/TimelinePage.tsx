@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import TimelineIntelligence from "../components/TimelineIntelligence";
+import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import DiamondClosure from "../components/DiamondClosure";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
@@ -71,6 +72,7 @@ export default function TimelinePage() {
   const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeInterpretationDepth = tierAllowsCapability(tier, "interpretation_depth");
   const [cachedTodayCard, setTodayCard] = useState<TimelineTodayCard | null>(null);
+  const [selectedInfluenceIndex, setSelectedInfluenceIndex] = useState<number | null>(null);
   const todayDate = localTimelineDate(new Date());
   const todayCard = cachedTodayCard?.profileId === profile?.id && cachedTodayCard?.date === todayDate
     ? cachedTodayCard : null;
@@ -233,6 +235,7 @@ export default function TimelinePage() {
 
   return (
     <main className="sc-page !pt-8">
+      <SoulReveal>
       <header className="grid items-center gap-8 pb-8 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div>
           <div className="sc-eyebrow">{dateLabel}</div>
@@ -250,7 +253,9 @@ export default function TimelinePage() {
           </div>
         ) : null}
       </header>
+      </SoulReveal>
 
+      <SoulReveal>
       <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your chart today">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -265,15 +270,31 @@ export default function TimelinePage() {
           <span className="sc-trust-chip">{visibleInfluences.length} current influence{visibleInfluences.length === 1 ? "" : "s"}</span>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        <SoulStagger className="mt-6 grid gap-3 md:grid-cols-2">
           {visibleInfluences.map((influence, index) => (
-            <article key={`${influence.label}-${index}`} className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4">
+            <SoulStaggerItem key={`${influence.label}-${index}`}>
+            <SoulInteractive>
+            <button
+              type="button"
+              aria-pressed={selectedInfluenceIndex === index}
+              onClick={() => setSelectedInfluenceIndex((current) => current === index ? null : index)}
+              className={`w-full rounded-2xl border p-4 text-left transition ${selectedInfluenceIndex === index ? "border-[var(--sc-gold)] bg-[rgba(217,182,111,.07)]" : "border-white/[0.07] bg-white/[0.02]"}`}
+            >
               <div className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-stone)]">Influence {index + 1}</div>
               <h3 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{influence.label}</h3>
               <p className="mb-0 mt-2 text-xs leading-5 text-[var(--sc-stone)]">{influence.detail}</p>
-            </article>
+            </button>
+            </SoulInteractive>
+            </SoulStaggerItem>
           ))}
-        </div>
+        </SoulStagger>
+
+        {selectedInfluenceIndex !== null && visibleInfluences[selectedInfluenceIndex] ? (
+          <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4" aria-live="polite">
+            <p className="m-0 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">Focused influence</p>
+            <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-ivory-soft)]">{visibleInfluences[selectedInfluenceIndex].label} · {visibleInfluences[selectedInfluenceIndex].detail}</p>
+          </div>
+        ) : null}
 
         {!advancedDaily && hiddenInfluenceCount > 0 ? (
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-4">
@@ -286,8 +307,10 @@ export default function TimelinePage() {
           </div>
         ) : null}
       </section>
+      </SoulReveal>
 
       {phase && personalYear ? (
+        <SoulReveal>
         <section className="sc-panel sc-panel-gold p-6 sm:p-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -303,6 +326,7 @@ export default function TimelinePage() {
             </p>
           ) : null}
         </section>
+        </SoulReveal>
       ) : null}
 
       {(profileContext.hdVerified || profileContext.rising || profileContext.midheaven || profileContext.dominantHouse) ? (
