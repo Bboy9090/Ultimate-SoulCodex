@@ -11,6 +11,8 @@ const natal = readFileSync(new URL("../client/src/components/VerifiedNatalChart.
 const compatibility = readFileSync(new URL("../client/src/pages/CompatibilityPersonPage.tsx", import.meta.url), "utf8");
 const home = readFileSync(new URL("../client/src/pages/home.tsx", import.meta.url), "utf8");
 const styles = readFileSync(new URL("../client/src/index.css", import.meta.url), "utf8");
+const identity = readFileSync(new URL("../client/src/pages/profile.tsx", import.meta.url), "utf8");
+const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
 
 test("motion system keeps user reduced-motion preference authoritative", () => {
   assert.match(app, /<MotionConfig reducedMotion="user">/);
@@ -43,4 +45,21 @@ test("button motion remains tap-driven and haptic while honoring reduced motion"
   assert.match(button, /triggerHapticFeedback\(\)/);
   assert.match(button, /whileTap=\{!reducedMotion/);
   assert.match(button, /whileHover=\{!reducedMotion/);
+});
+
+
+test("Identity and Timeline adopt the shared interactive motion language", () => {
+  assert.match(identity, /SoulReveal/);
+  assert.match(identity, /SoulStagger/);
+  assert.match(identity, /SoulInteractive/);
+  assert.match(timeline, /SoulReveal/);
+  assert.match(timeline, /SoulStagger/);
+  assert.match(timeline, /SoulInteractive/);
+});
+
+test("Timeline influence exploration is tap-selectable and persists focus", () => {
+  assert.match(timeline, /selectedInfluenceIndex/);
+  assert.match(timeline, /aria-pressed=\{selectedInfluenceIndex === index\}/);
+  assert.match(timeline, /setSelectedInfluenceIndex/);
+  assert.match(timeline, /Focused influence/);
 });
