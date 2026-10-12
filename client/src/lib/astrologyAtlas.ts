@@ -85,6 +85,18 @@ export function atlasEntry(sign: AtlasSign, house: number) {
     practice: `When considering “${area.question}”, ${style.practice}. ${area.action}`,
   };
 }
+
+/** Educational sign description for the chart wheel; never establishes a natal placement. */
+export function atlasSignMeaning(sign: AtlasSign) {
+  if (!ATLAS_SIGNS.includes(sign)) throw new RangeError('Choose a zodiac sign.');
+  const style = styles[sign];
+  return {
+    approach: style.approach,
+    gift: style.gift,
+    tension: style.tension,
+    practice: style.practice,
+  };
+}
 export function personalPlacementMeaning(body: string, sign: AtlasSign, house: number) {
   const planet = PLANET_FUNCTIONS[body];
   if (!planet) throw new RangeError('Choose a supported planet or point.');
