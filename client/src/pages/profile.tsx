@@ -3,6 +3,7 @@ import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
+import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { useProductAccess } from "../hooks/useProductAccess";
 import DiamondClosure from "@/components/DiamondClosure";
 import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthSurface";
@@ -166,6 +167,7 @@ export default function ProfilePage() {
       <main className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6">
         <Link href="/"><Button variant="ghost" className="mb-6 text-[var(--sc-stone)] hover:text-[var(--sc-ivory)]"><ArrowLeft className="mr-2 h-4 w-4" /> Back home</Button></Link>
 
+        <SoulReveal>
         <header className="sc-panel sc-panel-gold relative mb-8 overflow-hidden p-6 sm:p-9">
           <div
             className="pointer-events-none absolute inset-0 opacity-80"
@@ -185,8 +187,10 @@ export default function ProfilePage() {
             </div>
           </div>
         </header>
+        </SoulReveal>
 
-        <div className="mb-7 rounded-[1.35rem] border border-white/[0.065] bg-white/[0.018] p-5 sm:p-6">
+        <SoulReveal className="mb-7" delay={0.04}>
+        <div className="rounded-[1.35rem] border border-white/[0.065] bg-white/[0.018] p-5 sm:p-6">
           <div className="flex items-start gap-3">
             <span className="sc-icon-well shrink-0"><Sparkles className="h-[18px] w-[18px]" /></span>
             <div>
@@ -195,8 +199,11 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+        </SoulReveal>
 
-        <section className="mb-8 grid gap-3 lg:grid-cols-3" aria-label="Core profile">
+        <SoulStagger className="mb-8 grid gap-3 lg:grid-cols-3" aria-label="Core profile">
+          <SoulStaggerItem>
+            <SoulInteractive>
           <details className="sc-panel p-5">
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Big 3</p>
@@ -213,7 +220,11 @@ export default function ProfilePage() {
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
+            </SoulInteractive>
+          </SoulStaggerItem>
 
+          <SoulStaggerItem>
+            <SoulInteractive>
           <details className="sc-panel p-5">
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Core Numbers</p>
@@ -232,7 +243,11 @@ export default function ProfilePage() {
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
+            </SoulInteractive>
+          </SoulStaggerItem>
 
+          <SoulStaggerItem>
+            <SoulInteractive>
           <details className="sc-panel p-5">
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Human Design</p>
@@ -253,9 +268,13 @@ export default function ProfilePage() {
               <Link href="/systems" className="inline-flex items-center text-[var(--sc-gold-bright)] no-underline">Why am I seeing this?</Link>
             </div>
           </details>
-        </section>
+            </SoulInteractive>
+          </SoulStaggerItem>
+        </SoulStagger>
 
-        <ProfileSystemVerificationButton profile={profile} />
+        <SoulReveal>
+          <ProfileSystemVerificationButton profile={profile} />
+        </SoulReveal>
         <HumanDepthSurface profileId={String(id)} heading="How these patterns may live in you" intro="Read for recognition, contradiction, cost, context, and usable action. Reject anything that does not fit your lived experience." items={items} />
 
         <div className="mt-8">
