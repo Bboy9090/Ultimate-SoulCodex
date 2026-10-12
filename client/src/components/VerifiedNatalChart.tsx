@@ -63,7 +63,6 @@ function guideStopLabel(stop: ChartSelection): string {
   if (stop.kind === "point") return `${stop.key} point`;
   return `Aspect ${stop.index + 1}`;
 }
-}
 
 export default function VerifiedNatalChart({
   astrology,
@@ -325,10 +324,10 @@ export default function VerifiedNatalChart({
                   <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">{SIGN_GLYPH[selection.sign]} Zodiac sign · chart guide</p>
                   <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selection.sign} in your chart</h4>
                   <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">This sign’s symbolic style is {meaning.approach}. Its possible gift is {meaning.gift.toLowerCase()}.</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {interpretationDepth ? <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Watch point</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.tension}.</p></div>
                     <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Ground it</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.practice}.</p></div>
-                  </div>
+                  </div> : <InterpretationDepthGate />}
                   <div className="mt-4 space-y-2 text-sm text-[var(--sc-stone)]">
                     <p><strong className="text-[var(--sc-ivory)]">Planets here:</strong> {placements.length ? placements.map((item) => `${item.label}${item.house ? ` · House ${item.house}` : ""}`).join(", ") : "No verified planetary placements in this sign."}</p>
                     {points.length > 0 && <p><strong className="text-[var(--sc-ivory)]">Chart points here:</strong> {points.map((item) => item.label).join(", ")}.</p>}
