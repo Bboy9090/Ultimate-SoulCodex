@@ -1,5 +1,6 @@
 import AureonAvatar from "@/components/AureonAvatar";
 import { useState } from "react";
+import { Link } from "wouter";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { atlasEntry, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
@@ -43,12 +44,25 @@ function validLongitude(value: unknown): number | null {
   return Number.isFinite(n) ? ((n % 360) + 360) % 360 : null;
 }
 
+function InterpretationDepthGate() {
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.04)] p-3" data-testid="natal-interpretation-plus-gate">
+      <p className="m-0 text-xs leading-5 text-[var(--sc-stone)]">
+        The verified chart fact and core meaning stay visible on Free. Soul Codex+ opens the deeper tension, relationship, reflection, and practice layers.
+      </p>
+      <Link href="/pricing" className="text-xs font-semibold text-[var(--sc-gold-bright)] no-underline">Open deeper interpretation</Link>
+    </div>
+  );
+}
+
 export default function VerifiedNatalChart({
   astrology,
   synthesis,
+  interpretationDepth = false,
 }: {
   astrology: Record<string, any>;
   synthesis: UltimateCodexSynthesis;
+  interpretationDepth?: boolean;
 }) {
   const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<ChartSelection | null>(null);
@@ -240,13 +254,15 @@ export default function VerifiedNatalChart({
                     return <>
                       <p className="mt-4 font-serif text-2xl leading-tight text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
                       <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{meaning.synthesis}</p>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Planet · what</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
-                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Sign · how</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
-                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">House · where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
-                      </div>
-                      <div className="mt-4 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] p-3"><p className="text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.friction}</p></div>
-                      <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                      {interpretationDepth ? <>
+                        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                          <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Planet · what</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                          <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Sign · how</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
+                          <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">House · where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
+                        </div>
+                        <div className="mt-4 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] p-3"><p className="text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.friction}</p></div>
+                        <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                      </> : <InterpretationDepthGate />}
                     </>;
                   })() : <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">The sign is verified, but the house is unresolved. Soul Codex stops before inventing where this theme lands in life.</p>}
                 </motion.article>
@@ -258,11 +274,11 @@ export default function VerifiedNatalChart({
                   <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--sc-gold)]">House {selectedHouse.house} · life area</p>
                   <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selectedHouse.sign} on House {selectedHouse.house}</h4>
                   <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">{meaning.meaning}</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {interpretationDepth ? <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Strength</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.gift}</p></div>
                     <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Watch point</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.tension}</p></div>
                     <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">Ground it</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.practice}</p></div>
-                  </div>
+                  </div> : <InterpretationDepthGate />}
                   <p className="mt-4 text-xs leading-5 text-[var(--sc-stone)]">A cusp sign describes the house’s symbolic style. It is not the same as a planet occupying that house.</p>
                 </motion.article>;
               })()}
@@ -274,12 +290,14 @@ export default function VerifiedNatalChart({
                   <h4 className="mt-2 font-serif text-3xl capitalize text-[var(--sc-ivory)]">{meaning.label}</h4>
                   <p className="mt-1 text-xs text-[var(--sc-gold-bright)]">{meaning.orb}</p>
                   <p className="mt-4 font-serif text-2xl leading-tight text-[var(--sc-ivory-soft)]">{meaning.headline}</p>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The two jobs</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
-                    <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The connection</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.dynamic}</p></div>
-                  </div>
-                  <p className="mt-4 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.tension}</p>
-                  <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                  {interpretationDepth ? <>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The two jobs</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-gold)]">The connection</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.dynamic}</p></div>
+                    </div>
+                    <p className="mt-4 text-sm leading-6 text-[var(--sc-ivory-soft)]">{meaning.tension}</p>
+                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                  </> : <InterpretationDepthGate />}
                 </motion.article>;
               })()}
 
@@ -295,13 +313,15 @@ export default function VerifiedNatalChart({
                   <h4 className="mt-2 font-serif text-3xl text-[var(--sc-ivory)]">{selectedPoint.label} in {selectedPoint.sign}{selectedPoint.house ? ` · House ${selectedPoint.house}` : ""}</h4>
                   {meaning ? <>
                     <p className="mt-4 text-base leading-7 text-[var(--sc-ivory-soft)]">{meaning.synthesis}</p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">What</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
-                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">How</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
-                      <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">Where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
-                    </div>
-                    <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Reflection:</strong> {meaning.question}</p>
-                    <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                    {interpretationDepth ? <>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">What</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.what}</p></div>
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">How</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.how}</p></div>
+                        <div className="rounded-xl border border-white/[0.07] p-3"><p className="text-[10px] uppercase tracking-[.12em] text-[var(--sc-gold)]">Where</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{meaning.where}</p></div>
+                      </div>
+                      <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Reflection:</strong> {meaning.question}</p>
+                      <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]"><strong className="text-[var(--sc-ivory)]">Try this:</strong> {meaning.practice}</p>
+                    </> : <InterpretationDepthGate />}
                   </> : <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]">This point is verified, but Soul Codex does not have enough governed context to produce a house interpretation.</p>}
                 </motion.article>;
               })()}
