@@ -1,4 +1,5 @@
 import { tierAllowsCapability, type SoulCodexTier } from "@shared/product-access";
+import { synthesizeArchetype } from "../services/archetype";
 
 type AnyRecord = Record<string, any>;
 
@@ -60,6 +61,23 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
   projected.humanDesignData = tierAllowsCapability(tier, "human_design_depth")
     ? cloneRecord(profile.humanDesignData)
     : hdEvidenceOnly(profile.humanDesignData);
+
+  if (!tierAllowsCapability(tier, "interpretation_depth")) {
+    const freeArchetype = synthesizeArchetype(
+      profile.astrologyData,
+      projected.numerologyData,
+      profile.personalityData,
+      projected.humanDesignData,
+    );
+    projected.archetypeData = {
+      ...freeArchetype,
+      shadows: [],
+    };
+    projected.biography = freeArchetype.description;
+    projected.dailyGuidance = freeArchetype.guidance;
+    projected.depthInterpretation = null;
+    projected.synthesis = null;
+  }
 
   return projected as T;
 }
