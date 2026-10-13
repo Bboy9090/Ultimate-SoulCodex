@@ -45,6 +45,7 @@ type BillingDiagnosticState = {
   monthlyDisplayPrice: string | null;
   annualDisplayPrice: string | null;
   reason: string | null;
+  qualificationMode: boolean;
 };
 
 function shortSha(value?: string) {
@@ -79,6 +80,7 @@ export default function DiagnosticsPage() {
     monthlyDisplayPrice: null,
     annualDisplayPrice: null,
     reason: null,
+    qualificationMode: false,
   });
 
   useEffect(() => {
@@ -151,6 +153,7 @@ export default function DiagnosticsPage() {
               monthlyDisplayPrice: monthly?.displayPrice ?? null,
               annualDisplayPrice: annual?.displayPrice ?? null,
               reason: catalog.reason,
+              qualificationMode: Boolean(catalog.qualificationMode),
             });
           }
           return;
@@ -171,6 +174,7 @@ export default function DiagnosticsPage() {
             monthlyDisplayPrice: null,
             annualDisplayPrice: null,
             reason: typeof payload.reason === "string" ? payload.reason : null,
+            qualificationMode: false,
           });
         }
       } catch (error) {
@@ -311,6 +315,13 @@ export default function DiagnosticsPage() {
                 label="Server verifier"
                 detail={billing.verifierConfigured ? "configured" : "not configured"}
               />
+              {billing.platform === "ios" ? (
+                <StatusCard
+                  ok={billing.qualificationMode}
+                  label="Qualification path"
+                  detail={billing.qualificationMode ? "TestFlight sandbox qualification active" : "normal production path"}
+                />
+              ) : null}
               <StatusCard
                 ok={Boolean(billing.monthlyProductId && (billing.platform === "web" || billing.monthlyDisplayPrice))}
                 label="Monthly catalog"

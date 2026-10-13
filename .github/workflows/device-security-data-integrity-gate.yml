@@ -45,6 +45,7 @@ jobs:
           tests/billing-retention-privacy-contract.test.ts
           tests/auth-billing-privacy-contract.test.ts
           tests/native-billing-bridge-contract.test.ts
+          tests/ios-billing-qualification-build-contract.test.ts
           tests/native-billing-server-verification-contract.test.ts
           tests/native-billing-lifecycle-contract.test.ts
           tests/native-billing-lifecycle-behavior.test.ts

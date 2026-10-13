@@ -106,6 +106,16 @@ function platformNativeBillingFlagEnabled(platform: "ios" | "android"): boolean 
   return legacyNativeBillingFlagEnabled();
 }
 
+function iosQualificationFlagEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true";
+}
+
+function billingQualificationRequest(req: Request): boolean {
+  const marker = req.headers["x-soulcodex-billing-qualification"];
+  return marker === "1";
+}
+
+
 function googleRtdnVerificationTokenMatches(candidate: unknown): boolean {
   const expected = process.env.GOOGLE_PLAY_RTDN_VERIFICATION_TOKEN?.trim();
   if (!expected || typeof candidate !== "string" || !candidate) return false;
@@ -462,7 +472,11 @@ export function registerBillingRawRoutes(app: Express): void {
       }
 
       try {
-        const verifiedEvent = verifyAppleServerNotification(signedPayload);
+        const verifiedEvent = verifyAppleServerNotification(
+          signedPayload,
+          new Date(),
+          { allowSandbox: iosQualificationFlagEnabled() },
+        );
         if (!verifiedEvent) {
           return res.status(200).json({
             received: true,
@@ -637,7 +651,10 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
-    const enabled = platformNativeBillingFlagEnabled(platform);
+    const productionEnabled = platformNativeBillingFlagEnabled(platform);
+    const qualificationEnabled =
+      platform === "ios" && iosQualificationFlagEnabled() && billingQualificationRequest(req);
+    const enabled = productionEnabled || qualificationEnabled;
 
     const monthlyProductId =
       platform === "ios" ? appleMonthlyProductId() : googleMonthlyProductId();
@@ -652,6 +669,7 @@ export function registerBillingRoutes(app: Express): void {
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
     return res.status(200).json({
       enabled: enabled && configured && verifierConfigured,
+      qualificationMode: !productionEnabled && qualificationEnabled,
       platform,
       monthlyProductId: configured ? monthlyProductId : null,
       annualProductId: configured ? annualProductId : null,
@@ -683,7 +701,13 @@ export function registerBillingRoutes(app: Express): void {
       });
     }
 
-    if (!platformNativeBillingFlagEnabled(parsed.data.platform)) {
+    const productionEnabled = platformNativeBillingFlagEnabled(parsed.data.platform);
+    const qualificationEnabled =
+      parsed.data.platform === "ios" &&
+      iosQualificationFlagEnabled() &&
+      billingQualificationRequest(req);
+
+    if (!productionEnabled && !qualificationEnabled) {
       return res.status(503).json({
         message: "Native Soul Codex+ billing is not enabled for this platform",
         code: "native_billing_disabled",
@@ -709,8 +733,20 @@ export function registerBillingRoutes(app: Express): void {
     try {
       const verifiedEvent =
         parsed.data.platform === "ios"
-          ? await verifyAppleBillingEvidence(userId, parsed.data)
+          ? await verifyAppleBillingEvidence(
+              userId,
+              parsed.data,
+              new Date(),
+              { allowSandbox: qualificationEnabled },
+            )
           : await verifyGoogleBillingEvidence(userId, parsed.data);
+
+      if (qualificationEnabled && verifiedEvent.environment !== "sandbox") {
+        return res.status(409).json({
+          message: "Qualification mode accepts sandbox StoreKit evidence only.",
+          code: "native_billing_qualification_requires_sandbox",
+        });
+      }
 
       await recordVerifiedBillingEvent(storage, verifiedEvent);
       const access = await resolveProductEntitlementForUser(storage, userId);
