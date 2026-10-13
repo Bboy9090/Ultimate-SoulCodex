@@ -4,6 +4,7 @@ import test from "node:test";
 
 const bootstrap = readFileSync("ios/App/ci_scripts/ci_post_clone.sh", "utf8");
 const parity = readFileSync(".github/workflows/xcode-cloud-bootstrap-parity.yml", "utf8");
+const qualificationParity = readFileSync(".github/workflows/ios-billing-qualification-parity.yml", "utf8");
 const billing = readFileSync("server/billing.ts", "utf8");
 const client = readFileSync("client/src/lib/nativeBilling.ts", "utf8");
 
@@ -30,4 +31,15 @@ test("server qualification path remains separate from production iOS billing", (
 test("qualification marker is sent only by qualification builds", () => {
   assert.match(client, /import\.meta\.env\.VITE_BILLING_QUALIFICATION_MODE === "true"/);
   assert.match(client, /X-SoulCodex-Billing-Qualification/);
+});
+
+
+test("dedicated qualification parity runs with both markers true and never claims a signed upload", () => {
+  assert.match(qualificationParity, /VITE_BILLING_QUALIFICATION_MODE: "true"/);
+  assert.match(qualificationParity, /SOUL_CODEX_IOS_QUALIFICATION_BUILD: "true"/);
+  assert.match(qualificationParity, /Run real Xcode Cloud post-clone bootstrap in qualification mode/);
+  assert.match(qualificationParity, /Create unsigned qualification archive/);
+  assert.match(qualificationParity, /CODE_SIGNING_ALLOWED=NO/);
+  assert.match(qualificationParity, /signed_upload=false/);
+  assert.doesNotMatch(qualificationParity, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=true/);
 });
