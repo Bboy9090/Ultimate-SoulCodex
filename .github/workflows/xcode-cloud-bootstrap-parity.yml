@@ -29,6 +29,8 @@ env:
   VITE_RELEASE_VERSION: 4.1.0
   VITE_API_CONTRACT: foundation-v4
   VITE_RELEASE_SHA: ${{ github.sha }}
+  VITE_BILLING_QUALIFICATION_MODE: "false"
+  SOUL_CODEX_IOS_QUALIFICATION_BUILD: "false"
 
 jobs:
   xcode-cloud-bootstrap-parity:
@@ -55,6 +57,11 @@ jobs:
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
         run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Prove normal release bootstrap is not a billing qualification build
+        run: |
+          test "$VITE_BILLING_QUALIFICATION_MODE" = "false"
+          test "$SOUL_CODEX_IOS_QUALIFICATION_BUILD" = "false"
 
       - name: Validate final iOS release metadata
         run: npm run mobile:validate:ios
