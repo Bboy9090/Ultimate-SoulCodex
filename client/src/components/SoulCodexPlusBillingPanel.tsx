@@ -5,6 +5,8 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useProductAccess } from "@/hooks/useProductAccess";
 import {
+  finishNativeTransaction,
+  listenForNativeBillingUpdates,
   loadNativeBillingCatalog,
   loadNativeBillingProducts,
   purchaseNativeProduct,
@@ -181,8 +183,46 @@ export default function SoulCodexPlusBillingPanel() {
     if (refreshed.data?.tier !== "plus") {
       throw new Error("Store purchase verified without an active Soul Codex+ entitlement.");
     }
+
+    if (evidence.platform === "ios") {
+      await finishNativeTransaction(evidence.transactionId);
+    }
+
     setBillingMessage("Soul Codex+ is verified and active.");
   };
+
+  useEffect(() => {
+    if (!isNative || Capacitor.getPlatform() !== "ios" || !currentUser) return;
+
+    let cancelled = false;
+    let listenerHandle: Awaited<ReturnType<typeof listenForNativeBillingUpdates>> = null;
+
+    void listenForNativeBillingUpdates(async (evidence) => {
+      if (cancelled) return;
+      try {
+        await verifyNativeEvidence(evidence);
+      } catch (error) {
+        if (!cancelled) {
+          setBillingMessage(
+            error instanceof Error
+              ? `StoreKit update is awaiting verification: ${error.message}`
+              : "A StoreKit update arrived but could not be verified yet.",
+          );
+        }
+      }
+    }).then((handle) => {
+      if (cancelled) {
+        if (handle) void handle.remove();
+        return;
+      }
+      listenerHandle = handle;
+    });
+
+    return () => {
+      cancelled = true;
+      if (listenerHandle) void listenerHandle.remove();
+    };
+  }, [isNative, currentUser?.id]);
 
   const startNativePurchase = async (productId: string) => {
     if (!currentUser || nativeBusy) return;
