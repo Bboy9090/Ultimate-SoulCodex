@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, type ReactNode } from "react";
+import { Component, lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { MotionConfig } from "framer-motion";
 import { Switch, Route, useLocation, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -11,7 +11,7 @@ import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 
-function lazyRoute<T extends { default: React.ComponentType<any> }>(
+function lazyRoute<T extends { default: ComponentType<any> }>(
   loader: () => Promise<T>,
   label: string,
 ) {
