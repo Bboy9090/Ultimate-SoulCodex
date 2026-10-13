@@ -154,3 +154,14 @@ test("provider-specific decision rejects unknown provider names", () => {
   });
   assert.throws(() => providerQualificationDecision(report, "stripe"), /provider must be ios, android, or web/);
 });
+
+
+test("committed evidence template cannot carry a stale qualification SHA", () => {
+  const template = JSON.parse(
+    require("node:fs").readFileSync(
+      "governance/release-audits/V4_1_BILLING_QUALIFICATION_EVIDENCE.template.json",
+      "utf8",
+    ),
+  );
+  assert.equal(template.releaseSha, "REPLACE_WITH_EXACT_40_CHAR_QUALIFICATION_SHA");
+});
