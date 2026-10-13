@@ -1,0 +1,191 @@
+{
+  "releaseSha": "49992bd61ae23ed040818529a51846bcd20cfb7a",
+  "appVersionBuild": "4.1.0 / 4000011",
+  "testWindow": "provider qualification pending",
+  "providers": {
+    "ios": {
+      "catalog": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "observedAt": "",
+        "appBuild": "4.1.0 / 4000011",
+        "device": "",
+        "accountAlias": ""
+      },
+      "monthly_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": "",
+        "observedAt": "",
+        "appBuild": "4.1.0 / 4000011",
+        "device": "",
+        "accountAlias": ""
+      },
+      "annual_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": "",
+        "observedAt": "",
+        "appBuild": "4.1.0 / 4000011",
+        "device": "",
+        "accountAlias": ""
+      },
+      "cancelled_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "persistence": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "restore": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "reinstall_restore": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "second_device": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "expiration_cancellation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "refund_revocation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "transaction_updates": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "server_notifications_v2": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "replay_environment_product_rejection": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "free_fallback": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      }
+    },
+    "android": {
+      "catalog": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "monthly_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": ""
+      },
+      "annual_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": ""
+      },
+      "cancelled_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "verify_before_acknowledge": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "persistence": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "restore": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "reinstall_restore": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "second_device": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "expiration_cancellation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "refund_revocation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "grace_account_hold": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "rtdn_requery": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "replay_package_product_token_rejection": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "free_fallback": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      }
+    },
+    "web": {
+      "catalog": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "monthly_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": ""
+      },
+      "annual_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": "",
+        "serverVerification": ""
+      },
+      "cancelled_purchase": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "persistence": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "manage_subscription": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "expiration_cancellation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "refund_revocation": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "webhook_verification": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "replay_product_rejection": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      },
+      "free_fallback": {
+        "result": "INCONCLUSIVE",
+        "evidenceRef": ""
+      }
+    }
+  }
+}
