@@ -40,3 +40,11 @@ test("diagnostics explicitly refuse to equate configuration with purchase qualif
   assert.match(diagnostics, /real sandbox\/TestFlight\/internal-test evidence/);
   assert.match(diagnostics, /before production activation/);
 });
+
+
+test("iOS diagnostics visibly distinguish qualification mode from normal production billing", () => {
+  assert.match(diagnostics, /Qualification path/);
+  assert.match(diagnostics, /TestFlight sandbox qualification active/);
+  assert.match(diagnostics, /normal production path/);
+  assert.match(diagnostics, /catalog\.qualificationMode/);
+});
