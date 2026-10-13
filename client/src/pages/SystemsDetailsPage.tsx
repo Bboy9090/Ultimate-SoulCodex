@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Link } from "wouter";
 import {
   Calculator,
@@ -21,6 +22,8 @@ import { getSynthesisPlacement, getVerifiedPlacement } from "@/lib/placementVeri
 import { hasVerifiedHumanDesignTrust } from "@/lib/profileVerificationReconciliation";
 import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDesignDisplay";
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
+
+const InteractivePlanetarySystem = lazy(() => import("@/components/InteractivePlanetarySystem"));
 
 type Placement = PlacementLike & {
   reason?: string;
@@ -208,11 +211,18 @@ export default function SystemsDetailsPage() {
         </header>
 
         <nav className="mx-auto mb-5 flex max-w-5xl flex-wrap gap-2" aria-label="System view navigation">
-          <a href="#combined-synthesis" className="sc-button-primary">Combined synthesis</a>
+          <a href="#planetary-system" className="sc-button-primary">Interactive planets</a>
+          <a href="#combined-synthesis" className="sc-button-secondary">Combined synthesis</a>
           <a href="#astrology-system" className="sc-button-secondary">Astrology</a>
           <a href="#numerology-system" className="sc-button-secondary">Numerology</a>
           <a href="#human-design-system" className="sc-button-secondary">Human Design</a>
         </nav>
+
+        <section id="planetary-system" className="mx-auto max-w-5xl scroll-mt-28" aria-label="Interactive planetary system">
+          <Suspense fallback={<div className="sc-panel mb-5 p-6 text-sm text-[var(--sc-stone)]" role="status">Opening interactive planetary system…</div>}>
+            <InteractivePlanetarySystem synthesis={ultimateCodex} />
+          </Suspense>
+        </section>
 
         <section id="combined-synthesis" className="mx-auto mb-5 max-w-5xl scroll-mt-28">
           <UltimateCodexPanel synthesis={ultimateCodex} />
