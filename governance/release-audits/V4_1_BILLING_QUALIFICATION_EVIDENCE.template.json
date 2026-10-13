@@ -1,7 +1,7 @@
 {
-  "releaseSha": "49992bd61ae23ed040818529a51846bcd20cfb7a",
+  "releaseSha": "REPLACE_WITH_EXACT_40_CHAR_QUALIFICATION_SHA",
   "appVersionBuild": "4.1.0 / 4000011",
-  "testWindow": "provider qualification pending",
+  "testWindow": "replace when provider qualification begins",
   "providers": {
     "ios": {
       "catalog": {

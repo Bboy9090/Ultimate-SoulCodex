@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   PROVIDER_CHECKPOINTS,
@@ -153,4 +154,15 @@ test("provider-specific decision rejects unknown provider names", () => {
     providers: { ios: {}, android: {}, web: {} },
   });
   assert.throws(() => providerQualificationDecision(report, "stripe"), /provider must be ios, android, or web/);
+});
+
+
+test("committed evidence template cannot carry a stale qualification SHA", () => {
+  const template = JSON.parse(
+    readFileSync(
+      "governance/release-audits/V4_1_BILLING_QUALIFICATION_EVIDENCE.template.json",
+      "utf8",
+    ),
+  );
+  assert.equal(template.releaseSha, "REPLACE_WITH_EXACT_40_CHAR_QUALIFICATION_SHA");
 });
