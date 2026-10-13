@@ -17,3 +17,11 @@ test("lazy routes have a bounded loading failure instead of an endless Opening s
   assert.match(app, /Retry this section/);
   assert.match(app, /lazyRoute\(\(\) => import\("\.\/pages\/ConnectionsPage"\), "people"\)/);
 });
+
+
+test("People route is proactively preloaded during idle time without preloading contacts", () => {
+  assert.match(app, /requestIdleCallback/);
+  assert.match(app, /import\("\.\/pages\/ConnectionsPage"\)/);
+  assert.match(app, /route-preload/);
+  assert.doesNotMatch(app, /deviceContactPicker/);
+});
