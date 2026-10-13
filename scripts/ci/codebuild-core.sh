@@ -24,6 +24,9 @@ node --import tsx --test \
   packages/astrology/__tests__/astrology-evidence.test.ts \
   tests/astrology-candidate.test.ts \
   tests/accuracy-reconciliation-v2.test.ts \
+  tests/unknown-time-dst-range.test.ts \
+  tests/dst-range-evidence-contract.test.ts \
+  tests/permanent-uncertainty-contract.test.ts \
   tests/astrology-independent-verification.test.ts \
   tests/jpl-horizons-reference.test.ts \
   tests/astrology-evidence-matrix.test.ts \
