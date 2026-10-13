@@ -152,6 +152,8 @@ function Router() {
       <Route path="/compatibility/explorer" component={CompatibilityExplorerPage} />
       <Route path="/compatibility/compare" component={CompatibilityPersonPage} />
       <Route path="/connections" component={ConnectionsPage} />
+      {/* Preserve historical People deep links alongside the canonical /connections path. */}
+      <Route path="/people" component={ConnectionsPage} />
       <Route path="/timeline" component={TimelineRoute} />
       <Route path="/tools" component={CodexToolsPage} />
       <Route path="/systems/atlas" component={AstrologyAtlasPage} />
