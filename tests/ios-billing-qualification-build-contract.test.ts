@@ -1,0 +1,33 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+
+const bootstrap = readFileSync("ios/App/ci_scripts/ci_post_clone.sh", "utf8");
+const parity = readFileSync(".github/workflows/xcode-cloud-bootstrap-parity.yml", "utf8");
+const billing = readFileSync("server/billing.ts", "utf8");
+const client = readFileSync("client/src/lib/nativeBilling.ts", "utf8");
+
+test("qualification build requires two explicit client-side switches", () => {
+  assert.match(bootstrap, /VITE_BILLING_QUALIFICATION_MODE/);
+  assert.match(bootstrap, /SOUL_CODEX_IOS_QUALIFICATION_BUILD/);
+  assert.match(bootstrap, /Refusing to enable billing qualification mode/);
+  assert.match(bootstrap, /must be true or false/);
+});
+
+test("normal release parity proves qualification mode is off", () => {
+  assert.match(parity, /VITE_BILLING_QUALIFICATION_MODE: "false"/);
+  assert.match(parity, /SOUL_CODEX_IOS_QUALIFICATION_BUILD: "false"/);
+  assert.match(parity, /Prove normal release bootstrap is not a billing qualification build/);
+});
+
+test("server qualification path remains separate from production iOS billing", () => {
+  assert.match(billing, /SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED/);
+  assert.match(billing, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+  assert.match(billing, /verifiedEvent\.environment !== "sandbox"/);
+  assert.match(billing, /native_billing_qualification_requires_sandbox/);
+});
+
+test("qualification marker is sent only by qualification builds", () => {
+  assert.match(client, /import\.meta\.env\.VITE_BILLING_QUALIFICATION_MODE === "true"/);
+  assert.match(client, /X-SoulCodex-Billing-Qualification/);
+});
