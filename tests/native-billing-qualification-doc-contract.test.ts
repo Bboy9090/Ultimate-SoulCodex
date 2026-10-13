@@ -38,7 +38,10 @@ test("receipt starts fail-closed with platform flags disabled", () => {
 
 test("current qualification receipt separates build readiness from provider transaction qualification", () => {
   assert.match(receipt, /Apple-managed Xcode Cloud archive: PASS/);
-  assert.match(receipt, /Railway production deployment[^\n]*SUCCESS/);
+  assert.match(receipt, /Qualification transaction SHA: \*\*NOT FROZEN/);
+  assert.match(receipt, /no dedicated TestFlight\/internal-test provider evidence run has begun/);
+  assert.match(receipt, /freeze the exact qualification build SHA/);
+  assert.match(receipt, /Railway production deployment status must be re-recorded for the frozen qualification SHA/);
   assert.match(receipt, /SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED[^\n]*staged/);
   assert.match(receipt, /dedicated qualification build and real Apple sandbox transactions have not yet been observed/);
 });
