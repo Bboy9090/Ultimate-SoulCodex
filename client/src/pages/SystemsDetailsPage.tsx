@@ -24,6 +24,7 @@ import { humanDesignListLabel, normalizeHumanDesignCenters } from "@/lib/humanDe
 import { buildUltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 const InteractivePlanetarySystem = lazy(() => import("@/components/InteractivePlanetarySystem"));
+const InteractivePlanetaryPreview = lazy(() => import("@/components/InteractivePlanetaryPreview"));
 
 type Placement = PlacementLike & {
   reason?: string;
@@ -160,8 +161,8 @@ export default function SystemsDetailsPage() {
     return (
       <div className="sc-app-shell">
         <Navigation />
-        <main className="sc-page flex min-h-[75vh] items-center justify-center">
-          <div className="sc-panel max-w-lg p-8 text-center">
+        <main className="sc-page min-h-[75vh] py-10">
+          <div className="sc-panel mx-auto max-w-3xl p-8 text-center">
             <Database className="mx-auto mb-4 h-9 w-9 text-[var(--sc-gold)]" />
             <h1 className="font-serif text-3xl font-medium text-[var(--sc-ivory)]">No active profile to inspect</h1>
             <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
@@ -170,6 +171,11 @@ export default function SystemsDetailsPage() {
             <Link href="/create" className="sc-button-primary mt-6 inline-flex">Create profile</Link>
             <Link href="/systems/atlas" className="mt-4 block underline">Explore the Astrology Atlas without a profile</Link>
             <p className="mt-4 text-xs text-[var(--sc-stone)]">Repository status: {status}</p>
+          </div>
+          <div className="mx-auto mt-8 max-w-5xl">
+            <Suspense fallback={<div role="status" className="sc-panel p-6 text-sm text-[var(--sc-stone)]">Opening educational planetary explorer…</div>}>
+              <InteractivePlanetaryPreview />
+            </Suspense>
           </div>
         </main>
       </div>
