@@ -1,17 +1,19 @@
 # Soul Codex 4.1 Native Billing Qualification Receipt
 
-Release SHA: **7a50f98373c8bc15cf587da23c50ada7037c3bc2**  
+Qualification transaction SHA: **NOT FROZEN — no provider transaction evidence run has begun**  
 App version/build: **4.1.0 / 4000011**  
 Test window: **2026-10-13 — release/configuration and qualification-path readiness only; provider transaction qualification still pending**
 
 ## Configuration safety evidence
 
-- Current release authority: merged `main` at `7a50f98373c8bc15cf587da23c50ada7037c3bc2`.
-- Exact-head release gates: PASS.
+- Latest implementation authority inspected before provider evidence: merged `main` at `ed8266842989a377b75fc793ecf16c321d87f733`.
+- Qualification transaction authority is intentionally **not frozen yet** because no dedicated TestFlight/internal-test provider evidence run has begun.
+- When the first provider evidence run begins, freeze the exact qualification build SHA in this receipt and in the redacted evidence file; do not silently carry an older SHA forward.
+- Exact-head release gates for the latest inspected implementation: PASS.
 - Exact-head Android store validation: PASS, including signed AAB build and signature verification.
 - Exact-head GitHub iOS store validation: PASS.
 - Exact-head Apple-managed Xcode Cloud archive: PASS.
-- Railway production deployment for `7a50f98373c8bc15cf587da23c50ada7037c3bc2`: SUCCESS.
+- Railway production deployment status must be re-recorded for the frozen qualification SHA before any provider checkpoint is marked PASS.
 - Production purchase flags remain staged `false`; the production billing patch remains undeployed.
 - iOS qualification flag `SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED` is staged `false` and remains undeployed.
 - iOS qualification support is present in code, but a dedicated qualification build and real Apple sandbox transactions have not yet been observed.
