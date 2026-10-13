@@ -1,10 +1,11 @@
-import AureonAvatar from "@/components/AureonAvatar";
+import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
 import { useState } from "react";
 import { Link } from "wouter";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { atlasEntry, atlasSignMeaning, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
+import { natalChartIdentity } from "@/lib/natalChartIdentity";
 
 const GLYPH: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
@@ -64,15 +65,23 @@ function guideStopLabel(stop: ChartSelection): string {
   return `Aspect ${stop.index + 1}`;
 }
 
-export default function VerifiedNatalChart({
-  astrology,
-  synthesis,
-  interpretationDepth = false,
-}: {
+type VerifiedNatalChartProps = {
   astrology: Record<string, any>;
   synthesis: UltimateCodexSynthesis;
   interpretationDepth?: boolean;
-}) {
+};
+
+export default function VerifiedNatalChart(props: VerifiedNatalChartProps) {
+  // Reset both selection and tour before rendering a different chart. An effect
+  // would run too late if the old step points past the new chart's final aspect.
+  return <VerifiedNatalChartContent key={natalChartIdentity(props.astrology, props.synthesis)} {...props} />;
+}
+
+function VerifiedNatalChartContent({
+  astrology,
+  synthesis,
+  interpretationDepth = false,
+}: VerifiedNatalChartProps) {
   const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<ChartSelection | null>(null);
   const [guideIndex, setGuideIndex] = useState<number | null>(null);
@@ -152,6 +161,24 @@ export default function VerifiedNatalChart({
   const selectedPoint = selection?.kind === "point"
     ? synthesis.supportingPoints.find((point) => point.key === selection.key) ?? null
     : null;
+  const aureonChartState: AureonState = !selection
+    ? "observing"
+    : selection.kind === "sign" || selection.kind === "house"
+      ? "focusing"
+      : selection.kind === "aspect"
+        ? "comparing"
+        : "explaining";
+  const aureonChartMessage = !selection
+    ? "Aureon is observing the verified wheel. Choose any symbol to focus the guide."
+    : selection.kind === "planet"
+      ? `Aureon is explaining ${selectedPlanet?.label ?? selection.key}: what it represents, how its sign moves, and where its house places the action.`
+      : selection.kind === "house"
+        ? `Aureon is focusing House ${selection.house}, the life area where verified placements can operate.`
+        : selection.kind === "sign"
+          ? `Aureon is focusing ${selection.sign}, the style shared by verified placements or cusps in that sign.`
+          : selection.kind === "aspect"
+            ? `Aureon is comparing ${selectedAspect?.planet1 ?? "these placements"} and ${selectedAspect?.planet2 ?? "their connection"} through the verified ${selectedAspect?.aspect ?? "aspect"}.`
+            : `Aureon is explaining ${selectedPoint?.label ?? selection.key}, a verified supporting chart point.`;
 
   return (
     <section className="sc-panel p-5 sm:p-6" data-testid="verified-natal-chart">
@@ -215,8 +242,12 @@ export default function VerifiedNatalChart({
                   className="cursor-pointer outline-none"
                   onClick={() => selectChartItem({ kind: "house", house: house.house })}
                   onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "house", house: house.house }))}
-                  animate={{ opacity: selection && !selected ? 0.68 : 1 }}
-                  transition={{ duration: reducedMotion ? 0 : 0.2 }}
+                  animate={{
+                    opacity: selection && !selected ? 0.46 : 1,
+                    scale: selected ? 1.035 : 1,
+                  }}
+                  transition={{ duration: reducedMotion ? 0 : 0.22 }}
+                  style={{ transformOrigin: "180px 180px" }}
                 >
                   <line x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y} stroke={selected || angular ? "var(--sc-gold-bright)" : "rgba(255,255,255,.16)"} strokeWidth={selected ? 3 : angular ? 1.8 : 1} />
                   <circle cx={label.x} cy={label.y} r={selected ? 12 : 10} fill={selected ? "rgba(217,182,111,.18)" : "rgba(8,6,14,.01)"} stroke={selected ? "var(--sc-line-gold)" : "transparent"} />
@@ -230,13 +261,15 @@ export default function VerifiedNatalChart({
                 aspect.planet1 === line.planet1 && aspect.planet2 === line.planet2 && aspect.aspect === line.aspect && aspect.orb === line.orb
               );
               const selected = selection?.kind === "aspect" && selection.index === sourceIndex;
+              const relatedToSelectedPlanet = selection?.kind === "planet"
+                && (line.planet1.toLowerCase() === selection.key || line.planet2.toLowerCase() === selection.key);
               return <motion.line
                 key={line.planet1 + "-" + line.aspect + "-" + line.planet2 + "-" + index}
                 x1={line.a.x} y1={line.a.y} x2={line.b.x} y2={line.b.y}
                 stroke={line.aspect === "square" || line.aspect === "opposition" ? "rgba(255,150,160,.42)" : "rgba(147,214,196,.34)"}
-                strokeWidth={selected ? "4" : "1"}
+                strokeWidth={selected ? "4" : relatedToSelectedPlanet ? "2.4" : "1"}
                 strokeDasharray={line.aspect === "conjunction" ? "2 4" : undefined}
-                opacity={selection && !selected ? 0.35 : 1}
+                opacity={selection && !selected && !relatedToSelectedPlanet ? 0.2 : relatedToSelectedPlanet ? 0.92 : 1}
                 role="button"
                 tabIndex={0}
                 aria-label={`Open ${line.planet1} ${line.aspect} ${line.planet2}`}
@@ -244,8 +277,12 @@ export default function VerifiedNatalChart({
                 className="cursor-pointer outline-none"
                 onClick={() => selectChartItem({ kind: "aspect", index: sourceIndex })}
                 onKeyDown={(event) => selectWithKeyboard(event, () => selectChartItem({ kind: "aspect", index: sourceIndex }))}
-                animate={{ pathLength: selected ? 1 : 0.96 }}
-                transition={{ duration: reducedMotion ? 0 : 0.25 }}
+                initial={false}
+                animate={{
+                  pathLength: selected || relatedToSelectedPlanet ? 1 : 0.96,
+                  filter: selected || relatedToSelectedPlanet ? "drop-shadow(0 0 3px rgba(239,208,141,.35))" : "none",
+                }}
+                transition={{ duration: reducedMotion ? 0 : selected ? 0.42 : 0.25 }}
               />
             })}
 
@@ -285,9 +322,10 @@ export default function VerifiedNatalChart({
           <section className="min-h-[280px] rounded-2xl border border-[var(--sc-line-gold)] bg-[radial-gradient(circle_at_top,rgba(217,182,111,.09),transparent_62%)] p-5" aria-live="polite" aria-atomic="true" data-testid="interactive-chart-guide">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <AureonAvatar state={selection ? "explaining" : "observing"} />
+                <AureonAvatar state={aureonChartState} />
                 <p className="sc-eyebrow">Tap the chart · Meet your placements</p>
                 <h3 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Explore your chart</h3>
+                <p className="mt-2 max-w-xl text-xs leading-5 text-[var(--sc-stone)]" aria-live="polite" data-testid="aureon-chart-reaction">{aureonChartMessage}</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {guideIndex === null && <button type="button" className="sc-button-secondary" onClick={startGuide}>Walk me through it</button>}
