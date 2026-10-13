@@ -84,7 +84,7 @@ test("secret-like fields are rejected", () => {
   );
 });
 
-test("all providers qualify only when every checkpoint is pass or not applicable", () => {
+test("all providers qualify only when every required checkpoint passes", () => {
   const report = validateBillingQualificationEvidence({
     releaseSha: SHA,
     appVersionBuild: "4.1.0 / 4000011",
@@ -99,6 +99,34 @@ test("all providers qualify only when every checkpoint is pass or not applicable
   assert.equal(report.providers.android.decision, "PASS");
   assert.equal(report.providers.web.decision, "PASS");
   assert.equal(report.overallQualified, true);
+});
+
+test("NOT APPLICABLE cannot waive any required provider checkpoint", () => {
+  for (const provider of ["ios", "android", "web"] as const) {
+    for (const checkpoint of PROVIDER_CHECKPOINTS[provider]) {
+      const evidence = allPassProvider(provider);
+      evidence[checkpoint] = { result: "NOT APPLICABLE", evidenceRef: "", serverVerification: "" };
+      const report = validateBillingQualificationEvidence({
+        releaseSha: SHA,
+        appVersionBuild: "4.1.0 / 4000011",
+        providers: { [provider]: evidence },
+      });
+      assert.equal(providerQualificationDecision(report, provider).qualified, false, `${provider}.${checkpoint}`);
+      assert.equal(report.providers[provider].decision, "INCONCLUSIVE");
+      assert.equal(report.overallQualified, false);
+    }
+  }
+});
+
+test("marking the entire qualification matrix NOT APPLICABLE cannot produce PASS", () => {
+  const providers = Object.fromEntries(Object.entries(PROVIDER_CHECKPOINTS).map(([provider, checkpoints]) => [
+    provider, Object.fromEntries(checkpoints.map((checkpoint) => [checkpoint, { result: "NOT APPLICABLE" }])),
+  ]));
+  const report = validateBillingQualificationEvidence({ releaseSha: SHA, appVersionBuild: "4.1.0 / 4000011", providers });
+  assert.equal(report.overallQualified, false);
+  for (const provider of Object.keys(PROVIDER_CHECKPOINTS)) {
+    assert.equal(providerQualificationDecision(report, provider).decision, "INCONCLUSIVE");
+  }
 });
 
 test("one provider can qualify independently while others remain inconclusive", () => {

@@ -153,7 +153,7 @@ export function validateBillingQualificationEvidence(input) {
 
     const requiredResults = Object.values(checkpoints).map((entry) => entry.result);
     const qualified = requiredResults.every(
-      (result) => result === "PASS" || result === "NOT APPLICABLE",
+      (result) => result === "PASS",
     );
     const failed = requiredResults.some((result) => result === "FAIL");
     providers[providerName] = {

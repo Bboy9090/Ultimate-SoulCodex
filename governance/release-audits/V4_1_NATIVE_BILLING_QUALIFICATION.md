@@ -112,6 +112,8 @@ Never commit passwords, raw service-account JSON, Apple credentials, webhook sec
 
 INCONCLUSIVE is not PASS.
 
+`NOT APPLICABLE` may document an unavailable scenario, but it cannot waive a required checkpoint or qualify a provider. Every checkpoint in the validator's provider matrix must have an evidenced PASS before that provider can qualify.
+
 ## Operator evidence workflow
 
 Use the redacted template at:
