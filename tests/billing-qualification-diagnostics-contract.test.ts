@@ -11,7 +11,7 @@ test("billing qualification diagnostics expose provider readiness and entitlemen
     "Server verifier",
     "Monthly catalog",
     "Annual catalog",
-    "Entitlement evidence",
+    "Paid entitlement evidence",
     "Current tier",
     "Entitlement source",
     "Last verification",
