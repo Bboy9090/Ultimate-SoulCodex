@@ -1,4 +1,4 @@
-import { calcExpression, calcLifePath, calcSoulUrge } from "@soulcodex/core";
+import { calcExpression, calcLifePath, calcSoulUrge, hasCompleteMinuteRangeEvidence } from "@soulcodex/core";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { getSynthesisPlacement } from "./placementVerification";
 export type ClarityConfidence =
@@ -499,8 +499,7 @@ export function buildClarityReadingModel(
     const stableComponent = (key: string): AnyRecord | null => {
       const component = humanDesign.components?.[key];
       return component?.evidenceState === "stable_across_range" &&
-        component?.rangeEvidence?.resolutionMinutes === 1 &&
-        component?.rangeEvidence?.testedValues === 1440
+        hasCompleteMinuteRangeEvidence(component?.rangeEvidence)
         ? component
         : null;
     };

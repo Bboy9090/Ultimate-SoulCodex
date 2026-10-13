@@ -3,6 +3,7 @@
  * Re-exported for backwards compatibility with existing client imports
  * New code should import directly from @soulcodex/core
  */
+import { hasCompleteMinuteRangeEvidence } from '@soulcodex/core';
 import type {
   VerificationState,
   PlacementEvidence,
@@ -65,13 +66,7 @@ export function getSynthesisPlacement(value: PlacementLike | null | undefined): 
 
   if (!value?.sign || value.evidenceState !== "stable_across_range") return null;
   const range = value.rangeEvidence;
-  if (
-    !range ||
-    range.resolutionMinutes !== 1 ||
-    range.testedValues !== 1440 ||
-    typeof range.rangeStartLocal !== "string" ||
-    typeof range.rangeEndLocal !== "string"
-  ) {
+  if (!hasCompleteMinuteRangeEvidence(range)) {
     return null;
   }
 
