@@ -7,6 +7,8 @@ const natal = readFileSync("client/src/components/VerifiedNatalChart.tsx", "utf8
 const bodygraph = readFileSync("client/src/components/HumanDesignBodygraph.tsx", "utf8");
 const panel = readFileSync("client/src/components/UltimateCodexPanel.tsx", "utf8");
 const systems = readFileSync("client/src/pages/SystemsDetailsPage.tsx", "utf8");
+const navigation = readFileSync("client/src/components/navigation.tsx", "utf8");
+const planetaryPreview = readFileSync("client/src/components/InteractivePlanetaryPreview.tsx", "utf8");
 
 test("Identity keeps governed natal evidence visible while technical fusion moves to Systems", () => {
   assert.match(offline, /VerifiedNatalChart/);
@@ -78,4 +80,19 @@ test("Systems inspector exposes separate and combined multi-system views", () =>
   assert.match(systems, /id="astrology-system"/);
   assert.match(systems, /id="numerology-system"/);
   assert.match(systems, /id="human-design-system"/);
+});
+
+test("Systems and the planetary explorer remain discoverable without a profile", () => {
+  assert.match(navigation, /\{ href: "\/systems", label: "Systems", icon: Database \}/);
+  assert.doesNotMatch(navigation, /\.\.\.\(profile \? \[\{ href: "\/systems"/);
+  assert.match(systems, /<InteractivePlanetaryPreview \/>/);
+  assert.match(systems, /Opening educational planetary explorer/);
+  assert.match(planetaryPreview, /data-testid="planetary-educational-preview"/);
+  assert.match(planetaryPreview, /not a personal chart/);
+  assert.match(planetaryPreview, /positions are decorative/);
+  assert.match(planetaryPreview, /useReducedMotion\(\)/);
+  assert.match(planetaryPreview, /aria-pressed=\{selectedKey === planet.key\}/);
+  assert.match(planetaryPreview, /onKeyDown=/);
+  assert.match(planetaryPreview, /href="\/create"/);
+  assert.doesNotMatch(planetaryPreview, /birthTime|longitude|houseCusps|natalLongitude/);
 });
