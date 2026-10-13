@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import UltimateCodexPanel from "@/components/UltimateCodexPanel";
-import type { PlacementLike } from "@soulcodex/core";
+import { hasCompleteMinuteRangeEvidence, type PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
@@ -44,6 +44,19 @@ function textValue(value: unknown): string | null {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return null;
+}
+
+function branchWindow(branch: {
+  value?: string | null;
+  startLocalTime?: string | null;
+  endLocalTime?: string | null;
+  utcOffsetMinutes?: number | null;
+}): string {
+  const offset = branch.utcOffsetMinutes;
+  const suffix = typeof offset === "number" && Number.isInteger(offset)
+    ? ` (UTC${offset >= 0 ? "+" : "-"}${String(Math.floor(Math.abs(offset) / 60)).padStart(2, "0")}:${String(Math.abs(offset) % 60).padStart(2, "0")})`
+    : "";
+  return `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}${suffix}`;
 }
 
 function PlacementRow({
@@ -111,7 +124,7 @@ function PlacementRow({
         <div className="mt-2 rounded-xl border border-amber-400/15 bg-amber-400/[0.035] px-3 py-2 text-[11px] leading-5 text-amber-100/80">
           <strong>Rectification branches:</strong>{" "}
           {placement.conditionalValues.map((branch) =>
-            `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+            branchWindow(branch)
           ).join(" · ")}
         </div>
       )}
@@ -184,8 +197,7 @@ export default function SystemsDetailsPage() {
   const stableHdEntries = humanDesignRange
     ? Object.entries(humanDesignRange).filter(([, value]: any) =>
         value?.evidenceState === "stable_across_range" &&
-        value?.rangeEvidence?.resolutionMinutes === 1 &&
-        value?.rangeEvidence?.testedValues === 1440)
+        hasCompleteMinuteRangeEvidence(value?.rangeEvidence))
     : [];
   const conditionalHdEntries = humanDesignRange
     ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
@@ -362,7 +374,7 @@ export default function SystemsDetailsPage() {
                           <span className="font-semibold capitalize text-[var(--sc-ivory-soft)]">{key.replace(/([A-Z])/g, " $1")}:</span>{" "}
                           {Array.isArray(value?.conditionalValues) && value.conditionalValues.length
                             ? value.conditionalValues.map((branch: any) =>
-                                `${branch.value ?? "?"} ${branch.startLocalTime ?? ""}–${branch.endLocalTime ?? ""}`
+                                branchWindow(branch)
                               ).join(" · ")
                             : "Changes across the supported day."}
                         </div>
