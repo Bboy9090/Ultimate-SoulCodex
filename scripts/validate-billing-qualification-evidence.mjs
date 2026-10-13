@@ -153,7 +153,7 @@ export function validateBillingQualificationEvidence(input) {
 
     const requiredResults = Object.values(checkpoints).map((entry) => entry.result);
     const qualified = requiredResults.every(
-      (result) => result === "PASS" || result === "NOT APPLICABLE",
+      (result) => result === "PASS",
     );
     const failed = requiredResults.some((result) => result === "FAIL");
     providers[providerName] = {
@@ -172,6 +172,17 @@ export function validateBillingQualificationEvidence(input) {
       providers.ios.qualified &&
       providers.android.qualified &&
       providers.web.qualified,
+  };
+}
+
+export function providerQualificationDecision(report, providerName) {
+  const provider = normalizeProvider(providerName);
+  const state = report?.providers?.[provider];
+  if (!state) throw new Error(`Missing provider report for ${provider}`);
+  return {
+    provider,
+    qualified: Boolean(state.qualified),
+    decision: state.decision,
   };
 }
 
@@ -222,6 +233,17 @@ if (process.argv[1]?.endsWith("validate-billing-qualification-evidence.mjs")) {
     const argv = process.argv.slice(2);
     const report = validateBillingQualificationEvidence(readInput(argv));
     console.log(renderQualificationSummary(report));
+
+    const providerIndex = argv.indexOf("--require-provider-pass");
+    if (providerIndex >= 0) {
+      const provider = argv[providerIndex + 1];
+      if (!provider) {
+        throw new Error("--require-provider-pass requires ios, android, or web");
+      }
+      const decision = providerQualificationDecision(report, provider);
+      if (!decision.qualified) process.exitCode = 3;
+    }
+
     if (argv.includes("--require-all-pass") && !report.overallQualified) {
       process.exitCode = 3;
     }

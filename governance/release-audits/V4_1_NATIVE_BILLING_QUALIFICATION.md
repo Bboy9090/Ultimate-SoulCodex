@@ -112,6 +112,32 @@ Never commit passwords, raw service-account JSON, Apple credentials, webhook sec
 
 INCONCLUSIVE is not PASS.
 
+`NOT APPLICABLE` may document an unavailable scenario, but it cannot waive a required checkpoint or qualify a provider. Every checkpoint in the validator's provider matrix must have an evidenced PASS before that provider can qualify.
+
+## Operator evidence workflow
+
+Use the redacted template at:
+
+`governance/release-audits/V4_1_BILLING_QUALIFICATION_EVIDENCE.template.json`
+
+Copy it to a local, untracked working file before recording provider observations. Do not commit passwords, raw service-account JSON, signed provider payloads, full receipts, or unredacted purchase tokens.
+
+Validate the working evidence file:
+
+```bash
+npm run billing:qualification:evidence -- --file <redacted-evidence.json>
+```
+
+Require one provider to pass without falsely requiring the other providers to be complete:
+
+```bash
+npm run billing:qualification:evidence -- --file <redacted-evidence.json> --require-provider-pass ios
+npm run billing:qualification:evidence -- --file <redacted-evidence.json> --require-provider-pass android
+npm run billing:qualification:evidence -- --file <redacted-evidence.json> --require-provider-pass web
+```
+
+Use `--require-all-pass` only for the final cross-provider launch decision.
+
 ## Provider activation decision
 
 A provider production flag may be considered for activation only when:
