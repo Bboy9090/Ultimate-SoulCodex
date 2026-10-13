@@ -138,6 +138,24 @@ npm run billing:qualification:evidence -- --file <redacted-evidence.json> --requ
 
 Use `--require-all-pass` only for the final cross-provider launch decision.
 
+## Provider-specific production preflight
+
+Before qualifying or activating a provider, run the matching strict configuration check:
+
+```bash
+npm run billing:preflight:ios
+npm run billing:preflight:android
+npm run billing:preflight:web
+```
+
+These commands intentionally validate one provider without requiring unrelated provider credentials. They do not enable billing and they do not replace sandbox/TestFlight/internal-test transaction evidence.
+
+Use the existing all-provider gate only for the final cross-provider launch decision:
+
+```bash
+npm run billing:preflight:strict
+```
+
 ## Provider activation decision
 
 A provider production flag may be considered for activation only when:
