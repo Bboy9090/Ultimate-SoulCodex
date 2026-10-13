@@ -37,7 +37,7 @@ export default function Navigation() {
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
     { href: "/connections", label: "People", icon: UsersRound },
-    ...(profile ? [{ href: "/systems", label: "Systems", icon: Database }] : []),
+    { href: "/systems", label: "Systems", icon: Database },
     { href: "/tools", label: "Tools", icon: Compass },
   ];
 
