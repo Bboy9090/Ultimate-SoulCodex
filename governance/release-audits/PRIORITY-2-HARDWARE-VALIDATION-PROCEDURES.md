@@ -172,24 +172,32 @@ Do not require fresh server-only content to materialize offline.
 
 A provider unavailable because of tester/account configuration is `INCONCLUSIVE`, not PASS.
 
-## 9. Premium/payment boundary — test the store-approved rc.2 configuration
+## 9. Premium/payment boundary — qualify the implemented provider path
 
-The rc.2 application code currently starts premium purchase through `/api/billing/checkout` and redirects to **Hosted Stripe Checkout**. Hardware validation must not invent an Apple StoreKit or Google Play Billing sheet that rc.2 does not implement.
+The current 4.1 application implements native StoreKit 2 purchase/restore on iOS and Google Play Billing purchase/restore on Android behind disabled platform flags. Web checkout remains a separate Hosted Stripe path. Production flags must stay disabled until the corresponding provider path has completed qualification.
 
-However, store policy approval is a Priority 1 prerequisite for exercising this checkpoint. Digital premium functionality may be subject to Apple/Google store-payment rules, storefront restrictions, or enrolled alternative/external-payment programs.
+Use only sandbox/TestFlight/internal-test billing accounts and products for this checkpoint. Do **not** complete a live production charge.
 
 Procedure:
 
-1. Use the exact premium/payment path that survived Priority 1 store ingestion for that platform/storefront.
-2. Confirm the UI describes the payment boundary accurately.
-3. Start checkout only far enough to prove the approved payment surface launches.
-4. **Do not complete a live charge** unless a dedicated sandbox/test purchase path is intentionally configured.
-5. Cancel/dismiss/return.
-6. Confirm Soul Codex returns to a coherent state and no premium entitlement is granted from cancellation alone.
+1. Confirm the platform-specific billing flag is explicitly configured for the qualification environment and that production remains disabled until the evidence set is complete.
+2. Sign in with the designated Soul Codex test account so store evidence can be bound to that account.
+3. Confirm the native catalog returns both qualified monthly and annual products with provider-supplied localized prices.
+4. Complete a sandbox/test **monthly** purchase and confirm Soul Codex+ is granted only after signed provider evidence is verified by the server.
+5. Repeat with the **annual** product using a clean test state/account where required.
+6. Force-quit and relaunch; confirm the verified entitlement persists.
+7. Exercise **Restore purchases** and confirm access is recovered from provider evidence rather than a local premium flag.
+8. Reinstall on the same device and, where the provider test environment supports it, verify restore after reinstall.
+9. Verify the same store/account purchase on a second test device when available; confirm the Soul Codex account receives only the entitlement backed by verified provider evidence.
+10. Exercise cancellation/expiry in the provider test environment and confirm access remains through any valid paid-through period, then falls back to Free when the verified entitlement expires.
+11. Exercise refund/revocation where the provider sandbox supports it and confirm signed lifecycle evidence removes Plus access.
+12. Cancel or fail a purchase attempt and confirm no Plus entitlement is granted.
+13. Confirm native store notification handling is exercised: App Store Server Notifications V2 for iOS and RTDN + Google Play re-query for Android.
+14. Capture the provider/test account state, product ID, transaction/evidence identifier in redacted form, timestamps, app build, device, and resulting entitlement state.
 
-**PASS**: the **store-approved** payment boundary launches and can be safely cancelled without crash, unintended charge, or false entitlement.
+**PASS**: monthly and annual test products resolve from the native store; purchase and restore create Plus only after server verification; persistence/reinstall/second-device behavior is consistent with verified provider state; cancellation/expiry/refund/revocation remove access correctly; failed/cancelled purchases never grant access; lifecycle notifications are verified; and no live production charge is used.
 
-If the store rejects rc.2 because the current hosted Stripe path is not permitted for the submitted storefront/program configuration, this checkpoint is `NOT APPLICABLE` until the Priority 1 policy blocker is resolved. Do not call the hardware build FAIL for a store-ingestion policy rejection that prevented delivery.
+If a provider test environment cannot exercise a required lifecycle case, record that item as `INCONCLUSIVE` and keep that provider's production billing flag disabled. Do not substitute code-level tests or a configuration-only green check for missing provider evidence.
 
 ## 10. Rotation, background, resume, and state preservation
 
