@@ -194,7 +194,17 @@ function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
       .filter((value): value is "sandbox" | "production" =>
         value === "sandbox" || value === "production",
       );
-    if (values.length) return new Set(values);
+    if (values.length) {
+      const allowed = new Set(values);
+      if (process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true") {
+        allowed.add("sandbox");
+      }
+      return allowed;
+    }
+  }
+
+  if (process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true") {
+    return new Set(["sandbox", ...(process.env.NODE_ENV === "production" ? ["production"] : [])]);
   }
 
   return new Set(
