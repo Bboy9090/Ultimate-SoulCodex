@@ -69,3 +69,13 @@ test("Apple environment parsing fails closed for unknown signed values", () => {
   assert.match(verifier, /normalized === "production"/);
   assert.match(verifier, /throw new Error\("apple_environment_invalid"\)/);
 });
+
+
+test("Apple sandbox qualification is request-scoped rather than globally enabled", () => {
+  assert.match(verifier, /options: \{ allowSandbox\?: boolean \} = \{\}/);
+  assert.match(verifier, /if \(options\.allowSandbox\) allowed\.add\("sandbox"\)/);
+  assert.doesNotMatch(verifier, /SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED/);
+  assert.match(billing, /allowSandbox: qualificationEnabled/);
+  assert.match(billing, /allowSandbox: iosQualificationFlagEnabled\(\)/);
+  assert.match(billing, /qualificationEnabled && verifiedEvent\.environment !== "sandbox"/);
+});
