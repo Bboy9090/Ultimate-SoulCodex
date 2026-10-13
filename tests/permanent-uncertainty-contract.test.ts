@@ -37,7 +37,7 @@ test("unknown-time verification exposes the four states and unlock guidance", ()
   assert.match(verificationRoute, /unavailable: "exclude"/);
   assert.match(verificationRoute, /Add an exact birth time/);
   assert.match(verificationRoute, /nearest known birth city or coordinates/);
-  assert.doesNotMatch(verificationRoute, /default birthplace/i);
+  assert.match(verificationRoute, /will not insert a default birthplace/i);
 });
 
 test("Ultimate Codex consumes range-stable evidence but excludes conditional values", () => {
