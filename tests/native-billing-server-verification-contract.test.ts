@@ -97,6 +97,7 @@ test("StoreKit transactions are finished only after server verification", () => 
 test("StoreKit transaction updates are observed and reverified through the durable entitlement path", () => {
   assert.match(iosPlugin, /Transaction\.updates/);
   assert.match(iosPlugin, /notifyListeners\("transactionUpdate"/);
+  assert.match(iosPlugin, /retainUntilConsumed: true/);
   assert.match(client, /addListener\(\s*"transactionUpdate"/);
   assert.match(panel, /listenForNativeBillingUpdates/);
   assert.match(panel, /await verifyNativeEvidence\(evidence\)/);
