@@ -1,4 +1,4 @@
-import type { OfflineCodexProfile } from "@soulcodex/core";
+import { hasCompleteMinuteRangeEvidence, type OfflineCodexProfile } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeRangeStableFoundationProfile,
@@ -184,12 +184,7 @@ export function getVerifiedAstrologySign(
 }
 
 function hasCompleteRangeEvidence(placement: PlacementRecord | undefined): boolean {
-  return Boolean(
-    placement?.rangeEvidence?.resolutionMinutes === 1 &&
-    placement?.rangeEvidence?.testedValues === 1440 &&
-    nonEmptyText(placement?.rangeEvidence?.rangeStartLocal) &&
-    nonEmptyText(placement?.rangeEvidence?.rangeEndLocal)
-  );
+  return hasCompleteMinuteRangeEvidence(placement?.rangeEvidence);
 }
 
 export function getSynthesisAstrologySign(
@@ -218,8 +213,7 @@ function rangeAnalyzedHumanDesign(value: Record<string, unknown> | null | undefi
       const component = components[key];
       return component &&
         ["stable_across_range", "conditional", "unavailable"].includes(String(component.evidenceState)) &&
-        component.rangeEvidence?.resolutionMinutes === 1 &&
-        component.rangeEvidence?.testedValues === 1440;
+        hasCompleteMinuteRangeEvidence(component.rangeEvidence);
     });
 }
 
