@@ -5,6 +5,7 @@ export type NativeBillingPlatform = "ios" | "android";
 
 export type NativeBillingCatalog = {
   enabled: boolean;
+  qualificationMode?: boolean;
   platform: NativeBillingPlatform;
   monthlyProductId: string | null;
   annualProductId: string | null;
@@ -47,10 +48,19 @@ export function currentNativeBillingPlatform(): NativeBillingPlatform | null {
   return null;
 }
 
+const qualificationMode =
+  import.meta.env.VITE_BILLING_QUALIFICATION_MODE === "true";
+
+function qualificationHeaders(): Record<string, string> {
+  return qualificationMode ? { "X-SoulCodex-Billing-Qualification": "1" } : {};
+}
+
 export async function loadNativeBillingCatalog(): Promise<NativeBillingCatalog | null> {
   const platform = currentNativeBillingPlatform();
   if (!platform) return null;
-  const response = await apiFetch(`/api/billing/native-catalog?platform=${platform}`);
+  const response = await apiFetch(`/api/billing/native-catalog?platform=${platform}`, {
+    headers: qualificationHeaders(),
+  });
   if (!response.ok) return null;
   return response.json();
 }
@@ -95,7 +105,7 @@ export async function verifyNativeBillingEvidence(
 }> {
   const response = await apiFetch("/api/billing/native/verify", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...qualificationHeaders() },
     body: JSON.stringify(evidence),
   });
   if (!response.ok) {
