@@ -70,7 +70,12 @@ app.use(
       callback(new Error("cors_origin_rejected"));
     },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Stripe-Signature",
+      "X-SoulCodex-Billing-Qualification",
+    ],
     credentials: true,
     maxAge: 600,
   }),
