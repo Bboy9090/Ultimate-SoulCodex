@@ -472,7 +472,11 @@ export function registerBillingRawRoutes(app: Express): void {
       }
 
       try {
-        const verifiedEvent = verifyAppleServerNotification(signedPayload);
+        const verifiedEvent = verifyAppleServerNotification(
+          signedPayload,
+          new Date(),
+          { allowSandbox: iosQualificationFlagEnabled() },
+        );
         if (!verifiedEvent) {
           return res.status(200).json({
             received: true,
@@ -729,10 +733,15 @@ export function registerBillingRoutes(app: Express): void {
     try {
       const verifiedEvent =
         parsed.data.platform === "ios"
-          ? await verifyAppleBillingEvidence(userId, parsed.data)
+          ? await verifyAppleBillingEvidence(
+              userId,
+              parsed.data,
+              new Date(),
+              { allowSandbox: qualificationEnabled },
+            )
           : await verifyGoogleBillingEvidence(userId, parsed.data);
 
-      if (!productionEnabled && qualificationEnabled && verifiedEvent.environment !== "sandbox") {
+      if (qualificationEnabled && verifiedEvent.environment !== "sandbox") {
         return res.status(409).json({
           message: "Qualification mode accepts sandbox StoreKit evidence only.",
           code: "native_billing_qualification_requires_sandbox",
