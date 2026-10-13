@@ -25,3 +25,8 @@ test("People route is proactively preloaded during idle time without preloading 
   assert.match(app, /route-preload/);
   assert.doesNotMatch(app, /deviceContactPicker/);
 });
+
+test("legacy /people deep links open the canonical People page instead of NotFound", () => {
+  assert.ok(app.includes('<Route path="/connections" component={ConnectionsPage} />'));
+  assert.ok(app.includes('<Route path="/people" component={ConnectionsPage} />'));
+});
