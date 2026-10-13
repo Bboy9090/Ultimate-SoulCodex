@@ -11,7 +11,6 @@ import { useProductAccess } from "../hooks/useProductAccess";
 import {
   loadNativeBillingCatalog,
   loadNativeBillingProducts,
-  type NativeBillingCatalog,
   type NativeBillingProduct,
 } from "../lib/nativeBilling";
 
@@ -338,7 +337,15 @@ export default function DiagnosticsPage() {
           )}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <StatusCard ok={access.verified} label="Entitlement evidence" detail={access.verified ? "server-resolved" : "not verified"} />
+            <StatusCard
+              ok={access.tier === "plus" && access.verified}
+              label="Paid entitlement evidence"
+              detail={
+                access.tier === "plus"
+                  ? access.verified ? "verified by server" : "Plus claim not verified"
+                  : "Free baseline · no paid entitlement"
+              }
+            />
             <StatusCard ok={access.tier === "plus"} label="Current tier" detail={access.tier} />
             <StatusCard ok={access.source !== "free"} label="Entitlement source" detail={access.source} />
             <StatusCard ok={Boolean(access.lastVerifiedAt)} label="Last verification" detail={access.lastVerifiedAt ?? "none"} />
