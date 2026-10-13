@@ -145,6 +145,8 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 
 ## App Store Privacy Draft
 
+Live-storefront reconciliation receipt: [V4_1_APP_STORE_LIVE_DISCLOSURE_READINESS_2026-10-13.md](../governance/release-audits/V4_1_APP_STORE_LIVE_DISCLOSURE_READINESS_2026-10-13.md). That receipt records public storefront observations only and does not claim private App Store Connect product state.
+
 The checked-in `PrivacyInfo.xcprivacy` currently declares these linked, non-tracking categories for app functionality:
 
 - Name
