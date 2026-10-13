@@ -5,6 +5,7 @@ import test from "node:test";
 const billing = readFileSync(new URL("../server/billing.ts", import.meta.url), "utf8");
 const verifier = readFileSync(new URL("../server/lib/native-billing-verification.ts", import.meta.url), "utf8");
 const client = readFileSync(new URL("../client/src/lib/nativeBilling.ts", import.meta.url), "utf8");
+const iosPlugin = readFileSync(new URL("../ios/App/App/SoulCodexNativeBillingPlugin.swift", import.meta.url), "utf8");
 const panel = readFileSync(new URL("../client/src/components/SoulCodexPlusBillingPanel.tsx", import.meta.url), "utf8");
 
 test("native verification is authenticated, origin-bound, and server-authoritative", () => {
@@ -78,4 +79,25 @@ test("Apple sandbox qualification is request-scoped rather than globally enabled
   assert.match(billing, /allowSandbox: qualificationEnabled/);
   assert.match(billing, /allowSandbox: iosQualificationFlagEnabled\(\)/);
   assert.match(billing, /qualificationEnabled && verifiedEvent\.environment !== "sandbox"/);
+});
+
+
+test("StoreKit transactions are finished only after server verification", () => {
+  assert.match(iosPlugin, /CAPPluginMethod\(name: "finishTransaction"/);
+  assert.match(iosPlugin, /Transaction\.unfinished/);
+  const purchaseStart = iosPlugin.indexOf("@objc func purchase");
+  const finishStart = iosPlugin.indexOf("@objc func finishTransaction");
+  assert.ok(purchaseStart >= 0 && finishStart > purchaseStart);
+  const purchaseBody = iosPlugin.slice(purchaseStart, finishStart);
+  assert.doesNotMatch(purchaseBody, /transaction\.finish\(\)/);
+  assert.match(panel, /await verifyNativeBillingEvidence\(evidence\)/);
+  assert.match(panel, /await finishNativeTransaction\(evidence\.transactionId\)/);
+});
+
+test("StoreKit transaction updates are observed and reverified through the durable entitlement path", () => {
+  assert.match(iosPlugin, /Transaction\.updates/);
+  assert.match(iosPlugin, /notifyListeners\("transactionUpdate"/);
+  assert.match(client, /addListener\(\s*"transactionUpdate"/);
+  assert.match(panel, /listenForNativeBillingUpdates/);
+  assert.match(panel, /await verifyNativeEvidence\(evidence\)/);
 });
