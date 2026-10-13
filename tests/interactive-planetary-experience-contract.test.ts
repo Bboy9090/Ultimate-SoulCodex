@@ -6,9 +6,9 @@ const system = readFileSync("client/src/components/InteractivePlanetarySystem.ts
 const offline = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
 const navigation = readFileSync("client/src/components/navigation.tsx", "utf8");
 
-test("Identity exposes an interactive planetary system before full house geometry is required", () => {
-  assert.match(offline, /InteractivePlanetarySystem/);
-  assert.match(offline, /ultimateCodex\.placements\.length > 0/);
+test("Identity always exposes the interactive planetary system before full house geometry is required", () => {
+  assert.match(offline, /<InteractivePlanetarySystem synthesis=\{ultimateCodex\} \/>/);
+  assert.doesNotMatch(offline, /ultimateCodex\.placements\.length > 0/);
   assert.doesNotMatch(
     offline,
     /verifiedFullNatal\s*&&\s*[^\n]*InteractivePlanetarySystem/,
