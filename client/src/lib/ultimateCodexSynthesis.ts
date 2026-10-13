@@ -5,6 +5,7 @@ import {
   calcMaturity,
   calcPersonality,
   calcSoulUrge,
+  hasCompleteMinuteRangeEvidence,
 } from "@soulcodex/core";
 import { SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY } from "@shared/system-registry";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
@@ -473,6 +474,7 @@ export function buildUltimateCodexSynthesis(
   const stableHdComponent = (key: string): string | null => {
     const component = hd?.components?.[key];
     return component?.evidenceState === "stable_across_range" &&
+      hasCompleteMinuteRangeEvidence(component?.rangeEvidence) &&
       typeof component?.value === "string" &&
       component.value.trim()
       ? component.value.trim()
