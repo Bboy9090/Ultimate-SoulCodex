@@ -3,6 +3,7 @@ import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Crown, Share2, Shield, Sparkles } from "lucide-react";
 import Navigation from "@/components/navigation";
+import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { useProductAccess } from "../hooks/useProductAccess";
 import DiamondClosure from "@/components/DiamondClosure";
@@ -24,6 +25,7 @@ const text = (...values: unknown[]) => values.find((value) => typeof value === "
 export default function ProfilePage() {
   const { id } = useParams();
   const [shareOpen, setShareOpen] = useState(false);
+  const [activeIdentityLayer, setActiveIdentityLayer] = useState<"big-three" | "numerology" | "human-design" | null>(null);
   const { data: profile, isLoading, error } = useQuery<Profile>({
     queryKey: ["/api/profiles", id],
     enabled: Boolean(id),
@@ -160,6 +162,13 @@ export default function ProfilePage() {
   const canSeeHumanDesignCore = tierAllowsCapability(tier, "human_design_core");
   const canSeeHumanDesignDepth = tierAllowsCapability(tier, "human_design_depth");
   const canUsePremiumExports = tierAllowsCapability(tier, "premium_exports");
+  const aureonIdentityState: AureonState = activeIdentityLayer === "human-design" && !humanDesignVerified
+    ? "warning"
+    : activeIdentityLayer
+      ? "explaining"
+      : humanDesignVerified
+        ? "confirming"
+        : "observing";
 
   return (
     <div className="sc-app-shell">
@@ -174,7 +183,8 @@ export default function ProfilePage() {
             aria-hidden="true"
             style={{ background: "radial-gradient(circle at 92% 5%, rgba(154,116,220,.16), transparent 31%), radial-gradient(circle at 14% 100%, rgba(217,182,111,.06), transparent 25%)" }}
           />
-          <div className="relative">
+          <div className="relative grid gap-5 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div>
             <div className="sc-eyebrow mb-4"><Crown className="h-3.5 w-3.5" />Unified Soul Codex</div>
             <h1 className="sc-display sc-display-gradient">{profile.name}</h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-[var(--sc-stone)] sm:text-lg">This page now explains the profile as one connected human story. Labels remain visible, but none of them are allowed to stand alone and pretend they explained you.</p>
@@ -184,6 +194,17 @@ export default function ProfilePage() {
               {rising && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{rising} Rising</span>}
               {numerology.lifePath && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">Life Path {numerology.lifePath}</span>}
               {archetype.title && <span className="rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.07)] px-3 py-1.5 text-[11px] font-medium text-[#ead9b9]">{archetype.title}</span>}
+            </div>
+            </div>
+            <div className="justify-self-start sm:justify-self-end">
+              <AureonAvatar state={aureonIdentityState} compact />
+              <p className="mt-1 max-w-[210px] text-xs leading-5 text-[var(--sc-stone)]" aria-live="polite">
+                {activeIdentityLayer
+                  ? `Aureon is explaining your ${activeIdentityLayer === "big-three" ? "Big 3" : activeIdentityLayer === "numerology" ? "core numbers" : "Human Design"} layer.`
+                  : humanDesignVerified
+                    ? "Aureon confirms the verified core and waits for a layer to explore."
+                    : "Aureon is observing. Open a layer to focus the guide."}
+              </p>
             </div>
           </div>
         </header>
@@ -204,7 +225,7 @@ export default function ProfilePage() {
         <SoulStagger className="mb-8 grid gap-3 lg:grid-cols-3" aria-label="Core profile">
           <SoulStaggerItem>
             <SoulInteractive>
-          <details className="sc-panel p-5">
+          <details className="sc-panel p-5" onToggle={(event) => setActiveIdentityLayer(event.currentTarget.open ? "big-three" : null)}>
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Big 3</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Identity · emotions · first impression</h2>
@@ -225,7 +246,7 @@ export default function ProfilePage() {
 
           <SoulStaggerItem>
             <SoulInteractive>
-          <details className="sc-panel p-5">
+          <details className="sc-panel p-5" onToggle={(event) => setActiveIdentityLayer(event.currentTarget.open ? "numerology" : null)}>
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Core Numbers</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Life Path · Expression · Soul Urge</h2>
@@ -248,7 +269,7 @@ export default function ProfilePage() {
 
           <SoulStaggerItem>
             <SoulInteractive>
-          <details className="sc-panel p-5">
+          <details className="sc-panel p-5" onToggle={(event) => setActiveIdentityLayer(event.currentTarget.open ? "human-design" : null)}>
             <summary className="cursor-pointer list-none">
               <p className="sc-eyebrow">Your Human Design</p>
               <h2 className="mt-2 font-serif text-xl font-semibold text-[var(--sc-ivory)]">Type · Strategy · Authority · Profile</h2>

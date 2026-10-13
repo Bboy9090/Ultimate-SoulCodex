@@ -19,7 +19,7 @@ test("home is organized around the four user questions", () => {
 });
 
 test("core profile uses progressive disclosure", () => {
-  assert.match(profile, /<details className="sc-panel p-5">/);
+  assert.match(profile, /<details className="sc-panel p-5" onToggle=/);
   assert.match(profile, /Your Big 3/);
   assert.match(profile, /Your Core Numbers/);
   assert.match(profile, /Your Human Design/);
