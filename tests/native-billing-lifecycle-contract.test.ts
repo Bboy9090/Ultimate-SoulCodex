@@ -7,7 +7,7 @@ const verifier = readFileSync(new URL("../server/lib/native-billing-verification
 
 test("Apple lifecycle endpoint accepts only verified V2 JWS notifications", () => {
   assert.match(billing, /\/api\/billing\/apple\/notifications/);
-  assert.match(billing, /verifyAppleServerNotification\(signedPayload\)/);
+  assert.match(billing, /verifyAppleServerNotification\([\s\S]*signedPayload[\s\S]*allowSandbox: iosQualificationFlagEnabled\(\)[\s\S]*\)/);
   assert.match(verifier, /notification\.version !== "2\.0"/);
   assert.match(verifier, /verifyAppleJws<AppleServerNotificationPayload>/);
   assert.match(verifier, /verifyAppleSignedTransaction\(data\.signedTransactionInfo/);
