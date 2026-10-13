@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { atlasEntry, atlasSignMeaning, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
+import { natalChartIdentity } from "@/lib/natalChartIdentity";
 
 const GLYPH: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
@@ -64,15 +65,23 @@ function guideStopLabel(stop: ChartSelection): string {
   return `Aspect ${stop.index + 1}`;
 }
 
-export default function VerifiedNatalChart({
-  astrology,
-  synthesis,
-  interpretationDepth = false,
-}: {
+type VerifiedNatalChartProps = {
   astrology: Record<string, any>;
   synthesis: UltimateCodexSynthesis;
   interpretationDepth?: boolean;
-}) {
+};
+
+export default function VerifiedNatalChart(props: VerifiedNatalChartProps) {
+  // Reset both selection and tour before rendering a different chart. An effect
+  // would run too late if the old step points past the new chart's final aspect.
+  return <VerifiedNatalChartContent key={natalChartIdentity(props.astrology, props.synthesis)} {...props} />;
+}
+
+function VerifiedNatalChartContent({
+  astrology,
+  synthesis,
+  interpretationDepth = false,
+}: VerifiedNatalChartProps) {
   const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<ChartSelection | null>(null);
   const [guideIndex, setGuideIndex] = useState<number | null>(null);
