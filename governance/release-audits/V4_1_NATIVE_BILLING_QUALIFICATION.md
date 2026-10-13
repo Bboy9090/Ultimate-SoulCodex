@@ -44,6 +44,28 @@ Before either provider can be tested:
 
 Distribution source: TestFlight or the approved sandbox qualification path.
 
+### Fail-closed qualification activation
+
+Normal production purchasing remains disabled throughout qualification:
+
+- `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=false`
+- legacy `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED=false`
+
+For the bounded TestFlight qualification window only:
+
+1. Deploy code that contains the qualification gate.
+2. Set server-side `SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED=true`.
+3. Build the dedicated TestFlight qualification archive with both:
+   - `VITE_BILLING_QUALIFICATION_MODE=true`
+   - `SOUL_CODEX_IOS_QUALIFICATION_BUILD=true`
+4. Verify the app reports qualification mode and resolves both StoreKit products.
+5. Run only Apple sandbox/TestFlight transactions.
+6. The backend must reject any qualification transaction whose verified Apple environment is not `sandbox`.
+7. When the evidence run is complete, set `SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED=false` again and build normal release archives with both client qualification keys false.
+
+The qualification switch does not itself grant access. A signed StoreKit transaction still has to pass certificate, bundle, product, environment, account-binding, replay, and entitlement verification before the durable ledger can change.
+
+
 Required checkpoints:
 
 1. **Catalog** — monthly and annual StoreKit products resolve with provider-supplied localized price/currency.
