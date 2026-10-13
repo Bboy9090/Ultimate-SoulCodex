@@ -1,0 +1,117 @@
+name: iOS Billing Qualification Parity
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "ios/**"
+      - "client/**"
+      - "server/**"
+      - "scripts/**"
+      - "package.json"
+      - "package-lock.json"
+      - "tests/ios-billing-qualification-build-contract.test.ts"
+      - ".github/workflows/ios-billing-qualification-parity.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-billing-qualification-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VITE_API_URL: https://soulcodex.up.railway.app
+  VITE_RELEASE_VERSION: 4.1.0
+  VITE_API_CONTRACT: foundation-v4
+  CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  VITE_BILLING_QUALIFICATION_MODE: "true"
+  SOUL_CODEX_IOS_QUALIFICATION_BUILD: "true"
+
+jobs:
+  ios-billing-qualification-parity:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+
+      - name: Prove exact candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Record qualification environment
+        run: |
+          xcodebuild -version
+          xcrun swift --version
+          node --version
+          npm --version
+          test "$VITE_BILLING_QUALIFICATION_MODE" = "true"
+          test "$SOUL_CODEX_IOS_QUALIFICATION_BUILD" = "true"
+
+      - name: Run real Xcode Cloud post-clone bootstrap in qualification mode
+        env:
+          CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
+        run: sh ios/App/ci_scripts/ci_post_clone.sh
+
+      - name: Prove qualification marker is embedded
+        run: |
+          test "$VITE_BILLING_QUALIFICATION_MODE" = "true"
+          test "$SOUL_CODEX_IOS_QUALIFICATION_BUILD" = "true"
+          grep -R --fixed-strings "X-SoulCodex-Billing-Qualification" client/src/lib/nativeBilling.ts
+
+      - name: Validate final iOS release metadata
+        run: npm run mobile:validate:ios
+
+      - name: Run qualification contracts
+        run: |
+          node --import tsx --test             tests/ios-billing-qualification-build-contract.test.ts             tests/ios-billing-qualification-cors-contract.test.ts             tests/native-billing-bridge-contract.test.ts             tests/native-billing-server-verification-contract.test.ts
+
+      - name: Resolve Swift package graph after qualification bootstrap
+        run: |
+          xcodebuild             -resolvePackageDependencies             -project ios/App/App.xcodeproj             -scheme "Ultimate Soul Codex"
+
+      - name: Require checked-in Swift package resolution parity
+        run: |
+          cat ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+          git diff --exit-code -- ios/App/App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+
+      - name: Create unsigned qualification device archive
+        run: |
+          xcodebuild             -project ios/App/App.xcodeproj             -scheme "Ultimate Soul Codex"             -configuration Release             -destination 'generic/platform=iOS'             -archivePath "$RUNNER_TEMP/SoulCodex-Billing-Qualification.xcarchive"             CODE_SIGNING_ALLOWED=NO             archive
+
+      - name: Record qualification parity receipt
+        if: always()
+        env:
+          QUALIFICATION_JOB_STATUS: ${{ job.status }}
+        run: |
+          {
+            echo "SHA=$CANDIDATE_SHA"
+            echo "job_status=$QUALIFICATION_JOB_STATUS"
+            echo "archive_signing=unsigned"
+            echo "provider_transactions=not_tested"
+            echo "release=4.1.0"
+            echo "scheme=Ultimate Soul Codex"
+            echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
+            echo "billing_qualification_mode=true"
+            echo "ios_qualification_build=true"
+            echo "purpose=prove dedicated TestFlight qualification bootstrap before provider evidence"
+          } > ios-billing-qualification-parity-receipt.txt
+
+      - name: Upload qualification parity receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-4.1.0-ios-billing-qualification-parity
+          path: ios-billing-qualification-parity-receipt.txt
+          retention-days: 90

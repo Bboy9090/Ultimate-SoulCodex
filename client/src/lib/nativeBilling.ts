@@ -1,4 +1,4 @@
-import { Capacitor, registerPlugin } from "@capacitor/core";
+import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 import { apiFetch } from "./queryClient";
 
 export type NativeBillingPlatform = "ios" | "android";
@@ -38,6 +38,11 @@ interface SoulCodexNativeBillingPlugin {
   getProducts(options: { productIds: string[] }): Promise<{ products: NativeBillingProduct[] }>;
   purchase(options: { productId: string; appAccountToken?: string }): Promise<NativeBillingEvidence>;
   restore(options: { productIds: string[] }): Promise<{ transactions: NativeBillingEvidence[] }>;
+  finishTransaction(options: { transactionId: string }): Promise<{ finished: boolean }>;
+  addListener(
+    eventName: "transactionUpdate",
+    listener: (evidence: NativeBillingEvidence) => void,
+  ): Promise<PluginListenerHandle>;
 }
 
 const NativeBilling = registerPlugin<SoulCodexNativeBillingPlugin>("SoulCodexNativeBilling");
@@ -87,6 +92,21 @@ export async function restoreNativePurchases(
 ): Promise<NativeBillingEvidence[]> {
   const { transactions } = await NativeBilling.restore({ productIds });
   return transactions;
+}
+
+export async function finishNativeTransaction(transactionId: string): Promise<boolean> {
+  if (currentNativeBillingPlatform() !== "ios") return false;
+  const result = await NativeBilling.finishTransaction({ transactionId });
+  return Boolean(result.finished);
+}
+
+export async function listenForNativeBillingUpdates(
+  listener: (evidence: NativeBillingEvidence) => void | Promise<void>,
+): Promise<PluginListenerHandle | null> {
+  if (currentNativeBillingPlatform() !== "ios") return null;
+  return NativeBilling.addListener("transactionUpdate", (evidence) => {
+    void listener(evidence);
+  });
 }
 
 
