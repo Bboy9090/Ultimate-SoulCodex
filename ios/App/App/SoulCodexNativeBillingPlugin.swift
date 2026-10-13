@@ -28,7 +28,7 @@ public class SoulCodexNativeBillingPlugin: CAPPlugin, CAPBridgedPlugin {
                     "transactionId": String(transaction.id),
                     "signedTransaction": verification.jwsRepresentation
                 ]
-                self?.notifyListeners("transactionUpdate", data: payload)
+                self?.notifyListeners("transactionUpdate", data: payload, retainUntilConsumed: true)
             }
         }
     }
