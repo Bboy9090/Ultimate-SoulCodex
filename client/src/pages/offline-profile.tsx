@@ -367,19 +367,9 @@ export default function OfflineProfilePage() {
           </section>
         )}
 
-        {ultimateCodex.placements.length > 0 ? (
-          <Suspense fallback={<DeepChartFallback label="interactive planetary system" />}>
-            <InteractivePlanetarySystem synthesis={ultimateCodex} />
-          </Suspense>
-        ) : (
-          <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="planetary-system-awaiting-evidence">
-            <p className="sc-eyebrow">Interactive planetary system</p>
-            <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Planetary evidence is not loaded yet.</h2>
-            <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
-              Soul Codex will animate and expose every supported planet as soon as astronomy verification or a full-day range analysis produces evidence-qualified placements. It will not populate the system with sample planets or invented degrees.
-            </p>
-          </section>
-        )}
+        <Suspense fallback={<DeepChartFallback label="interactive planetary system" />}>
+          <InteractivePlanetarySystem synthesis={ultimateCodex} />
+        </Suspense>
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="human-design-bodygraph-deferred">
