@@ -77,6 +77,12 @@ function providerReadiness(env = process.env) {
   const androidConfigured = google.configured;
   const nativeConfigured = iosConfigured && androidConfigured;
 
+  const providerConfigured = {
+    ios: iosConfigured && iosFlagExplicit,
+    android: androidConfigured && androidFlagExplicit,
+    web: stripe.configured && webAuth.configured,
+  };
+
   return {
     persistenceConfigured: persistent,
     publicAppUrlConfigured: publicAppUrl,
@@ -96,6 +102,7 @@ function providerReadiness(env = process.env) {
       nativeConfigured &&
       iosFlagExplicit &&
       androidFlagExplicit,
+    providerConfigured,
     flags: {
       webCheckoutEnabled: stripe.enabled,
       iosBillingEnabled: iosEnabled,
@@ -107,6 +114,8 @@ function providerReadiness(env = process.env) {
   };
 }
 
+export { providerReadiness };
+
 const readiness = providerReadiness();
 console.log(JSON.stringify(readiness, null, 2));
 
@@ -117,6 +126,19 @@ if (
 ) {
   console.error("Soul Codex+ billing activation is unsafe: an enabled purchase surface is missing required production configuration.");
   process.exit(2);
+}
+
+const providerIndex = process.argv.indexOf("--require-provider");
+if (providerIndex >= 0) {
+  const provider = String(process.argv[providerIndex + 1] ?? "").trim().toLowerCase();
+  if (!["ios", "android", "web"].includes(provider)) {
+    console.error("--require-provider requires ios, android, or web.");
+    process.exit(4);
+  }
+  if (!readiness.providerConfigured[provider]) {
+    console.error(`Soul Codex+ ${provider} production billing is not fully configured.`);
+    process.exit(3);
+  }
 }
 
 if (process.argv.includes("--require-all") && !readiness.fullyConfigured) {
