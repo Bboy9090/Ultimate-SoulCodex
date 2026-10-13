@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ArrowLeft, Check, CheckCircle2, Copy, RefreshCw, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import Navigation from "../components/navigation";
@@ -6,6 +7,13 @@ import FeatureState from "../components/FeatureState";
 import { apiFetch } from "../lib/queryClient";
 import { getClientReleaseIdentity } from "../lib/releaseIdentity";
 import { buildSafeDiagnosticBundle } from "../lib/safeDiagnosticBundle";
+import { useProductAccess } from "../hooks/useProductAccess";
+import {
+  loadNativeBillingCatalog,
+  loadNativeBillingProducts,
+  type NativeBillingCatalog,
+  type NativeBillingProduct,
+} from "../lib/nativeBilling";
 
 type BackendIdentity = {
   status?: string;
@@ -27,6 +35,19 @@ type CheckState = {
   checkedAt: string | null;
 };
 
+type BillingDiagnosticState = {
+  loading: boolean;
+  error: string;
+  platform: "ios" | "android" | "web";
+  enabled: boolean | null;
+  verifierConfigured: boolean | null;
+  monthlyProductId: string | null;
+  annualProductId: string | null;
+  monthlyDisplayPrice: string | null;
+  annualDisplayPrice: string | null;
+  reason: string | null;
+};
+
 function shortSha(value?: string) {
   if (!value || value === "unknown") return "unknown";
   return value.length > 12 ? `${value.slice(0, 12)}…` : value;
@@ -34,6 +55,10 @@ function shortSha(value?: string) {
 
 export default function DiagnosticsPage() {
   const client = useMemo(() => getClientReleaseIdentity(), []);
+  const { access } = useProductAccess();
+  const nativePlatform = Capacitor.getPlatform();
+  const billingPlatform: BillingDiagnosticState["platform"] =
+    nativePlatform === "ios" || nativePlatform === "android" ? nativePlatform : "web";
   const [revision, setRevision] = useState(0);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState("");
@@ -43,6 +68,18 @@ export default function DiagnosticsPage() {
     backend: null,
     compatibilityOk: null,
     checkedAt: null,
+  });
+  const [billing, setBilling] = useState<BillingDiagnosticState>({
+    loading: true,
+    error: "",
+    platform: billingPlatform,
+    enabled: null,
+    verifierConfigured: null,
+    monthlyProductId: null,
+    annualProductId: null,
+    monthlyDisplayPrice: null,
+    annualDisplayPrice: null,
+    reason: null,
   });
 
   useEffect(() => {
@@ -85,6 +122,74 @@ export default function DiagnosticsPage() {
     void run();
     return () => { cancelled = true; };
   }, [client.expectedApiContract, revision]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function runBillingDiagnostics() {
+      setBilling((previous) => ({ ...previous, loading: true, error: "", platform: billingPlatform }));
+      try {
+        if (billingPlatform === "ios" || billingPlatform === "android") {
+          const catalog = await loadNativeBillingCatalog();
+          if (!catalog) throw new Error("Native billing catalog endpoint did not return a result.");
+
+          let products: NativeBillingProduct[] = [];
+          if (catalog.enabled) {
+            products = await loadNativeBillingProducts(catalog);
+          }
+
+          const monthly = products.find((product) => product.id === catalog.monthlyProductId) ?? null;
+          const annual = products.find((product) => product.id === catalog.annualProductId) ?? null;
+          if (!cancelled) {
+            setBilling({
+              loading: false,
+              error: "",
+              platform: billingPlatform,
+              enabled: catalog.enabled,
+              verifierConfigured: catalog.verifierConfigured,
+              monthlyProductId: catalog.monthlyProductId,
+              annualProductId: catalog.annualProductId,
+              monthlyDisplayPrice: monthly?.displayPrice ?? null,
+              annualDisplayPrice: annual?.displayPrice ?? null,
+              reason: catalog.reason,
+            });
+          }
+          return;
+        }
+
+        const response = await apiFetch("/api/billing/status", { cache: "no-store" });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(`Billing status failed with HTTP ${response.status}.`);
+        if (!cancelled) {
+          setBilling({
+            loading: false,
+            error: "",
+            platform: "web",
+            enabled: Boolean(payload.enabled),
+            verifierConfigured: Boolean(payload.subscriptionWebhookVerification),
+            monthlyProductId: payload.monthlyProductConfigured ? "configured" : null,
+            annualProductId: payload.annualProductConfigured ? "configured" : null,
+            monthlyDisplayPrice: null,
+            annualDisplayPrice: null,
+            reason: typeof payload.reason === "string" ? payload.reason : null,
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setBilling((previous) => ({
+            ...previous,
+            loading: false,
+            error: error instanceof Error ? error.message : "Billing diagnostics unavailable.",
+          }));
+        }
+      }
+    }
+
+    void runBillingDiagnostics();
+    return () => {
+      cancelled = true;
+    };
+  }, [billingPlatform, revision]);
 
   const contractMatches = Boolean(
     state.backend?.apiContract
@@ -175,6 +280,72 @@ export default function DiagnosticsPage() {
               <p className="mt-5 text-sm text-[var(--sc-stone)]">No backend identity received.</p>
             )}
           </article>
+        </section>
+
+        <section className="sc-panel mt-4 p-6" data-testid="billing-qualification-diagnostics">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div className="sc-eyebrow">Billing qualification</div>
+              <h2 className="mt-2 font-serif text-2xl font-semibold">Provider readiness without payment secrets</h2>
+              <p className="mb-0 mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+                This view exposes catalog/readiness and durable entitlement state only. Transaction IDs, purchase tokens, signed payloads, card data, and provider secrets are never rendered here.
+              </p>
+            </div>
+            <button type="button" className="sc-button-secondary" onClick={() => setRevision((value) => value + 1)}>
+              <RefreshCw className="h-4 w-4" /> Recheck
+            </button>
+          </div>
+
+          {billing.loading ? (
+            <p className="mt-5 text-sm text-[var(--sc-stone)]">Checking billing provider readiness…</p>
+          ) : billing.error ? (
+            <p role="alert" className="mt-5 text-sm text-amber-300">{billing.error}</p>
+          ) : (
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <StatusCard
+                ok={billing.enabled === true}
+                label={`Provider · ${billing.platform}`}
+                detail={billing.enabled ? "purchase surface enabled in this environment" : `disabled · ${billing.reason ?? "not ready"}`}
+              />
+              <StatusCard
+                ok={billing.verifierConfigured === true}
+                label="Server verifier"
+                detail={billing.verifierConfigured ? "configured" : "not configured"}
+              />
+              <StatusCard
+                ok={Boolean(billing.monthlyProductId && (billing.platform === "web" || billing.monthlyDisplayPrice))}
+                label="Monthly catalog"
+                detail={
+                  billing.platform === "web"
+                    ? billing.monthlyProductId ? "configured server-side" : "not configured"
+                    : billing.monthlyProductId
+                      ? `${billing.monthlyProductId}${billing.monthlyDisplayPrice ? ` · ${billing.monthlyDisplayPrice}` : " · product not returned"}`
+                      : "not configured"
+                }
+              />
+              <StatusCard
+                ok={Boolean(billing.annualProductId && (billing.platform === "web" || billing.annualDisplayPrice))}
+                label="Annual catalog"
+                detail={
+                  billing.platform === "web"
+                    ? billing.annualProductId ? "configured server-side" : "not configured"
+                    : billing.annualProductId
+                      ? `${billing.annualProductId}${billing.annualDisplayPrice ? ` · ${billing.annualDisplayPrice}` : " · product not returned"}`
+                      : "not configured"
+                }
+              />
+            </div>
+          )}
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatusCard ok={access.verified} label="Entitlement evidence" detail={access.verified ? "server-resolved" : "not verified"} />
+            <StatusCard ok={access.tier === "plus"} label="Current tier" detail={access.tier} />
+            <StatusCard ok={access.source !== "free"} label="Entitlement source" detail={access.source} />
+            <StatusCard ok={Boolean(access.lastVerifiedAt)} label="Last verification" detail={access.lastVerifiedAt ?? "none"} />
+          </div>
+          <p className="mb-0 mt-4 text-xs leading-5 text-[var(--sc-stone)]">
+            A green catalog/verifier card is configuration evidence only. Provider purchase, restore, lifecycle, reinstall, second-device, cancellation/expiry, and revocation still require real sandbox/TestFlight/internal-test evidence before production activation.
+          </p>
         </section>
 
         {state.error ? (
