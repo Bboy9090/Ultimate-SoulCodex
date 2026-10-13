@@ -47,6 +47,8 @@ test("incomplete or forged range evidence cannot enter synthesis", () => {
     { ...fall, ambiguousLocalMinutes: 59 },
     { ...base, testedValues: 1380 },
     { ...base, testedValues: 1500 },
+    { ...base, timezone: "America/New_York", testedValues: 1440 },
+    { ...fall, expectedValues: undefined, testedValues: 1440 },
     { ...base, testedValues: 1440, resolutionMinutes: 15 },
   ]) {
     assert.equal(hasCompleteMinuteRangeEvidence(range), false);
@@ -59,4 +61,15 @@ test("incomplete or forged range evidence cannot enter synthesis", () => {
     assert.equal(getSynthesisPlacement(placement), null);
     assert.equal(getSynthesisAstrologySign({ sun: placement } as any, "sun"), null);
   }
+});
+
+test("ordinary legacy receipts with an IANA timezone remain compatible", () => {
+  const ordinary = {
+    resolutionMinutes: 1,
+    rangeStartLocal: "2023-02-15T00:00",
+    rangeEndLocal: "2023-02-15T23:59",
+    timezone: "America/New_York",
+    testedValues: 1440,
+  };
+  assert.equal(hasCompleteMinuteRangeEvidence(ordinary), true);
 });
