@@ -52,6 +52,7 @@ jobs:
           tests/offline-entitlement-cache-behavior.test.ts
           tests/billing-production-readiness-contract.test.ts
           tests/billing-variable-name-audit.test.ts
+          tests/billing-qualification-evidence-contract.test.ts
           tests/store-privacy-billing-disclosure-contract.test.ts
           tests/release-4.1-identity-contract.test.ts
           tests/store-catalog-handoff-contract.test.ts
