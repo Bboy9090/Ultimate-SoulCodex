@@ -74,6 +74,27 @@ export function hasCompleteMinuteRangeEvidence(range: Partial<RangeEvidence> | n
   ) return false;
   if (range.expectedValues === undefined) {
     if (range.testedValues !== 1440) return false;
+
+    // A legacy receipt may omit the newer civil-day counters entirely. If any
+    // of those counters are present, however, they must describe an ordinary
+    // 1,440-minute day exactly. This prevents a forged or partially migrated
+    // DST-transition receipt from being accepted merely because testedValues
+    // was rewritten to 1,440.
+    const legacyCounters = [
+      range.validLocalMinutes,
+      range.nonexistentLocalMinutes,
+      range.ambiguousLocalMinutes,
+      range.invalidLocalMinutes,
+    ];
+    if (legacyCounters.some((value) => value !== undefined)) {
+      if (
+        range.validLocalMinutes !== 1440 ||
+        range.nonexistentLocalMinutes !== 0 ||
+        range.ambiguousLocalMinutes !== 0 ||
+        range.invalidLocalMinutes !== 0
+      ) return false;
+    }
+
     // Old receipts cannot certify a transition day: they sampled only 1,440
     // wall-clock labels, silently missing a gap or a repeated occurrence.
     if (range.timezone) {
