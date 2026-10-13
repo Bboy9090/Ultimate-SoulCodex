@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import UltimateCodexPanel from "@/components/UltimateCodexPanel";
-import type { PlacementLike } from "@soulcodex/core";
+import { hasCompleteMinuteRangeEvidence, type PlacementLike } from "@soulcodex/core";
 import { useActiveProfile } from "@/hooks/useActiveProfile";
 import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
@@ -181,8 +181,7 @@ export default function SystemsDetailsPage() {
   const stableHdEntries = humanDesignRange
     ? Object.entries(humanDesignRange).filter(([, value]: any) =>
         value?.evidenceState === "stable_across_range" &&
-        value?.rangeEvidence?.resolutionMinutes === 1 &&
-        value?.rangeEvidence?.testedValues === 1440)
+        hasCompleteMinuteRangeEvidence(value?.rangeEvidence))
     : [];
   const conditionalHdEntries = humanDesignRange
     ? Object.entries(humanDesignRange).filter(([, value]: any) => value?.evidenceState === "conditional")
