@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   PROVIDER_CHECKPOINTS,
@@ -158,7 +159,7 @@ test("provider-specific decision rejects unknown provider names", () => {
 
 test("committed evidence template cannot carry a stale qualification SHA", () => {
   const template = JSON.parse(
-    require("node:fs").readFileSync(
+    readFileSync(
       "governance/release-audits/V4_1_BILLING_QUALIFICATION_EVIDENCE.template.json",
       "utf8",
     ),
