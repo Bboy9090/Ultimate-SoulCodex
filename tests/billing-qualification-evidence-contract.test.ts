@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   PROVIDER_CHECKPOINTS,
   validateBillingQualificationEvidence,
+  providerQualificationDecision,
 } from "../scripts/validate-billing-qualification-evidence.mjs";
 
 const SHA = "a".repeat(40);
@@ -98,4 +99,30 @@ test("all providers qualify only when every checkpoint is pass or not applicable
   assert.equal(report.providers.android.decision, "PASS");
   assert.equal(report.providers.web.decision, "PASS");
   assert.equal(report.overallQualified, true);
+});
+
+test("one provider can qualify independently while others remain inconclusive", () => {
+  const report = validateBillingQualificationEvidence({
+    releaseSha: SHA,
+    appVersionBuild: "4.1.0 / 4000011",
+    providers: {
+      ios: allPassProvider("ios"),
+      android: {},
+      web: {},
+    },
+  });
+
+  assert.equal(providerQualificationDecision(report, "ios").qualified, true);
+  assert.equal(providerQualificationDecision(report, "ios").decision, "PASS");
+  assert.equal(providerQualificationDecision(report, "android").qualified, false);
+  assert.equal(report.overallQualified, false);
+});
+
+test("provider-specific decision rejects unknown provider names", () => {
+  const report = validateBillingQualificationEvidence({
+    releaseSha: SHA,
+    appVersionBuild: "4.1.0 / 4000011",
+    providers: { ios: {}, android: {}, web: {} },
+  });
+  assert.throws(() => providerQualificationDecision(report, "stripe"), /provider must be ios, android, or web/);
 });
