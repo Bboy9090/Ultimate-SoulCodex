@@ -35,3 +35,21 @@ test("receipt starts fail-closed with platform flags disabled", () => {
   assert.match(receipt, /MUST REMAIN FALSE until result is PASS/);
   assert.match(receipt, /Legacy native umbrella flag allowed: NO/);
 });
+
+test("current qualification receipt separates build readiness from provider transaction qualification", () => {
+  assert.match(receipt, /Apple-managed Xcode Cloud archive: PASS/);
+  assert.match(receipt, /Railway production deployment[^\n]*SUCCESS/);
+  assert.match(receipt, /SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED[^\n]*staged/);
+  assert.match(receipt, /dedicated qualification build and real Apple sandbox transactions have not yet been observed/);
+});
+
+test("all provider transaction checkpoints remain inconclusive until evidence is recorded", () => {
+  const rows = receipt
+    .split("\n")
+    .filter((line) => line.startsWith("| ") && !line.includes("Checkpoint") && !line.startsWith("|---"));
+  assert.ok(rows.length >= 29);
+  for (const row of rows) {
+    const cells = row.split("|").map((cell) => cell.trim()).filter(Boolean);
+    assert.equal(cells[1], "INCONCLUSIVE", row);
+  }
+});
