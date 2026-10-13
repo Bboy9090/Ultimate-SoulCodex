@@ -1,3 +1,5 @@
+import { resolveCivilTimeStrict } from '../compute/civil-time.js';
+
 /**
  * Canonical Placement Verification Types
  *
@@ -70,7 +72,22 @@ export function hasCompleteMinuteRangeEvidence(range: Partial<RangeEvidence> | n
     typeof range.rangeStartLocal !== "string" ||
     typeof range.rangeEndLocal !== "string"
   ) return false;
-  if (range.expectedValues === undefined) return range.testedValues === 1440;
+  if (range.expectedValues === undefined) {
+    if (range.testedValues !== 1440) return false;
+    // Old receipts cannot certify a transition day: they sampled only 1,440
+    // wall-clock labels, silently missing a gap or a repeated occurrence.
+    if (range.timezone) {
+      const date = /^(\\d{4}-\\d{2}-\\d{2})T00:00$/.exec(range.rangeStartLocal)?.[1];
+      if (!date || range.rangeEndLocal !== `${date}T23:59`) return false;
+      const first = resolveCivilTimeStrict(date, "00:00", range.timezone);
+      const last = resolveCivilTimeStrict(date, "23:59", range.timezone);
+      if (first.status !== "valid" || last.status !== "valid") return false;
+      const firstOffset = first.candidateUtcOffsetsMinutes[0];
+      const lastOffset = last.candidateUtcOffsetsMinutes[0];
+      if (!Number.isInteger(firstOffset) || firstOffset !== lastOffset) return false;
+    }
+    return true;
+  }
 
   const expected = range.expectedValues;
   const tested = range.testedValues;
