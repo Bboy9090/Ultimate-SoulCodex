@@ -77,7 +77,7 @@ export function hasCompleteMinuteRangeEvidence(range: Partial<RangeEvidence> | n
     // Old receipts cannot certify a transition day: they sampled only 1,440
     // wall-clock labels, silently missing a gap or a repeated occurrence.
     if (range.timezone) {
-      const date = /^(\\d{4}-\\d{2}-\\d{2})T00:00$/.exec(range.rangeStartLocal)?.[1];
+      const date = /^(\d{4}-\d{2}-\d{2})T00:00$/.exec(range.rangeStartLocal)?.[1];
       if (!date || range.rangeEndLocal !== `${date}T23:59`) return false;
       const first = resolveCivilTimeStrict(date, "00:00", range.timezone);
       const last = resolveCivilTimeStrict(date, "23:59", range.timezone);
