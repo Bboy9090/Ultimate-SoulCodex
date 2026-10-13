@@ -185,8 +185,12 @@ function environmentFromApple(value: unknown): "sandbox" | "production" {
   throw new Error("apple_environment_invalid");
 }
 
-function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
+function allowedAppleEnvironments(
+  options: { allowSandbox?: boolean } = {},
+): Set<"sandbox" | "production"> {
   const configured = process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS?.trim();
+  let allowed: Set<"sandbox" | "production">;
+
   if (configured) {
     const values = configured
       .split(",")
@@ -194,32 +198,26 @@ function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
       .filter((value): value is "sandbox" | "production" =>
         value === "sandbox" || value === "production",
       );
-    if (values.length) {
-      const allowed = new Set(values);
-      if (process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true") {
-        allowed.add("sandbox");
-      }
-      return allowed;
-    }
+    allowed = values.length
+      ? new Set(values)
+      : new Set(process.env.NODE_ENV === "production" ? ["production"] : ["sandbox"]);
+  } else {
+    allowed = new Set(
+      process.env.NODE_ENV === "production"
+        ? ["production"]
+        : ["sandbox"],
+    );
   }
 
-  if (process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true") {
-    const qualificationEnvironments: Array<"sandbox" | "production"> = ["sandbox"];
-    if (process.env.NODE_ENV === "production") qualificationEnvironments.push("production");
-    return new Set(qualificationEnvironments);
-  }
-
-  return new Set(
-    process.env.NODE_ENV === "production"
-      ? ["production"]
-      : ["sandbox"],
-  );
+  if (options.allowSandbox) allowed.add("sandbox");
+  return allowed;
 }
 
 export async function verifyAppleBillingEvidence(
   userId: string,
   evidenceInput: NativeBillingEvidence,
   now = new Date(),
+  options: { allowSandbox?: boolean } = {},
 ): Promise<VerifiedBillingEvent> {
   const evidence = appleEvidenceSchema.parse(evidenceInput);
   const payload = verifyAppleSignedTransaction(evidence.signedTransaction, now);
@@ -241,7 +239,7 @@ export async function verifyAppleBillingEvidence(
   if (!plan) throw new Error("apple_product_not_allowed");
 
   const appleEnvironment = environmentFromApple(payload.environment);
-  if (!allowedAppleEnvironments().has(appleEnvironment)) {
+  if (!allowedAppleEnvironments(options).has(appleEnvironment)) {
     throw new Error("apple_environment_mismatch");
   }
 
@@ -509,6 +507,7 @@ function appleNotificationAccessStatus(
 export function verifyAppleServerNotification(
   signedPayload: string,
   now = new Date(),
+  options: { allowSandbox?: boolean } = {},
 ): VerifiedBillingEvent | null {
   const notification = verifyAppleJws<AppleServerNotificationPayload>(signedPayload, now);
   if (notification.version !== "2.0") throw new Error("apple_notification_version_invalid");
@@ -533,7 +532,7 @@ export function verifyAppleServerNotification(
   const outerEnvironment = environmentFromApple(data.environment);
   const transactionEnvironment = environmentFromApple(transaction.environment);
   if (outerEnvironment !== transactionEnvironment) throw new Error("apple_environment_mismatch");
-  if (!allowedAppleEnvironments().has(transactionEnvironment)) {
+  if (!allowedAppleEnvironments(options).has(transactionEnvironment)) {
     throw new Error("apple_environment_mismatch");
   }
 
