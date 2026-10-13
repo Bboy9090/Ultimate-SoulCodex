@@ -179,9 +179,12 @@ function Router() {
 function App() {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const preloadPeople = () => {
+    const preloadPrimaryRoutes = () => {
       void import("./pages/ConnectionsPage").catch((error) => {
         console.warn("[route-preload] People route did not preload", error);
+      });
+      void import("./pages/CodexToolsPage").catch((error) => {
+        console.warn("[route-preload] Tools route did not preload", error);
       });
     };
     const idleWindow = window as typeof window & {
@@ -189,10 +192,10 @@ function App() {
       cancelIdleCallback?: (handle: number) => void;
     };
     if (idleWindow.requestIdleCallback) {
-      const handle = idleWindow.requestIdleCallback(preloadPeople, { timeout: 3500 });
+      const handle = idleWindow.requestIdleCallback(preloadPrimaryRoutes, { timeout: 3500 });
       return () => idleWindow.cancelIdleCallback?.(handle);
     }
-    const handle = window.setTimeout(preloadPeople, 1200);
+    const handle = window.setTimeout(preloadPrimaryRoutes, 1200);
     return () => window.clearTimeout(handle);
   }, []);
 
