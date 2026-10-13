@@ -62,3 +62,21 @@ test("Android uses Play Billing 9.1 and returns purchase tokens for server verif
   assert.doesNotMatch(java, /acknowledgePurchase\(/);
   assert.doesNotMatch(java, /isPremium/);
 });
+
+
+test("iOS qualification mode is separate from production billing activation", () => {
+  assert.match(billing, /SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED/);
+  assert.match(billing, /x-soulcodex-billing-qualification/);
+  assert.match(billing, /nativeBillingRequestEnabled|qualificationEnabled/);
+  assert.match(billing, /native_billing_qualification_requires_sandbox/);
+  assert.match(billing, /verifiedEvent\.environment !== "sandbox"/);
+  assert.match(client, /VITE_BILLING_QUALIFICATION_MODE/);
+  assert.match(client, /X-SoulCodex-Billing-Qualification/);
+});
+
+test("qualification mode does not replace the production iOS billing flag", () => {
+  assert.match(billing, /productionEnabled = platformNativeBillingFlagEnabled/);
+  assert.match(billing, /!productionEnabled && qualificationEnabled/);
+  assert.match(billing, /enabled: enabled && configured && verifierConfigured/);
+  assert.doesNotMatch(client, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+});
