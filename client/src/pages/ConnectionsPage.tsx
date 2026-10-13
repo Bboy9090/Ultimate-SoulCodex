@@ -4,7 +4,6 @@ import { BookOpen, HeartHandshake, LockKeyhole, Mail, MessageCircle, PlusCircle,
 import Navigation from "@/components/navigation";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { ATLAS_SIGNS, personalPlacementMeaning, type AtlasSign } from "@/lib/astrologyAtlas";
-import { pickConnectionContacts } from "@/lib/deviceContactPicker";
 import {
   CONNECTION_PLACEMENT_KEYS,
   CONNECTION_RELATIONSHIPS,
@@ -65,6 +64,10 @@ export default function ConnectionsPage() {
     setError("");
     setContactStatus("");
     try {
+      // Keep the native contacts bridge out of the initial People route chunk.
+      // It is loaded only after an explicit user gesture so a plugin/bootstrap
+      // problem cannot block the entire People page from rendering.
+      const { pickConnectionContacts } = await import("@/lib/deviceContactPicker");
       const result = await pickConnectionContacts();
       if (result.status === "unsupported") {
       setContactStatus("This device or browser does not expose contact picking here. You can still type a name or phone number manually.");

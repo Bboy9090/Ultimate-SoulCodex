@@ -81,6 +81,9 @@ jobs:
           tests/human-design-bodygraph-bundle-boundary.test.ts
           tests/accessibility-device-acceptance-contract.test.ts
           tests/form-accessibility-recovery-contract.test.ts
+          tests/people-route-resilience-contract.test.ts
+          tests/internal-route-click-audit.test.ts
+          tests/interactive-planetary-experience-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/profile-verification-boundary.test.ts
           tests/known-time-profile-verification-http.test.ts
