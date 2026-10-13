@@ -204,7 +204,9 @@ function allowedAppleEnvironments(): Set<"sandbox" | "production"> {
   }
 
   if (process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true") {
-    return new Set(["sandbox", ...(process.env.NODE_ENV === "production" ? ["production"] : [])]);
+    const qualificationEnvironments: Array<"sandbox" | "production"> = ["sandbox"];
+    if (process.env.NODE_ENV === "production") qualificationEnvironments.push("production");
+    return new Set(qualificationEnvironments);
   }
 
   return new Set(
