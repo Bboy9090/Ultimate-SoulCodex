@@ -115,10 +115,6 @@ function billingQualificationRequest(req: Request): boolean {
   return marker === "1";
 }
 
-function nativeBillingRequestEnabled(platform: "ios" | "android", req: Request): boolean {
-  if (platformNativeBillingFlagEnabled(platform)) return true;
-  return platform === "ios" && iosQualificationFlagEnabled() && billingQualificationRequest(req);
-}
 
 function googleRtdnVerificationTokenMatches(candidate: unknown): boolean {
   const expected = process.env.GOOGLE_PLAY_RTDN_VERIFICATION_TOKEN?.trim();
