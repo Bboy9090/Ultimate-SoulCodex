@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, type ComponentType, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, type ComponentType, type ReactNode } from "react";
 import { MotionConfig } from "framer-motion";
 import { Switch, Route, useLocation, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -177,6 +177,25 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preloadPeople = () => {
+      void import("./pages/ConnectionsPage").catch((error) => {
+        console.warn("[route-preload] People route did not preload", error);
+      });
+    };
+    const idleWindow = window as typeof window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    if (idleWindow.requestIdleCallback) {
+      const handle = idleWindow.requestIdleCallback(preloadPeople, { timeout: 3500 });
+      return () => idleWindow.cancelIdleCallback?.(handle);
+    }
+    const handle = window.setTimeout(preloadPeople, 1200);
+    return () => window.clearTimeout(handle);
+  }, []);
+
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
