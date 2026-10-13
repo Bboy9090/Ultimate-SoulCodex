@@ -47,7 +47,8 @@ test("navigation and shared close controls preserve touch-sized targets", async 
   assert.match(sheet, /h-11 w-11 place-items-center/);
   assert.match(nav, /pb-\[max\(1\.25rem,env\(safe-area-inset-bottom\)\)\]/);
   assert.match(nav, /aria-current=\{active \? "page" : undefined\}/);
-  assert.match(nav, /aria-current=\{isActive\(pathname, "\/systems"\) \? "page" : undefined\}/);
+  assert.match(nav, /href: "\/systems", label: "Systems"/);
+  assert.match(nav, /aria-current=\{active \? "page" : undefined\}/);
   assert.match(nav, /aria-current=\{isActive\(pathname, "\/settings"\) \? "page" : undefined\}/);
   assert.match(checkbox, /peer relative h-6 w-6/);
   assert.match(checkbox, /after:-inset-2\.5/);
