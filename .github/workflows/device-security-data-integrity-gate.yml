@@ -85,6 +85,9 @@ jobs:
           tests/internal-route-click-audit.test.ts
           tests/interactive-planetary-experience-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/unknown-time-dst-range.test.ts
+          tests/dst-range-evidence-contract.test.ts
+          tests/permanent-uncertainty-contract.test.ts
           tests/profile-verification-boundary.test.ts
           tests/known-time-profile-verification-http.test.ts
           tests/human-design-complete-input-matrix.test.ts
