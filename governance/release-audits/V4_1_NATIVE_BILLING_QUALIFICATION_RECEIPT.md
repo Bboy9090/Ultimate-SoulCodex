@@ -1,8 +1,16 @@
 # Soul Codex 4.1 Native Billing Qualification Receipt
 
-Release SHA: **UNSET**  
-App version/build: **UNSET**  
-Test window: **UNSET**
+Release SHA: **955df14875646d9a428916281c0e8a9b8bd5207a**  
+App version/build: **4.1.0 / 4000011**  
+Test window: **2026-10-12 — release/configuration qualification only; provider transaction qualification still pending**
+
+## Configuration safety evidence
+
+- Exact-head 4.1 release qualification: PASS on PR #531 head `24363e54ac54a4a0e14e6ea9ef728db5c1ba54e8`.
+- Current merged main / deployed Railway commit: `955df14875646d9a428916281c0e8a9b8bd5207a`.
+- Railway production deployment: SUCCESS.
+- Production purchase flags: explicitly staged `false`; patch remains undeployed.
+- Provider purchase/restore/lifecycle rows below remain INCONCLUSIVE until real provider evidence is observed.
 
 ## iOS / StoreKit 2
 
