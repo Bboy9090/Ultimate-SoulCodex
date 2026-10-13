@@ -86,6 +86,8 @@ test("Systems and the planetary explorer remain discoverable without a profile",
   assert.match(navigation, /\{ href: "\/systems", label: "Systems", icon: Database \}/);
   assert.doesNotMatch(navigation, /\.\.\.\(profile \? \[\{ href: "\/systems"/);
   assert.match(systems, /<InteractivePlanetaryPreview \/>/);
+  assert.ok(systems.indexOf("<InteractivePlanetaryPreview />") < systems.indexOf("No active profile to inspect"));
+  assert.ok(systems.includes("min-h-[75vh] pb-10 pt-28"));
   assert.match(systems, /Opening educational planetary explorer/);
   assert.match(planetaryPreview, /data-testid="planetary-educational-preview"/);
   assert.match(planetaryPreview, /not a personal chart/);
