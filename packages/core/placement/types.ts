@@ -44,6 +44,8 @@ export interface ConditionalValueRange {
   value: string;
   startLocalTime?: string | null;
   endLocalTime?: string | null;
+  /** Distinguishes both occurrences of a repeated DST wall-clock minute. */
+  utcOffsetMinutes?: number | null;
 }
 
 export interface RangeEvidence {
@@ -54,6 +56,34 @@ export interface RangeEvidence {
   latitude?: number | null;
   longitude?: number | null;
   testedValues: number;
+  expectedValues?: number;
+  validLocalMinutes?: number;
+  nonexistentLocalMinutes?: number;
+  ambiguousLocalMinutes?: number;
+  invalidLocalMinutes?: number;
+}
+
+/** Accept only complete 1-minute civil-day evidence; legacy 1,440-minute receipts remain readable. */
+export function hasCompleteMinuteRangeEvidence(range: Partial<RangeEvidence> | null | undefined): boolean {
+  if (
+    range?.resolutionMinutes !== 1 ||
+    typeof range.rangeStartLocal !== "string" ||
+    typeof range.rangeEndLocal !== "string"
+  ) return false;
+  if (range.expectedValues === undefined) return range.testedValues === 1440;
+
+  const expected = range.expectedValues;
+  const tested = range.testedValues;
+  const valid = range.validLocalMinutes;
+  const nonexistent = range.nonexistentLocalMinutes;
+  const ambiguous = range.ambiguousLocalMinutes;
+  const invalid = range.invalidLocalMinutes;
+  if (![expected, tested, valid, nonexistent, ambiguous, invalid].every(
+    (n) => typeof n === "number" && Number.isSafeInteger(n) && n >= 0,
+  )) return false;
+  return expected! > 0 && tested === expected && invalid === 0 &&
+    valid! + nonexistent! === 1440 && ambiguous! <= valid! &&
+    expected === valid! + ambiguous!;
 }
 
 export type SynthesisEvidenceMode = "use" | "branch_only" | "exclude";
