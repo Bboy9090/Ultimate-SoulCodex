@@ -78,6 +78,9 @@ jobs:
           tests/accessibility-device-acceptance-contract.test.ts
           tests/form-accessibility-recovery-contract.test.ts
           tests/profile-verification-reconciliation.test.ts
+          tests/unknown-time-dst-range.test.ts
+          tests/dst-range-evidence-contract.test.ts
+          tests/permanent-uncertainty-contract.test.ts
           tests/profile-verification-boundary.test.ts
           tests/known-time-profile-verification-http.test.ts
           tests/human-design-complete-input-matrix.test.ts
