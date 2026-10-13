@@ -97,3 +97,17 @@ test("Aureon actively reacts inside Identity and Timeline", () => {
   assert.match(timeline, /AureonAvatar state="warning" compact/);
   assert.match(timeline, /selectedInfluenceIndex !== null/);
 });
+
+
+test("Verified natal chart deepens interactive focus without inventing geometry", () => {
+  assert.match(natal, /const aureonChartState: AureonState/);
+  assert.match(natal, /aureonChartMessage/);
+  assert.match(natal, /AureonAvatar state=\{aureonChartState\}/);
+  assert.match(natal, /data-testid="aureon-chart-reaction"/);
+  assert.match(natal, /relatedToSelectedPlanet/);
+  assert.match(natal, /drop-shadow\(0 0 3px rgba\(239,208,141,.35\)\)/);
+  assert.match(natal, /scale: selected \? 1\.035 : 1/);
+  assert.match(natal, /style=\{\{ transformOrigin: "180px 180px" \}\}/);
+  assert.match(natal, /validLongitude/);
+  assert.match(natal, /synthesis\.houseCusps\.length !== 12/);
+});
