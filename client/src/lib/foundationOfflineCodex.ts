@@ -6,6 +6,7 @@ import {
   calcPersonality,
   calcPersonalYear,
   calcSoulUrge,
+  hasCompleteMinuteRangeEvidence,
   resolveOfflineSun,
   synthesizeDepthInterpretationV1,
   validateDepthInterpretationV1,
@@ -502,12 +503,7 @@ function verifiedSign(astrology: VerifiedAstrologyForSynthesis, key: "sun" | "mo
 }
 
 function completeRangeEvidence(placement: VerifiedPlacementForSynthesis | undefined): boolean {
-  return Boolean(
-    placement?.rangeEvidence?.resolutionMinutes === 1 &&
-    placement?.rangeEvidence?.testedValues === 1440 &&
-    typeof placement?.rangeEvidence?.rangeStartLocal === "string" &&
-    typeof placement?.rangeEvidence?.rangeEndLocal === "string"
-  );
+  return hasCompleteMinuteRangeEvidence(placement?.rangeEvidence);
 }
 
 function rangeStableSign(placement: VerifiedPlacementForSynthesis | undefined): string | null {
@@ -1016,10 +1012,7 @@ export function synthesizeRangeStableFoundationProfile(
         .filter(([, value]: any) =>
           value?.evidenceState === "stable_across_range" &&
           value?.value &&
-          value?.rangeEvidence?.resolutionMinutes === 1 &&
-          value?.rangeEvidence?.testedValues === 1440 &&
-          typeof value?.rangeEvidence?.rangeStartLocal === "string" &&
-          typeof value?.rangeEvidence?.rangeEndLocal === "string"
+          hasCompleteMinuteRangeEvidence(value?.rangeEvidence)
         )
         .map(([key, value]: any) => `${key}: ${value.value}`)
     : [];
@@ -1567,10 +1560,7 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
         const placement = (verifiedAstrologyData as any)?.[key];
         return (
           ["stable_across_range", "conditional"].includes(String(placement?.evidenceState)) &&
-          placement?.rangeEvidence?.resolutionMinutes === 1 &&
-          placement?.rangeEvidence?.testedValues === 1440 &&
-          typeof placement?.rangeEvidence?.rangeStartLocal === "string" &&
-          typeof placement?.rangeEvidence?.rangeEndLocal === "string"
+          hasCompleteMinuteRangeEvidence(placement?.rangeEvidence)
         );
       });
       repairedNarrative = hasCompleteRange

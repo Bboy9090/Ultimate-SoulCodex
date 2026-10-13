@@ -37,6 +37,7 @@ export default function Navigation() {
     { href: "/timeline", label: "Timeline", icon: Orbit },
     { href: "/compatibility", label: "Compatibility", icon: HeartHandshake },
     { href: "/connections", label: "People", icon: UsersRound },
+    ...(profile ? [{ href: "/systems", label: "Systems", icon: Database }] : []),
     { href: "/tools", label: "Tools", icon: Compass },
   ];
 
@@ -85,22 +86,6 @@ export default function Navigation() {
                 );
               })}
             </div>
-
-            {profile && (
-              <Link
-                href="/systems"
-                className={`grid h-11 w-11 place-items-center rounded-lg border no-underline transition-colors ${
-                  isActive(pathname, "/systems")
-                    ? "border-[rgba(114,216,197,.24)] bg-[rgba(114,216,197,.08)] text-[var(--sc-teal)]"
-                    : "border-white/[0.06] text-[var(--sc-stone)] hover:bg-white/[0.04] hover:text-[var(--sc-ivory)]"
-                }`}
-                aria-label="See underlying systems"
-                title="See underlying systems"
-                data-testid="link-underlying-systems"
-              >
-                <Database className="h-4 w-4" strokeWidth={1.8} />
-              </Link>
-            )}
 
             <Link
               href="/settings"
@@ -160,12 +145,6 @@ export default function Navigation() {
                       </Link>
                     );
                   })}
-                  {profile && (
-                    <Link href="/systems" aria-current={isActive(pathname, "/systems") ? "page" : undefined} data-testid="link-underlying-systems-mobile" className="flex min-h-12 items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3.5 text-sm font-semibold text-[var(--sc-ivory-soft)] no-underline">
-                      <Database className="h-4.5 w-4.5 text-[var(--sc-stone)]" strokeWidth={1.8} />
-                      Underlying systems
-                    </Link>
-                  )}
                   <Link
                     href="/settings"
                     aria-current={isActive(pathname, "/settings") ? "page" : undefined}

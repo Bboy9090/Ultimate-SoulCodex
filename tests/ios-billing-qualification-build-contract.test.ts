@@ -49,3 +49,19 @@ test("normal and qualification parity lanes cannot collapse into one mode", () =
   assert.match(qualificationParity, /VITE_BILLING_QUALIFICATION_MODE: "true"/);
   assert.match(qualificationParity, /SOUL_CODEX_IOS_QUALIFICATION_BUILD: "true"/);
 });
+
+test("qualification checkout, embedded release identity, and receipt use the exact candidate", () => {
+  assert.match(qualificationParity, /CANDIDATE_SHA: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/);
+  assert.match(qualificationParity, /VITE_RELEASE_SHA: \$\{\{ github.event.pull_request.head.sha \|\| github.sha \}\}/);
+  assert.match(qualificationParity, /ref: \$\{\{ env.CANDIDATE_SHA \}\}/);
+  assert.match(qualificationParity, /test "\$\(git rev-parse HEAD\)" = "\$CANDIDATE_SHA"/);
+  assert.match(qualificationParity, /echo "SHA=\$CANDIDATE_SHA"/);
+  assert.doesNotMatch(qualificationParity, /echo "SHA=\$GITHUB_SHA"/);
+});
+
+test("always-uploaded qualification receipt distinguishes failed jobs and unsigned builds from purchase evidence", () => {
+  assert.match(qualificationParity, /QUALIFICATION_JOB_STATUS: \$\{\{ job.status \}\}/);
+  assert.match(qualificationParity, /echo "job_status=\$QUALIFICATION_JOB_STATUS"/);
+  assert.match(qualificationParity, /archive_signing=unsigned/);
+  assert.match(qualificationParity, /provider_transactions=not_tested/);
+});

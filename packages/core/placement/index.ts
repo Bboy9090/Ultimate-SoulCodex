@@ -8,4 +8,4 @@ export type {
   PlacementLike,
   VerifiedPlacement
 } from './types.js';
-export { synthesisModeForEvidenceState } from './types.js';
+export { synthesisModeForEvidenceState, hasCompleteMinuteRangeEvidence } from './types.js';

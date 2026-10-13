@@ -16,6 +16,7 @@ import { useProductAccess } from "@/hooks/useProductAccess";
 import { tierAllowsCapability } from "@shared/product-access";
 
 const VerifiedNatalChart = lazy(() => import("@/components/VerifiedNatalChart"));
+const InteractivePlanetarySystem = lazy(() => import("@/components/InteractivePlanetarySystem"));
 
 function DeepChartFallback({ label }: { label: string }) {
   return (
@@ -365,6 +366,10 @@ export default function OfflineProfilePage() {
             </div>
           </section>
         )}
+
+        <Suspense fallback={<DeepChartFallback label="interactive planetary system" />}>
+          <InteractivePlanetarySystem synthesis={ultimateCodex} />
+        </Suspense>
 
         {verifiedHumanDesign && (
           <section className="sc-panel mb-6 p-5 sm:p-6" data-testid="human-design-bodygraph-deferred">

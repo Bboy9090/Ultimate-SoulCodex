@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
+import { Component, lazy, Suspense, useEffect, type ComponentType, type ReactNode } from "react";
 import { MotionConfig } from "framer-motion";
-import { Switch, Route, useParams } from "wouter";
+import { Switch, Route, useLocation, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,27 +11,83 @@ import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 
-const LocalFirstInputForm = lazy(() => import("./pages/local-first-input-form"));
-const Profile = lazy(() => import("./pages/profile"));
-const OfflineProfilePage = lazy(() => import("./pages/offline-profile"));
-const ClarityReadingPage = lazy(() => import("./pages/ClarityReadingPage"));
-const OfflineClarityReadingPage = lazy(() => import("./pages/OfflineClarityReadingPage"));
-const CompatibilityExplorerPage = lazy(() => import("./pages/CompatibilityExplorerPage"));
-const CompatibilityPersonPage = lazy(() => import("./pages/CompatibilityPersonPage"));
-const CompatibilityRoute = lazy(() => import("./pages/CompatibilityRoute"));
-const TimelinePage = lazy(() => import("./pages/TimelinePage"));
-const CodexToolsPage = lazy(() => import("./pages/CodexToolsPage"));
-const AstrologyAtlasPage = lazy(() => import("./pages/AstrologyAtlasPage"));
-const SystemsDetailsPage = lazy(() => import("./pages/SystemsDetailsPage"));
-const PrivacyPage = lazy(() => import("./pages/PrivacyPage"));
-const TermsPage = lazy(() => import("./pages/TermsPage"));
-const SupportPage = lazy(() => import("./pages/SupportPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const DiagnosticsPage = lazy(() => import("./pages/DiagnosticsPage"));
-const AccountDeletionPage = lazy(() => import("./pages/AccountDeletionPage"));
-const PricingPage = lazy(() => import("./pages/PricingPage"));
-const ConnectionsPage = lazy(() => import("./pages/ConnectionsPage"));
-const PublicSharedProfilePage = lazy(() => import("./pages/PublicSharedProfilePage"));
+function lazyRoute<T extends { default: ComponentType<any> }>(
+  loader: () => Promise<T>,
+  label: string,
+) {
+  return lazy(async () => {
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        loader(),
+        new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(
+            () => reject(new Error(`route_chunk_timeout:${label}`)),
+            12000,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+    }
+  });
+}
+
+const LocalFirstInputForm = lazyRoute(() => import("./pages/local-first-input-form"), "create");
+const Profile = lazyRoute(() => import("./pages/profile"), "profile");
+const OfflineProfilePage = lazyRoute(() => import("./pages/offline-profile"), "offline-profile");
+const ClarityReadingPage = lazyRoute(() => import("./pages/ClarityReadingPage"), "reading");
+const OfflineClarityReadingPage = lazyRoute(() => import("./pages/OfflineClarityReadingPage"), "offline-reading");
+const CompatibilityExplorerPage = lazyRoute(() => import("./pages/CompatibilityExplorerPage"), "compatibility-explorer");
+const CompatibilityPersonPage = lazyRoute(() => import("./pages/CompatibilityPersonPage"), "compatibility-person");
+const CompatibilityRoute = lazyRoute(() => import("./pages/CompatibilityRoute"), "compatibility");
+const TimelinePage = lazyRoute(() => import("./pages/TimelinePage"), "timeline");
+const CodexToolsPage = lazyRoute(() => import("./pages/CodexToolsPage"), "tools");
+const AstrologyAtlasPage = lazyRoute(() => import("./pages/AstrologyAtlasPage"), "astrology-atlas");
+const SystemsDetailsPage = lazyRoute(() => import("./pages/SystemsDetailsPage"), "systems");
+const PrivacyPage = lazyRoute(() => import("./pages/PrivacyPage"), "privacy");
+const TermsPage = lazyRoute(() => import("./pages/TermsPage"), "terms");
+const SupportPage = lazyRoute(() => import("./pages/SupportPage"), "support");
+const SettingsPage = lazyRoute(() => import("./pages/SettingsPage"), "settings");
+const DiagnosticsPage = lazyRoute(() => import("./pages/DiagnosticsPage"), "diagnostics");
+const AccountDeletionPage = lazyRoute(() => import("./pages/AccountDeletionPage"), "account-deletion");
+const PricingPage = lazyRoute(() => import("./pages/PricingPage"), "pricing");
+const ConnectionsPage = lazyRoute(() => import("./pages/ConnectionsPage"), "people");
+const PublicSharedProfilePage = lazyRoute(() => import("./pages/PublicSharedProfilePage"), "shared-profile");
+
+type RouteErrorBoundaryState = { error: Error | null };
+
+class RouteErrorBoundary extends Component<{ children: ReactNode }, RouteErrorBoundaryState> {
+  state: RouteErrorBoundaryState = { error: null };
+
+  static getDerivedStateFromError(error: Error): RouteErrorBoundaryState {
+    return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("[route] failed to open", error);
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6">
+        <div className="sc-panel max-w-lg p-7 text-center" role="alert">
+          <div className="font-serif text-2xl font-semibold">This section did not open cleanly.</div>
+          <p className="mt-3 text-sm leading-6 opacity-70">
+            Soul Codex stopped the stalled route instead of leaving you on an endless loading screen.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <button type="button" className="sc-button-primary" onClick={() => window.location.reload()}>
+              Retry this section
+            </button>
+            <a className="sc-button-secondary" href="/">Back home</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
 
 function RouteLoadingFallback() {
   return (
@@ -75,6 +131,7 @@ function TimelineRoute() {
 }
 
 function Router() {
+  const [pathname] = useLocation();
   return (
     <>
       <a
@@ -83,6 +140,7 @@ function Router() {
       >
         Skip to main content
       </a>
+      <RouteErrorBoundary key={pathname}>
       <Suspense fallback={<RouteLoadingFallback />}>
         <div id="main-content" tabIndex={-1}>
           <Switch>
@@ -113,11 +171,31 @@ function Router() {
           </Switch>
         </div>
       </Suspense>
+      </RouteErrorBoundary>
     </>
   );
 }
 
 function App() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const preloadPeople = () => {
+      void import("./pages/ConnectionsPage").catch((error) => {
+        console.warn("[route-preload] People route did not preload", error);
+      });
+    };
+    const idleWindow = window as typeof window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    if (idleWindow.requestIdleCallback) {
+      const handle = idleWindow.requestIdleCallback(preloadPeople, { timeout: 3500 });
+      return () => idleWindow.cancelIdleCallback?.(handle);
+    }
+    const handle = window.setTimeout(preloadPeople, 1200);
+    return () => window.clearTimeout(handle);
+  }, []);
+
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>

@@ -12,6 +12,7 @@ on:
       - "scripts/**"
       - "package.json"
       - "package-lock.json"
+      - "tests/ios-billing-qualification-build-contract.test.ts"
       - ".github/workflows/ios-billing-qualification-parity.yml"
 
 permissions:
@@ -25,7 +26,8 @@ env:
   VITE_API_URL: https://soulcodex.up.railway.app
   VITE_RELEASE_VERSION: 4.1.0
   VITE_API_CONTRACT: foundation-v4
-  VITE_RELEASE_SHA: ${{ github.sha }}
+  CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+  VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_BILLING_QUALIFICATION_MODE: "true"
   SOUL_CODEX_IOS_QUALIFICATION_BUILD: "true"
 
@@ -36,6 +38,11 @@ jobs:
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+
+      - name: Prove exact candidate
+        run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
 
       - name: Setup Node 22
         uses: actions/setup-node@v5
@@ -85,9 +92,14 @@ jobs:
 
       - name: Record qualification parity receipt
         if: always()
+        env:
+          QUALIFICATION_JOB_STATUS: ${{ job.status }}
         run: |
           {
-            echo "SHA=$GITHUB_SHA"
+            echo "SHA=$CANDIDATE_SHA"
+            echo "job_status=$QUALIFICATION_JOB_STATUS"
+            echo "archive_signing=unsigned"
+            echo "provider_transactions=not_tested"
             echo "release=4.1.0"
             echo "scheme=Ultimate Soul Codex"
             echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
