@@ -20,11 +20,13 @@ test("permanent four-state synthesis policy is fail-closed", () => {
 test("unknown-time astronomy and Human Design use full-day minute sweeps", () => {
   assert.match(rangeSource, /for \(let minute = 0; minute < 1440; minute \+= 1\)/);
   assert.match(rangeSource, /testedValues: values\.length/);
-  assert.match(rangeSource, /values\.length !== 1440/);
+  assert.match(rangeSource, /values\\.length !== expectedValues/);
+  assert.match(rangeSource, /enumerateCivilInstants/);
+  assert.match(rangeSource, /utcOffsetMinutes/);
   assert.match(rangeSource, /stable_across_range/);
   assert.match(rangeSource, /conditional/);
   assert.match(rangeSource, /Use the listed windows only as rectification branches, not certified chart data/);
-  assert.match(rangeSource, /Only Human Design components stable across every possible birth minute/i);
+  assert.match(rangeSource, /Type is identical across every possible birth minute/i);
 });
 
 test("unknown-time verification exposes the four states and unlock guidance", () => {
