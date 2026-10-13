@@ -32,7 +32,13 @@ Pending Railway patch:
   - `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED`
   - `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED`
 
-The connector exposes staged values only as redacted. Therefore this audit does **not** claim any staged billing flag is false or safe to enable.
+The connector exposes staged values as redacted. On 2026-10-12, the production Railway patch was explicitly rewritten through Railway's staged-variable API so these four purchase flags are staged as `false` without deploying the patch:
+- `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=false`
+- `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED=false`
+- `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED=false`
+- `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED=false`
+
+This removes flag-value ambiguity while keeping the entire patch undeployed.
 
 ## Required configuration still absent by variable name
 
@@ -84,12 +90,16 @@ Therefore Android packaging is qualified, but Play Console publishing and Google
 
 **BLOCKED — do not commit/enable the staged billing patch as a production billing launch.**
 
-Reasons:
-1. Staged flag values are redacted and cannot be verified as disabled.
-2. Google Play Developer API service-account configuration is absent.
-3. Web Apple authentication client configuration is absent.
-4. Stripe production catalog/webhook configuration is absent.
-5. Provider sandbox/TestFlight/internal-test evidence is still required for purchase, cancellation/failure, restore, renewal, expiry, refund/revocation, reinstall/second-device, and server-verification behavior.
+Current safety state:
+- all four purchase flags are explicitly staged `false`;
+- the patch remains staged and undeployed;
+- Free remains the only production purchase state.
+
+Remaining blockers:
+1. Google Play Developer API service-account configuration is absent.
+2. Web Apple authentication client configuration is absent.
+3. Stripe production catalog/webhook configuration is absent.
+4. Provider sandbox/TestFlight/internal-test evidence is still required for purchase, cancellation/failure, restore, renewal, expiry, refund/revocation, reinstall/second-device, and server-verification behavior.
 
 ## Safe next actions
 
