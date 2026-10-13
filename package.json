@@ -39,6 +39,7 @@
     "cap:android": "npx cap open android",
     "billing:preflight": "node scripts/validate-billing-production-readiness.mjs",
     "billing:audit:names": "node scripts/audit-billing-variable-names.mjs",
+    "billing:qualification:evidence": "node scripts/validate-billing-qualification-evidence.mjs",
     "billing:preflight:strict": "node scripts/validate-billing-production-readiness.mjs --require-all",
     "validate:integrations": "node --import tsx scripts/validate-integration-readiness.ts"
   },
