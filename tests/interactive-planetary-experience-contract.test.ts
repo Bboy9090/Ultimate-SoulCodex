@@ -5,6 +5,7 @@ import test from "node:test";
 const system = readFileSync("client/src/components/InteractivePlanetarySystem.tsx", "utf8");
 const offline = readFileSync("client/src/pages/offline-profile.tsx", "utf8");
 const navigation = readFileSync("client/src/components/navigation.tsx", "utf8");
+const systems = readFileSync("client/src/pages/SystemsDetailsPage.tsx", "utf8");
 
 test("Identity always exposes the interactive planetary system before full house geometry is required", () => {
   assert.match(offline, /<InteractivePlanetarySystem synthesis=\{ultimateCodex\} \/>/);
@@ -37,4 +38,13 @@ test("every supported placement is directly selectable", () => {
 test("Systems is a labeled primary navigation destination when a profile exists", () => {
   assert.match(navigation, /href: "\/systems", label: "Systems"/);
   assert.doesNotMatch(navigation, /data-testid="link-underlying-systems"/);
+});
+
+
+test("Systems makes the same interactive planetary system immediately discoverable", () => {
+  assert.match(systems, /href="#planetary-system"[^>]*>Interactive planets/);
+  assert.match(systems, /id="planetary-system"/);
+  assert.match(systems, /lazy\(\(\) => import\("@\/components\/InteractivePlanetarySystem"\)\)/);
+  assert.match(systems, /<InteractivePlanetarySystem synthesis=\{ultimateCodex\}/);
+  assert.match(systems, /role="status">Opening interactive planetary system/);
 });
