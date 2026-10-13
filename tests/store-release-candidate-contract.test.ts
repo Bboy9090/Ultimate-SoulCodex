@@ -58,6 +58,15 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   }
   assert.match(workflow, /release\/store-4\.0\.0-federation-final/);
   assert.match(workflow, /actions\/checkout@v5/);
+  assert.match(workflow, /CANDIDATE_SHA:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.equal((workflow.match(/ref:\s*\$\{\{ env\.CANDIDATE_SHA \}\}/g) ?? []).length, 3);
+  assert.equal((workflow.match(/test "\$\(git rev-parse HEAD\)" = "\$CANDIDATE_SHA"/g) ?? []).length, 3);
+  assert.match(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ env\.CANDIDATE_SHA \}\}/);
+  assert.match(workflow, /SHA=\$\{CANDIDATE_SHA\}/);
+  assert.match(workflow, /printf '%s\\n' "\$CANDIDATE_SHA" > RELEASE-CANDIDATE-SHA\.txt/);
+  assert.doesNotMatch(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ github\.sha \}\}/);
+  assert.doesNotMatch(workflow, /SHA=\$\{GITHUB_SHA\}/);
+  assert.doesNotMatch(workflow, /RELEASE-CANDIDATE-SHA\.txt[\s\S]{0,200}\$GITHUB_SHA/);
   assert.match(workflow, /actions\/setup-node@v5/);
   assert.match(workflow, /actions\/setup-java@v5/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
