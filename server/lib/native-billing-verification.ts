@@ -185,9 +185,14 @@ function environmentFromApple(value: unknown): "sandbox" | "production" {
   throw new Error("apple_environment_invalid");
 }
 
-function allowedAppleEnvironments(
+export function allowedAppleEnvironments(
   options: { allowSandbox?: boolean } = {},
 ): Set<"sandbox" | "production"> {
+  // A configured sandbox allowlist must never widen ordinary production verification.
+  // Only the request-scoped, server-authorized qualification path may accept sandbox JWS.
+  if (process.env.NODE_ENV === "production" && !options.allowSandbox) {
+    return new Set(["production"]);
+  }
   const configured = process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS?.trim();
   let allowed: Set<"sandbox" | "production">;
 
@@ -253,6 +258,9 @@ export async function verifyAppleBillingEvidence(
       : expiresAt && expiresAt.getTime() <= now.getTime()
         ? "expired"
         : "active";
+  if (accessStatus === "active" && (!expiresAt || !Number.isFinite(expiresAt.getTime()))) {
+    throw new Error("apple_expiry_time_invalid");
+  }
 
   const occurredAt =
     revokedAt ??
@@ -412,6 +420,9 @@ export async function verifyGoogleBillingEvidence(
   if (expiresAt && Number.isNaN(expiresAt.getTime())) throw new Error("google_play_expiry_time_invalid");
 
   const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
+  if (["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus) && !expiresAt) {
+    throw new Error("google_play_expiry_time_missing");
+  }
   const providerTransactionId = purchase.latestOrderId || evidence.transactionId;
   const googleEnvironment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
 
@@ -551,6 +562,12 @@ export function verifyAppleServerNotification(
 
   const purchasedAt = dateFromMilliseconds(transaction.purchaseDate);
   const expiresAt = dateFromMilliseconds(transaction.expiresDate);
+  if (
+    ["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus) &&
+    (!expiresAt || !Number.isFinite(expiresAt.getTime()))
+  ) {
+    throw new Error("apple_expiry_time_invalid");
+  }
 
   return {
     userId: transaction.appAccountToken,
@@ -682,6 +699,9 @@ export async function verifyGoogleRtdnNotification(
   if (expiresAt && Number.isNaN(expiresAt.getTime())) throw new Error("google_play_expiry_time_invalid");
 
   const accessStatus = googleAccessStatus(purchase.subscriptionState, expiresAt, now);
+  if (["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus) && !expiresAt) {
+    throw new Error("google_play_expiry_time_missing");
+  }
 
   if (
     purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
