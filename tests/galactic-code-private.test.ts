@@ -38,3 +38,15 @@ test("authorized owner cannot receive caller-forged fingerprint data", async () 
     assert.equal(JSON.stringify(result.result).includes('"forged":true'), false);
   }
 });
+
+test("a successful private generation is revision-bound and does not trust stored revision", async () => {
+  const result = await generatePrivateGalacticCode("private-1", { userId: "owner-1" }, {
+    getProfile: async () => ({ ...fakeProfile, galacticRevision: "attacker-forged-revision" }),
+  });
+  if (result.status === "ready") {
+    assert.match(result.revision, /^[a-f0-9]{64}$/);
+    assert.notEqual(result.revision, "attacker-forged-revision");
+  } else {
+    assert.equal(result.status, "insufficient_verified_evidence");
+  }
+});
