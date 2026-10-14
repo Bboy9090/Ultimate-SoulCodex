@@ -1,0 +1,80 @@
+name: Navigation and Planetary Browser Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/App.tsx"
+      - "client/src/components/navigation.tsx"
+      - "client/src/components/InteractivePlanetaryPreview.tsx"
+      - "client/src/components/InteractivePlanetarySystem.tsx"
+      - "client/src/pages/ConnectionsPage.tsx"
+      - "client/src/pages/CodexToolsPage.tsx"
+      - "client/src/pages/SystemsDetailsPage.tsx"
+      - "tests/pwa/**"
+      - ".github/workflows/navigation-planetary-browser-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: navigation-planetary-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Verify exact candidate SHA
+        env:
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "$EXPECTED_SHA" > navigation-browser-candidate-sha.txt
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install pinned existing browser test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.54.1
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build workspaces
+        run: npm run build:workspaces
+
+      - name: Build production application
+        run: npm run build
+
+      - name: Run real-click navigation and planetary acceptance
+        run: >-
+          npx playwright test
+          --config=tests/pwa/playwright.config.mjs
+          --project=chromium-desktop
+          --grep "Navigation and planetary browser acceptance"
+
+      - name: Upload browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-planetary-browser-${{ github.run_id }}
+          path: |
+            navigation-browser-candidate-sha.txt
+            playwright-report
+            test-results/pwa
+          if-no-files-found: warn
+          retention-days: 30

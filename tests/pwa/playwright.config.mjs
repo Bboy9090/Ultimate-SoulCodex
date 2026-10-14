@@ -3,7 +3,7 @@ import { defineConfig } from "@playwright/test";
 export default defineConfig({
   testDir: ".",
   testMatch:
-    /(offline-shell|project-clarity|foundation-profile-journey|foundation-consumer-responsive|account-deletion-restart)\.spec\.mjs/,
+    /(offline-shell|project-clarity|foundation-profile-journey|foundation-consumer-responsive|account-deletion-restart|navigation-planetary)\.spec\.mjs/,
   timeout: 180_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,
@@ -20,7 +20,7 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   projects: [
-    { name: "chromium-desktop", use: { browserName: "chromium" } },
+    { name: "chromium-desktop", use: { browserName: "chromium", launchOptions: process.env.SOUL_CODEX_TEST_CHROME ? { executablePath: process.env.SOUL_CODEX_TEST_CHROME } : undefined } },
     { name: "webkit-iphone", use: { browserName: "webkit" } },
   ],
   webServer: {
