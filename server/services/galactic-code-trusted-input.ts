@@ -7,6 +7,7 @@ import type { Profile } from "../../shared/schema";
 import type { GalacticCodeInput } from "../../shared/galactic-code/types";
 import { calculateNumerology } from "./numerology";
 import { calculateVerifiedAstrology } from "./astrology-production";
+import { calculateProfileHumanDesign } from "./profile-human-design";
 import { profileBelongsToActor, type ProfileActor } from "../lib/profile-ownership";
 
 type Data = Record<string, any>;
@@ -49,11 +50,21 @@ export async function trustedGalacticInputFromProfile(
   const hasBirthTime = Boolean(profile.birthTime?.trim());
   const rising = hasBirthTime ? verifiedSign(astrology.rising) : undefined;
 
-  // Stored HD is eligible only when its approved receipt is reproducible.
-  // Do not propagate advanced HD fields or browser-authored evidence labels.
-  // Human Design stays withheld until a receipt can be bound to this profile revision.
-  const verifiedHd = false;
-  const hd: Data = {};
+  // Recompute HD from the same current birth fields as the profile, not
+  // from persisted user-editable JSON or a stale verification receipt.
+  // The existing calculator validates the civil instant and approved trust record.
+  let hd: Data = {};
+  if (hasBirthTime && profile.timezone && Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    try {
+      hd = record(calculateProfileHumanDesign({
+        birthDate, birthTime: profile.birthTime!, timezone: profile.timezone,
+        latitude, longitude,
+      }));
+    } catch {
+      hd = {};
+    }
+  }
+  const verifiedHd = hd.status === "verified";
 
   return {
     profileId: profile.id,
