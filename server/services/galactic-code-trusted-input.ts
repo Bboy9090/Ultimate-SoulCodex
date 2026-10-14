@@ -31,6 +31,9 @@ export async function trustedGalacticInputFromProfile(
   // Recompute deterministic numerology instead of trusting stored claims.
   const date = profile.birthDate instanceof Date ? profile.birthDate : new Date(profile.birthDate);
   if (!Number.isFinite(date.getTime())) return null;
+  // Reject rollover and out-of-range calendar dates before computing an identity.
+  const year = date.getUTCFullYear();
+  if (year < 1800 || year > new Date().getUTCFullYear()) return null;
   const birthDate = date.toISOString().slice(0, 10);
   const numerology = calculateNumerology(profile.fullBirthName || "", birthDate);
   if (numerology.status !== "resolved") return null;
@@ -70,7 +73,11 @@ export async function trustedGalacticInputFromProfile(
       hd = {};
     }
   }
-  const verifiedHd = hd.status === "verified";
+  const verifiedHd = hd.status === "verified" &&
+    typeof hd.inputTimestampUtc === "string" &&
+    typeof hd.verificationReceiptId === "string" &&
+    typeof hd.type === "string" && typeof hd.strategy === "string" &&
+    typeof hd.authority === "string" && typeof hd.profile === "string";
 
   return {
     profileId: profile.id,
