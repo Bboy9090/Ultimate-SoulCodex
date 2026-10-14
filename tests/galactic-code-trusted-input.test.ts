@@ -33,3 +33,26 @@ test("a fabricated stored astrology result cannot promote the Sun when calculati
   assert.ok(result);
   assert.notEqual(result.astrology.sun, "Scorpio");
 });
+
+test("anonymous session ownership is supported without exposing user-owned records", async () => {
+  const guest = { ...profile, userId: null, sessionId: "session-a" };
+  assert.equal(await trustedGalacticInputFromProfile(guest, { sessionId: "session-b" }), null);
+  const result = await trustedGalacticInputFromProfile(guest, { sessionId: "session-a" });
+  assert.ok(result);
+  assert.equal(result.profileId, "p1");
+});
+
+test("invalid birth dates fail closed instead of producing fingerprints", async () => {
+  assert.equal(await trustedGalacticInputFromProfile(
+    { ...profile, birthDate: new Date("invalid") }, { userId: "owner" },
+  ), null);
+});
+
+test("invalid coordinates cannot qualify stored Human Design assertions", async () => {
+  const result = await trustedGalacticInputFromProfile(
+    { ...profile, birthTime: "11:11", timezone: "America/New_York", latitude: "999", longitude: "-999" },
+    { userId: "owner" },
+  );
+  assert.ok(result);
+  assert.equal(result.humanDesign.coverage, "missing");
+});
