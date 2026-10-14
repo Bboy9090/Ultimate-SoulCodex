@@ -57,15 +57,11 @@ export const verifiedBillingEventSchema = z.object({
   diagnosticMetadata: diagnosticMetadataSchema.default({}),
 }).superRefine((value, context) => {
   const grantsAccess = ["active", "trialing", "grace_period", "canceled_pending_expiry"].includes(value.accessStatus);
-  if (
-    grantsAccess &&
-    (value.provider === "apple" || value.provider === "google_play") &&
-    !value.expiresAt
-  ) {
+  if (grantsAccess && !value.expiresAt) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["expiresAt"],
-      message: "Native subscription access requires a verified expiration date.",
+      message: "Subscription access requires a verified expiration date.",
     });
   }
   if (
@@ -202,8 +198,8 @@ export function grantAllowsPlus(
 ): boolean {
   if (!grant) return false;
   if (grant.capability !== SOUL_CODEX_PLUS_CAPABILITY) return false;
-  // Fail closed for previously persisted native grants with no verified paid-through date.
-  if ((grant.sourceProvider === "apple" || grant.sourceProvider === "google_play") && !grant.expiresAt) return false;
+  // Every Soul Codex+ plan is a subscription. Legacy grants without paid-through evidence cannot confer access.
+  if (!grant.expiresAt) return false;
   if (grant.revokedAt && grant.revokedAt.getTime() <= now.getTime()) return false;
   if (grant.effectiveAt.getTime() > now.getTime()) return false;
   if (grant.expiresAt && grant.expiresAt.getTime() <= now.getTime()) return false;

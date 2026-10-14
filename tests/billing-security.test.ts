@@ -227,6 +227,7 @@ test("scheduled cancellation keeps the paid period while unpaid fails closed", (
           object: "subscription",
           status,
           cancel_at_period_end: cancelAtPeriodEnd,
+          current_period_end: 1793534400,
           metadata: { soulCodexUserId: "user-123" },
           items: { data: [{ price: { id: "price_plus_annual" } }] },
         },
@@ -241,5 +242,44 @@ test("scheduled cancellation keeps the paid period while unpaid fails closed", (
       verifiedStripeSubscriptionEvent(stripeEvent("unpaid", false), raw)?.accessStatus,
       "account_hold",
     );
+  });
+});
+
+test("Stripe subscriptions never grant Plus without a verified paid-through date", () => {
+  withStripeCatalog(() => {
+    const raw = Buffer.from("{}");
+    const stripeEvent = (status: string, expiry?: unknown) => ({
+      id: `evt_missing_expiry_${status}`,
+      type: "customer.subscription.updated",
+      livemode: false,
+      data: {
+        object: {
+          id: "sub_missing_expiry",
+          object: "subscription",
+          status,
+          metadata: { soulCodexUserId: "user-123" },
+          ...(expiry === undefined ? {} : { current_period_end: expiry }),
+          items: { data: [{ price: { id: "price_plus_monthly" } }] },
+        },
+      },
+    } as any);
+
+    for (const status of ["active", "trialing", "past_due"]) {
+      assert.throws(
+        () => verifiedStripeSubscriptionEvent(stripeEvent(status), raw),
+        /stripe_subscription_expiry_missing/,
+      );
+      assert.throws(
+        () => verifiedStripeSubscriptionEvent(stripeEvent(status, "invalid"), raw),
+        /stripe_subscription_expiry_missing/,
+      );
+    }
+
+    const denied = verifiedStripeSubscriptionEvent(stripeEvent("unpaid"), raw);
+    assert.equal(denied?.accessStatus, "account_hold");
+    assert.equal(denied?.expiresAt, null);
+    const valid = verifiedStripeSubscriptionEvent(stripeEvent("active", 1793534400), raw);
+    assert.equal(valid?.accessStatus, "active");
+    assert.ok(valid?.expiresAt instanceof Date);
   });
 });

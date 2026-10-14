@@ -252,3 +252,26 @@ test("post-deletion refund event remains auditable without restoring access", as
   );
   assert.equal(access.tier, "free");
 });
+
+test("Stripe active subscription without expiry is rejected before a durable grant is created", async () => {
+  const storage = new MemStorage();
+  const user = await testUser(storage, "missing-expiry");
+  await assert.rejects(
+    () => recordVerifiedBillingEvent(storage, event(user.id, { expiresAt: null })),
+    /Subscription access requires a verified expiration date/,
+  );
+  assert.equal((await resolveProductEntitlementForUser(storage, user.id)).tier, "free");
+});
+
+test("previously persisted Stripe grants without an expiration fail closed", async () => {
+  const { grantAllowsPlus } = await import("../server/lib/product-entitlement");
+  const grant = {
+    capability: SOUL_CODEX_PLUS_CAPABILITY,
+    sourceProvider: "stripe",
+    status: "active",
+    effectiveAt: new Date("2026-10-01T12:00:00Z"),
+    expiresAt: null,
+    revokedAt: null,
+  } as unknown as NonNullable<Parameters<typeof grantAllowsPlus>[0]>;
+  assert.equal(grantAllowsPlus(grant, new Date("2026-10-10T12:00:00Z")), false);
+});
