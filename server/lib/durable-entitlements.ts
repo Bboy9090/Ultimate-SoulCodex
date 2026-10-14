@@ -56,8 +56,20 @@ export const verifiedBillingEventSchema = z.object({
   evidenceDigest: z.string().regex(/^[a-f0-9]{64}$/i, "evidenceDigest must be a SHA-256 hex digest"),
   diagnosticMetadata: diagnosticMetadataSchema.default({}),
 }).superRefine((value, context) => {
+  const grantsAccess = ["active", "trialing", "grace_period", "canceled_pending_expiry"].includes(value.accessStatus);
   if (
-    ["active", "trialing", "grace_period", "canceled_pending_expiry"].includes(value.accessStatus) &&
+    grantsAccess &&
+    (value.provider === "apple" || value.provider === "google_play") &&
+    !value.expiresAt
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["expiresAt"],
+      message: "Native subscription access requires a verified expiration date.",
+    });
+  }
+  if (
+    grantsAccess &&
     value.expiresAt &&
     value.expiresAt.getTime() <= value.verifiedAt.getTime()
   ) {
@@ -190,6 +202,8 @@ export function grantAllowsPlus(
 ): boolean {
   if (!grant) return false;
   if (grant.capability !== SOUL_CODEX_PLUS_CAPABILITY) return false;
+  // Fail closed for previously persisted native grants with no verified paid-through date.
+  if ((grant.sourceProvider === "apple" || grant.sourceProvider === "google_play") && !grant.expiresAt) return false;
   if (grant.revokedAt && grant.revokedAt.getTime() <= now.getTime()) return false;
   if (grant.effectiveAt.getTime() > now.getTime()) return false;
   if (grant.expiresAt && grant.expiresAt.getTime() <= now.getTime()) return false;
