@@ -308,6 +308,13 @@ export function verifiedStripeSubscriptionEvent(
   const purchasedAt =
     secondsToDate(subscription?.start_date) ??
     secondsToDate(subscription?.created);
+  const accessStatus = stripeSubscriptionAccessStatus(subscription);
+  if (
+    ["active", "trialing", "grace_period", "canceled_pending_expiry"].includes(accessStatus) &&
+    (!currentPeriodEnd || !Number.isFinite(currentPeriodEnd.getTime()))
+  ) {
+    throw new Error("stripe_subscription_expiry_missing");
+  }
 
   return {
     userId,
@@ -321,7 +328,7 @@ export function verifiedStripeSubscriptionEvent(
     eventType: event.type,
     occurredAt: secondsToDate((event as any).created) ?? verifiedAt,
     verificationState: "verified",
-    accessStatus: stripeSubscriptionAccessStatus(subscription),
+    accessStatus,
     purchasedAt,
     expiresAt: currentPeriodEnd,
     verifiedAt,
