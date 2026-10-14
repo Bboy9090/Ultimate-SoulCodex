@@ -79,6 +79,10 @@ export async function trustedGalacticInputFromProfile(
     typeof hd.type === "string" && typeof hd.strategy === "string" &&
     typeof hd.authority === "string" && typeof hd.profile === "string";
 
+  // The current generator requires a verified Sun plus another qualified
+  // system. Never synthesize a partial identity from a missing Sun.
+  if (!sun) return null;
+
   return {
     profileId: profile.id,
     birthDate,
