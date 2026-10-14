@@ -185,9 +185,14 @@ function environmentFromApple(value: unknown): "sandbox" | "production" {
   throw new Error("apple_environment_invalid");
 }
 
-function allowedAppleEnvironments(
+export function allowedAppleEnvironments(
   options: { allowSandbox?: boolean } = {},
 ): Set<"sandbox" | "production"> {
+  // A configured sandbox allowlist must never widen ordinary production verification.
+  // Only the request-scoped, server-authorized qualification path may accept sandbox JWS.
+  if (process.env.NODE_ENV === "production" && !options.allowSandbox) {
+    return new Set(["production"]);
+  }
   const configured = process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS?.trim();
   let allowed: Set<"sandbox" | "production">;
 

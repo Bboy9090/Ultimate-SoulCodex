@@ -7,6 +7,7 @@ import {
   verifiedBillingEventSchema,
 } from "../server/lib/durable-entitlements";
 import {
+  allowedAppleEnvironments,
   verifyGoogleBillingEvidence,
   verifyGoogleRtdnNotification,
 } from "../server/lib/native-billing-verification";
@@ -182,3 +183,23 @@ test("Google RTDN active purchase without expiry cannot grant or acknowledge", a
     );
     assert.equal(calls.some((url) => url.endsWith(":acknowledge")), false);
   }));
+
+test("Apple sandbox evidence is rejected in production unless the request is qualified", () => {
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousAllowed = process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS;
+  try {
+    process.env.NODE_ENV = "production";
+    for (const configured of ["sandbox", "sandbox,production", "production,sandbox"]) {
+      process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS = configured;
+      assert.deepEqual([...allowedAppleEnvironments()], ["production"],
+        `normal production must reject sandbox even with ${configured} configured`);
+      assert.equal(allowedAppleEnvironments({ allowSandbox: true }).has("sandbox"), true,
+        "only a request-scoped qualification may add sandbox");
+    }
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousAllowed === undefined) delete process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS;
+    else process.env.APPLE_IAP_ALLOWED_ENVIRONMENTS = previousAllowed;
+  }
+});
