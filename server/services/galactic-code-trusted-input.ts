@@ -38,13 +38,19 @@ export async function trustedGalacticInputFromProfile(
   // Recompute against the current birth data; stored verification flags are untrusted.
   const latitude = profile.latitude == null ? undefined : Number(profile.latitude);
   const longitude = profile.longitude == null ? undefined : Number(profile.longitude);
-  const astrology = await calculateVerifiedAstrology({
+  let astrology: Awaited<ReturnType<typeof calculateVerifiedAstrology>>;
+  try {
+    astrology = await calculateVerifiedAstrology({
     birthDate,
     birthTime: profile.birthTime || undefined,
     timezone: profile.timezone || undefined,
-    latitude: Number.isFinite(latitude) ? latitude : undefined,
-    longitude: Number.isFinite(longitude) ? longitude : undefined,
+    latitude: Number.isFinite(latitude) && Math.abs(latitude) <= 90 ? latitude : undefined,
+    longitude: Number.isFinite(longitude) && Math.abs(longitude) <= 180 ? longitude : undefined,
   });
+  } catch {
+    // Ephemeris or reference-service failure cannot promote old stored evidence.
+    return null;
+  }
   const sun = verifiedSign(astrology.sun);
   const moon = verifiedSign(astrology.moon);
   const hasBirthTime = Boolean(profile.birthTime?.trim());
@@ -54,7 +60,7 @@ export async function trustedGalacticInputFromProfile(
   // from persisted user-editable JSON or a stale verification receipt.
   // The existing calculator validates the civil instant and approved trust record.
   let hd: Data = {};
-  if (hasBirthTime && profile.timezone && Number.isFinite(latitude) && Number.isFinite(longitude)) {
+  if (hasBirthTime && profile.timezone && Number.isFinite(latitude) && Math.abs(latitude) <= 90 && Number.isFinite(longitude) && Math.abs(longitude) <= 180) {
     try {
       hd = record(calculateProfileHumanDesign({
         birthDate, birthTime: profile.birthTime!, timezone: profile.timezone,
@@ -70,8 +76,8 @@ export async function trustedGalacticInputFromProfile(
     profileId: profile.id,
     birthDate,
     astrology: {
-      evidenceState: sun ? "verified" : "unavailable",
-      coverage: sun ? "partial" : "missing",
+      evidenceState: sun || moon || rising ? "verified" : "unavailable",
+      coverage: sun || moon || rising ? "partial" : "missing",
       sun,
       moon,
       rising,
