@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useEffect, type ComponentType, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { MotionConfig } from "framer-motion";
 import { Switch, Route, useLocation, useParams } from "wouter";
 import { queryClient } from "./lib/queryClient";
@@ -90,11 +90,25 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, RouteErrorBo
 }
 
 function RouteLoadingFallback() {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setSlow(true), 3500);
+    return () => window.clearTimeout(handle);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#08060d] text-[#f5ead7] grid place-items-center px-6" role="status" aria-live="polite" aria-label="Soul Codex route is loading">
       <div className="text-center">
         <div className="font-serif text-xl font-semibold">Soul Codex</div>
-        <div className="mt-2 text-sm opacity-60">Opening…</div>
+        <div className="mt-2 text-sm opacity-60">{slow ? "Still opening. Your connection may be slow." : "Opening…"}</div>
+        {slow && (
+          <div className="mt-5 flex flex-wrap justify-center gap-3">
+            <button type="button" className="sc-button-primary" onClick={() => window.location.reload()}>
+              Retry loading
+            </button>
+            <a className="sc-button-secondary" href="/">Back home</a>
+          </div>
+        )}
       </div>
     </div>
   );
