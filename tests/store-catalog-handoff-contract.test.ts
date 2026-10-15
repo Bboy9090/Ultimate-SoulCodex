@@ -5,8 +5,8 @@ import test from "node:test";
 const handoff = readFileSync(new URL("../docs/SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md", import.meta.url), "utf8");
 
 test("4.1 store catalog handoff freezes the intended cross-store identifiers and cadence", () => {
-  assert.match(handoff, /app\.soulcodex\.plus\.monthly/);
-  assert.match(handoff, /app\.soulcodex\.plus\.annual/);
+  assert.match(handoff, /`app\.soulcodex\.plus\.monthly\.renewing`/);
+  assert.match(handoff, /`app\.soulcodex\.plus\.annual\.renewing`/);
   assert.match(handoff, /soul_codex_plus_monthly/);
   assert.match(handoff, /soul_codex_plus_annual/);
   assert.match(handoff, /\$5\.99 USD/);
@@ -15,8 +15,13 @@ test("4.1 store catalog handoff freezes the intended cross-store identifiers and
   assert.match(handoff, /every 1 year/);
 });
 
-test("handoff refuses to claim uncreated store products or enable billing prematurely", () => {
-  assert.match(handoff, /does \*\*not\*\* claim the products already exist/);
+test("handoff distinguishes observed Apple products from unverified purchases and keeps billing disabled", () => {
+  assert.match(handoff, /Google Play and Stripe catalog creation and availability remain unverified/);
+  assert.match(handoff, /Both products were \*\*Prepare for Submission\*\*/);
+  assert.match(handoff, /existence does not prove StoreKit availability or completed purchases/);
+  assert.match(handoff, /APPLE_PLUS_MONTHLY_PRODUCT_ID=app\.soulcodex\.plus\.monthly\.renewing`/);
+  assert.match(handoff, /APPLE_PLUS_ANNUAL_PRODUCT_ID=app\.soulcodex\.plus\.annual\.renewing`/);
+  assert.doesNotMatch(handoff, /`app\.soulcodex\.plus\.(monthly|annual)`/);
   assert.match(handoff, /billing flags remain `false`/);
   assert.match(handoff, /sandbox\/TestFlight\/internal-test purchase/);
   assert.match(handoff, /Free remains available/);

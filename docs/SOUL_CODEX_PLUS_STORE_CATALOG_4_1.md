@@ -1,6 +1,6 @@
 # Soul Codex+ 4.1 Store Catalog Handoff
 
-This document is the operator contract for creating the production subscription catalog. It does **not** claim the products already exist in App Store Connect, Google Play Console, or Stripe.
+This document is the operator contract for creating the production subscription catalog. Apple account observations are recorded below. Google Play and Stripe catalog creation and availability remain unverified.
 
 ## Commercial baseline
 
@@ -22,15 +22,15 @@ App identity:
 - Bundle ID: `app.soulcodex.ios`
 - App Store numeric ID: `6764221944`
 
-Create one auto-renewable subscription group for Soul Codex+ with these products:
+Use the existing auto-renewable subscription group **Soul Codex+** (group ID `22442182`). Observed in App Store Connect on 2026-10-14:
 
-- Monthly product ID: `app.soulcodex.plus.monthly`
-- Annual product ID: `app.soulcodex.plus.annual`
+- Monthly product ID: `app.soulcodex.plus.monthly.renewing`
+- Annual product ID: `app.soulcodex.plus.annual.renewing`
 
-After the products exist and are available to the intended sandbox/TestFlight/production environment, set Railway:
+Both products were **Prepare for Submission** when inspected. Their existence does not prove StoreKit availability or completed purchases. Railway was corrected to these observed identifiers on 2026-10-14:
 
-- `APPLE_PLUS_MONTHLY_PRODUCT_ID=app.soulcodex.plus.monthly`
-- `APPLE_PLUS_ANNUAL_PRODUCT_ID=app.soulcodex.plus.annual`
+- `APPLE_PLUS_MONTHLY_PRODUCT_ID=app.soulcodex.plus.monthly.renewing`
+- `APPLE_PLUS_ANNUAL_PRODUCT_ID=app.soulcodex.plus.annual.renewing`
 
 Do not enable `SOUL_CODEX_PLUS_IOS_BILLING_ENABLED` until the server verifier, sandbox purchase, restore, cancellation/expiry, refund/revocation, and App Store Server Notifications V2 path all pass.
 
@@ -78,7 +78,7 @@ The Stripe catalog is re-read server-side before checkout; inactive, wrong-caden
 
 ## Activation sequence
 
-1. Create Apple monthly and annual products.
+1. Verify the existing Apple monthly and annual auto-renewable products and complete their submission metadata; do not create duplicates.
 2. Create Google monthly and annual products.
 3. Connect the Google Play service account and verify Developer API access.
 4. Create Stripe monthly and annual recurring Prices plus webhook endpoint.
@@ -95,8 +95,16 @@ The Stripe catalog is re-read server-side before checkout; inactive, wrong-caden
 
 ## Non-claims
 
-Until the account-side catalog is created and sandbox evidence is recorded:
-- product IDs listed here are the canonical identifiers to create, not proof of existing store products;
+Until provider-specific sandbox evidence is recorded:
+- Apple identifiers above were observed in the account; Google and Stripe entries remain configuration targets, not proof of existing products;
 - prices are the established product baseline, not proof of store approval;
 - purchase flags remain off;
 - Soul Codex Free remains available.
+
+## Observed qualification checkpoint — 2026-10-14
+
+- Railway deployment `3045515c-e8a6-46dc-b7b1-582ca3110431` succeeded after correcting only the two Apple product IDs. The live iOS catalog returned both `.renewing` IDs, `enabled: false`, and `qualificationMode: false`; web checkout also remained disabled.
+- App Store Connect showed build **4.1.0 (310)** as **Validated / Ready to Submit**, uploaded October 14 at 3:33 AM. Its source SHA and qualification build settings were not established by that metadata. Do not substitute it for the signed local qualification artifact without checking provenance.
+- Signed local qualification build **4.1.0 (4000011)** uses source `7abb40d35a50a80134474e266a819865f0e6c156`. IPA SHA-256: `6cc5a3a15c09b23f8570cd2c737b7b71a648ce02e5c9880a1142e15e33ffba81`. Upload of this artifact was not verified.
+- Apple displayed an updated Developer Program License Agreement notice requiring Account Holder acceptance before app updates/submissions. Subsequent Apple Developer sign-in timed out; acceptance remains unverified.
+- Real purchase, restore, renewal, cancellation/expiry, refund/revocation, notifications, and second-device qualification remain outstanding. No production billing activation is authorized by this checkpoint.
