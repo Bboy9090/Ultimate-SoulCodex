@@ -1,0 +1,78 @@
+name: Browser Experience Smoke
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/**"
+      - "tests/browser-experience-smoke.mjs"
+      - ".github/workflows/browser-experience-smoke.yml"
+  push:
+    branches: [main]
+    paths:
+      - "client/**"
+      - "tests/browser-experience-smoke.mjs"
+      - ".github/workflows/browser-experience-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-experience-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-experience-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked application dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build application and workspace evidence
+        run: |
+          npm run build:workspaces
+          npm run build
+
+      - name: Install isolated browser driver without changing the lockfile
+        run: |
+          command -v google-chrome
+          google-chrome --version
+          npm install --no-save --package-lock=false --ignore-scripts puppeteer-core@24.24.0
+
+      - name: Start candidate web preview
+        run: |
+          nohup ./node_modules/.bin/vite preview --host 127.0.0.1 --port 4173 --strictPort > /tmp/soulcodex-preview.log 2>&1 &
+          echo $! > /tmp/soulcodex-preview.pid
+          for i in $(seq 1 30); do
+            if curl -fsS -o /dev/null http://127.0.0.1:4173/; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/soulcodex-preview.log
+          exit 1
+
+      - name: Exercise real browser routes and interactions
+        env:
+          SOUL_CODEX_SMOKE_BASE_URL: http://127.0.0.1:4173
+        run: node tests/browser-experience-smoke.mjs
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-experience-smoke-${{ github.sha }}
+          path: |
+            artifacts/soulcodex-browser-experience-smoke.json
+            artifacts/soulcodex-people-compare.png
+          if-no-files-found: warn
+          retention-days: 30
