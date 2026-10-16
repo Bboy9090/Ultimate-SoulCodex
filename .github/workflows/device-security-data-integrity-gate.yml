@@ -56,6 +56,7 @@ jobs:
           tests/billing-production-readiness-contract.test.ts
           tests/billing-variable-name-audit.test.ts
           tests/billing-qualification-evidence-contract.test.ts
+          tests/native-billing-qualification-doc-contract.test.ts
           tests/billing-qualification-diagnostics-contract.test.ts
           tests/store-privacy-billing-disclosure-contract.test.ts
           tests/app-store-live-disclosure-readiness-contract.test.ts
