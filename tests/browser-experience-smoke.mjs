@@ -11,7 +11,10 @@ let browser;
 
 async function visiblePage(page, pathname) {
   const response = await page.goto(base + pathname, { waitUntil: "domcontentloaded", timeout: 25000 });
-  assert.equal(response?.status(), 200, pathname + " did not return HTTP 200");
+  assert.ok(
+    response && [200, 304].includes(response.status()),
+    pathname + " returned an unexpected HTTP response: " + response?.status(),
+  );
   await page.waitForFunction(
     () => {
       const heading = document.querySelector("h1");
