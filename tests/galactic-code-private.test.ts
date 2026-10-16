@@ -50,3 +50,26 @@ test("a successful private generation is revision-bound and does not trust store
     assert.equal(result.status, "insufficient_verified_evidence");
   }
 });
+
+test("generation refuses a changed birth profile rather than returning a stale revision", async () => {
+  let reads = 0;
+  const result = await generatePrivateGalacticCode("private-1", { userId: "owner-1" }, {
+    getProfile: async () => {
+      reads++;
+      return reads === 1 ? fakeProfile : { ...fakeProfile, fullBirthName: "Changed Name" };
+    },
+  });
+  assert.notEqual(result.status, "ready");
+  assert.ok(reads >= 1);
+});
+
+test("generation refuses a profile whose ownership is revoked mid-calculation", async () => {
+  let reads = 0;
+  const result = await generatePrivateGalacticCode("private-1", { userId: "owner-1" }, {
+    getProfile: async () => {
+      reads++;
+      return reads === 1 ? fakeProfile : { ...fakeProfile, userId: "another-owner" };
+    },
+  });
+  assert.notEqual(result.status, "ready");
+});
