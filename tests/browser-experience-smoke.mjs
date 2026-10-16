@@ -123,6 +123,17 @@ async function run() {
   await visiblePage(mobile, "/");
   await mobile.click('[data-testid="button-menu"]');
   await mobile.waitForSelector('[data-testid="link-people-mobile"]', { visible: true, timeout: 6000 });
+  // Radix Sheet can expose a visible link while its slide-in transform still
+  // places the element outside the viewport. Click only once it is hittable.
+  await mobile.waitForFunction(() => {
+    const link = document.querySelector('[data-testid="link-people-mobile"]');
+    const rect = link?.getBoundingClientRect();
+    if (!rect || rect.width < 20 || rect.height < 20 ||
+        rect.left < 0 || rect.right > innerWidth ||
+        rect.top < 0 || rect.bottom > innerHeight) return false;
+    const target = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return target === link || Boolean(target && link?.contains(target));
+  }, { timeout: 8000 });
   await mobile.click('[data-testid="link-people-mobile"]');
   await mobile.waitForFunction(
     () => location.pathname === "/connections" &&
