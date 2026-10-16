@@ -31,7 +31,15 @@ export async function generatePrivateGalacticCode(
   const input = await trustedGalacticInputFromProfile(profile, actor);
   if (!input) return { status: "insufficient_verified_evidence" };
   try {
-    return { status: "ready", revision, result: generateGalacticCode(input) };
+    const result = generateGalacticCode(input);
+    // Calculation may await external ephemeris evidence. Never return a result
+    // based on birth fields that changed while the calculation was running.
+    const current = await storage.getProfile(profileId);
+    if (!current || !profileBelongsToActor(current, actor)) return { status: "not_found" };
+    if (galacticProfileRevision(current) !== revision) {
+      return { status: "insufficient_verified_evidence" };
+    }
+    return { status: "ready", revision, result };
   } catch {
     // Do not return internal evidence or partial fingerprints on failed synthesis.
     return { status: "insufficient_verified_evidence" };
