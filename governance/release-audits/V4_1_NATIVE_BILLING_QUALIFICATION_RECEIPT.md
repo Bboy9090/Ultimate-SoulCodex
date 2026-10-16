@@ -27,8 +27,8 @@ OS:
 TestFlight/build identity:  
 Soul Codex test-account alias:  
 Apple sandbox/test alias:  
-Monthly product: `app.soulcodex.plus.monthly`  
-Annual product: `app.soulcodex.plus.annual`
+Monthly product: `app.soulcodex.plus.monthly.renewing`  
+Annual product: `app.soulcodex.plus.annual.renewing`
 
 | Checkpoint | Result | Evidence / redacted transaction reference |
 |---|---|---|
