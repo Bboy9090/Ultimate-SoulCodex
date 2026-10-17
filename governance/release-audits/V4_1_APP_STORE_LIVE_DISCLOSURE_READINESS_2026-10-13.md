@@ -69,8 +69,8 @@ Code/build readiness is no longer the blocker. The remaining Apple-owner/provide
 
 1. Update the live App Store Privacy answers so they match the 4.1 manifest and store packet.
 2. Confirm the Soul Codex+ subscription group exists in App Store Connect.
-3. Confirm monthly product `app.soulcodex.plus.monthly` is available to the intended sandbox/TestFlight qualification build.
-4. Confirm annual product `app.soulcodex.plus.annual` is available to the intended sandbox/TestFlight qualification build.
+3. Confirm monthly product `app.soulcodex.plus.monthly.renewing` is available to the intended sandbox/TestFlight qualification build.
+4. Confirm annual product `app.soulcodex.plus.annual.renewing` is available to the intended sandbox/TestFlight qualification build.
 5. Produce a dedicated Xcode Cloud/TestFlight qualification build with both client qualification markers enabled.
 6. Enable only the server qualification flag for the bounded test window while production iOS billing remains disabled.
 7. Complete every StoreKit qualification checkpoint with redacted evidence.

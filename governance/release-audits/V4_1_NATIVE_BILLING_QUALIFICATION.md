@@ -8,8 +8,8 @@ This procedure is evidence collection, not an activation instruction. Code-level
 
 - Soul Codex+ Monthly baseline: **$5.99 USD / month**
 - Soul Codex+ Annual baseline: **$59.99 USD / year**
-- Apple monthly: `app.soulcodex.plus.monthly`
-- Apple annual: `app.soulcodex.plus.annual`
+- Apple monthly: `app.soulcodex.plus.monthly.renewing`
+- Apple annual: `app.soulcodex.plus.annual.renewing`
 - Google monthly: `soul_codex_plus_monthly`
 - Google annual: `soul_codex_plus_annual`
 

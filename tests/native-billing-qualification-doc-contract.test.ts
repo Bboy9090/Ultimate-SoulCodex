@@ -9,8 +9,8 @@ test("native billing qualification names the approved catalog without claiming p
   for (const value of [
     "$5.99 USD / month",
     "$59.99 USD / year",
-    "app.soulcodex.plus.monthly",
-    "app.soulcodex.plus.annual",
+    "app.soulcodex.plus.monthly.renewing",
+    "app.soulcodex.plus.annual.renewing",
     "soul_codex_plus_monthly",
     "soul_codex_plus_annual",
   ]) assert.match(procedure, new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -55,4 +55,24 @@ test("all provider transaction checkpoints remain inconclusive until evidence is
     const cells = row.split("|").map((cell) => cell.trim()).filter(Boolean);
     assert.equal(cells[1], "INCONCLUSIVE", row);
   }
+});
+
+test("Apple qualification instructions match observed App Store Connect renewing IDs", () => {
+  const catalog = readFileSync(new URL("../docs/SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md", import.meta.url), "utf8");
+  const envExample = readFileSync(new URL("../.env.example", import.meta.url), "utf8");
+  const disclosure = readFileSync(new URL("../governance/release-audits/V4_1_APP_STORE_LIVE_DISCLOSURE_READINESS_2026-10-13.md", import.meta.url), "utf8");
+  for (const [name, document] of [
+    ["store catalog", catalog],
+    ["qualification procedure", procedure],
+    ["qualification receipt", receipt],
+    ["environment example", envExample],
+    ["App Store disclosure checklist", disclosure],
+  ] as const) {
+    for (const id of ["app.soulcodex.plus.monthly.renewing", "app.soulcodex.plus.annual.renewing"]) {
+      assert.ok(document.includes(id), `${name} must use the observed product ID ${id}`);
+    }
+    assert.doesNotMatch(document, /app\.soulcodex\.plus\.(monthly|annual)(?!\.renewing)/, `${name} must not direct testers to old Apple product IDs`);
+  }
+  assert.match(catalog, /Prepare for Submission/);
+  assert.match(receipt, /\*\*iOS result:\*\* INCONCLUSIVE/);
 });
