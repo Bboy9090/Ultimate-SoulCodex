@@ -91,3 +91,54 @@ test("Navigation and planetary browser acceptance: clickable routes, alias, and 
     contentType: "application/json",
   });
 });
+
+
+test("Navigation and planetary browser acceptance: saved Identity keeps personal planetary evidence honest", async ({ page }, testInfo) => {
+  const pageErrors = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  // This is an isolated disposable browser profile; verification remains opt-in.
+  await page.goto("/create", { waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("input-name")).toBeVisible();
+  await page.getByTestId("input-name").fill("Planetary Smoke Profile");
+  await page.getByTestId("input-birth-date").fill("1990-09-17");
+  // Unknown birth time is intentional: never guess Rising, houses, or degrees.
+  await page.getByTestId("button-onboarding-next").click();
+  await page.getByTestId("input-birth-location").fill("Bronx, New York");
+  await page.getByTestId("button-location-lookup").click();
+  await page.getByTestId("button-onboarding-next").click();
+  await expect(page.getByTestId("checkbox-online-verification")).not.toBeChecked();
+  await expect(page.getByTestId("button-create-profile")).toBeEnabled();
+
+  await Promise.all([
+    page.waitForURL(/\/profile\/local-/),
+    page.getByTestId("button-create-profile").click(),
+  ]);
+  await expect(page.getByRole("heading", { name: "Planetary Smoke Profile" })).toBeVisible();
+
+  const personalChart = page.getByTestId("interactive-planetary-system");
+  await expect(personalChart).toBeVisible();
+  await expect(personalChart).toContainText("No evidence-qualified planetary placement is available yet");
+  await expect(personalChart.locator('g[role="button"]')).toHaveCount(0);
+  await expect(personalChart).toContainText("0 supported placements");
+  await assertNoOverflow(page, "saved Identity planetary system");
+
+  // Switching tabs must preserve the same evidence boundary and not hang.
+  await page.getByTestId("link-people").click();
+  await expect(destinations[0].ready(page)).toBeVisible();
+  await page.getByTestId("link-systems").click();
+  await expect(page).toHaveURL(/\/systems$/);
+  const systemsChart = page.getByTestId("interactive-planetary-system");
+  await expect(systemsChart).toBeVisible();
+  await expect(systemsChart).toContainText("No evidence-qualified planetary placement is available yet");
+  await assertNoOverflow(page, "saved Systems planetary system");
+
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.getByTestId("interactive-planetary-system")).toBeVisible();
+  await expect(page.getByTestId("interactive-planetary-system")).toContainText("0 supported placements");
+  expect(pageErrors).toEqual([]);
+  await testInfo.attach("profiled-planetary-journey.json", {
+    body: Buffer.from(JSON.stringify({ noBirthTime: true, verifiedDegreesDrawn: 0, pageErrors }, null, 2)),
+    contentType: "application/json",
+  });
+});

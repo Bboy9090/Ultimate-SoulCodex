@@ -6,6 +6,7 @@ import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { atlasEntry, atlasSignMeaning, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";
 import { natalChartIdentity } from "@/lib/natalChartIdentity";
+import { verifiedAscendantLongitude } from "@/lib/natalWheelGeometry";
 
 const GLYPH: Record<string, string> = {
   sun: "☉", moon: "☽", mercury: "☿", venus: "♀", mars: "♂",
@@ -39,11 +40,6 @@ function pointFor(longitude: number, ascendant: number, radius: number) {
   const screenDegrees = longitude - ascendant + 180;
   const radians = (screenDegrees * Math.PI) / 180;
   return { x: 180 + radius * Math.cos(radians), y: 180 - radius * Math.sin(radians) };
-}
-
-function validLongitude(value: unknown): number | null {
-  const n = Number(value);
-  return Number.isFinite(n) ? ((n % 360) + 360) % 360 : null;
 }
 
 function InterpretationDepthGate() {
@@ -85,10 +81,8 @@ function VerifiedNatalChartContent({
   const reducedMotion = useReducedMotion();
   const [selection, setSelection] = useState<ChartSelection | null>(null);
   const [guideIndex, setGuideIndex] = useState<number | null>(null);
-  const ascendant =
-    validLongitude(astrology?.rising?.internalCandidate?.longitude) ??
-    synthesis.houseCusps.find((house) => house.house === 1)?.longitude ??
-    null;
+  // Never orient verified geometry from an unverified Rising candidate.
+  const ascendant = verifiedAscendantLongitude(synthesis.houseCusps);
 
   const drawablePlacements = synthesis.placements.filter((placement) => placement.longitude !== null);
 
