@@ -86,6 +86,7 @@ jobs:
           tests/people-route-resilience-contract.test.ts
           tests/internal-route-click-audit.test.ts
           tests/interactive-planetary-experience-contract.test.ts
+          tests/natal-wheel-verified-orientation.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/unknown-time-dst-range.test.ts
           tests/dst-range-evidence-contract.test.ts
