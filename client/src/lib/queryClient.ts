@@ -1,14 +1,23 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { resolveApiUrlWithBase } from "./api-url";
+import { Capacitor, registerPlugin, type HttpOptions, type HttpResponse } from "@capacitor/core";
+import { createSessionFetch } from "./native-session-fetch";
 
 const configuredApiBase = import.meta.env?.VITE_API_URL || "";
+const nativeSessionHTTP = registerPlugin<{ request(options: HttpOptions): Promise<HttpResponse> }>("SoulCodexSessionHTTP");
+const sessionFetch = createSessionFetch({
+  isIOS: () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios",
+  apiBase: configuredApiBase,
+  nativeRequest: (options) => nativeSessionHTTP.request(options),
+  webFetch: (url, init) => fetch(url, init),
+});
 
 export function resolveApiUrl(url: string): string {
   return resolveApiUrlWithBase(url, configuredApiBase);
 }
 
 export async function apiFetch(url: string, init: RequestInit = {}): Promise<Response> {
-  return fetch(resolveApiUrl(url), {
+  return sessionFetch(resolveApiUrl(url), {
     ...init,
     credentials: init.credentials ?? "include",
   });

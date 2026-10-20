@@ -75,7 +75,18 @@ jobs:
 
       - name: Run qualification contracts
         run: |
-          node --import tsx --test             tests/ios-billing-qualification-build-contract.test.ts             tests/ios-billing-qualification-cors-contract.test.ts             tests/native-billing-bridge-contract.test.ts             tests/native-billing-server-verification-contract.test.ts
+          node --import tsx --test \
+            tests/ios-billing-qualification-build-contract.test.ts \
+            tests/ios-billing-qualification-cors-contract.test.ts \
+            tests/native-billing-bridge-contract.test.ts \
+            tests/native-billing-server-verification-contract.test.ts \
+            tests/native-session-fetch.test.ts \
+            tests/native-billing-session-recovery-contract.test.ts
+
+      - name: Verify Foundation session cookie expiry and logout
+        run: |
+          swiftc ios/App/App/SoulCodexSessionPolicy.swift tests/native-session-cookie-tests.swift -o "$RUNNER_TEMP/session-cookie-tests"
+          "$RUNNER_TEMP/session-cookie-tests"
 
       - name: Resolve Swift package graph after qualification bootstrap
         run: |

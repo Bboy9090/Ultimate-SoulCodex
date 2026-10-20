@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { Loader2, ShieldCheck } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useProductAccess } from "@/hooks/useProductAccess";
+import AppleSignInButton from "./AppleSignInButton";
 import {
   finishNativeTransaction,
   listenForNativeBillingUpdates,
@@ -11,6 +12,7 @@ import {
   loadNativeBillingProducts,
   purchaseNativeProduct,
   restoreNativePurchases,
+  requireNativeBillingSession,
   verifyNativeBillingEvidence,
   type NativeBillingCatalog,
   type NativeBillingProduct,
@@ -65,6 +67,19 @@ export default function SoulCodexPlusBillingPanel() {
   const [nativeCatalog, setNativeCatalog] = useState<NativeBillingCatalog | null>(null);
   const [nativeProducts, setNativeProducts] = useState<NativeBillingProduct[]>([]);
   const [nativeBusy, setNativeBusy] = useState<"purchase" | "restore" | null>(null);
+  const [sessionRecoveryNeeded, setSessionRecoveryNeeded] = useState(false);
+
+  const handleNativeFailure = (error: unknown) => {
+    const code = error instanceof Error ? error.message : "";
+    if (code === "authentication_required" || code === "billing_account_changed") {
+      setSessionRecoveryNeeded(true);
+      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.setQueryData(["/api/user"], null);
+      setBillingMessage("Your Soul Codex session needs to be reconnected. Sign in with the same account, then restore your purchase. You do not need to buy again.");
+      return;
+    }
+    setBillingMessage(code || "The store purchase could not be verified. Your access has not changed.");
+  };
 
   const { data: currentUser, isLoading: userLoading } = useQuery<CurrentUser | null>({
     queryKey: ["/api/auth/user"],
@@ -203,11 +218,7 @@ export default function SoulCodexPlusBillingPanel() {
         await verifyNativeEvidence(evidence);
       } catch (error) {
         if (!cancelled) {
-          setBillingMessage(
-            error instanceof Error
-              ? `StoreKit update is awaiting verification: ${error.message}`
-              : "A StoreKit update arrived but could not be verified yet.",
-          );
+          handleNativeFailure(error);
         }
       }
     }).then((handle) => {
@@ -229,12 +240,11 @@ export default function SoulCodexPlusBillingPanel() {
     setNativeBusy("purchase");
     setBillingMessage(null);
     try {
+      await requireNativeBillingSession(currentUser.id);
       const evidence = await purchaseNativeProduct(productId, currentUser.id);
       await verifyNativeEvidence(evidence);
     } catch (error) {
-      setBillingMessage(
-        error instanceof Error ? error.message : "Native Soul Codex+ purchase could not be verified.",
-      );
+      handleNativeFailure(error);
     } finally {
       setNativeBusy(null);
     }
@@ -250,6 +260,7 @@ export default function SoulCodexPlusBillingPanel() {
     setNativeBusy("restore");
     setBillingMessage(null);
     try {
+      await requireNativeBillingSession(currentUser.id);
       const evidenceList = await restoreNativePurchases(productIds);
       if (!evidenceList.length) {
         setBillingMessage("No active Soul Codex+ store purchase was found to restore.");
@@ -261,7 +272,8 @@ export default function SoulCodexPlusBillingPanel() {
         try {
           await verifyNativeEvidence(evidence);
           verified = true;
-        } catch {
+        } catch (error) {
+          if (error instanceof Error && ["authentication_required", "billing_account_changed"].includes(error.message)) throw error;
           // Continue across restored transactions; only a verified current
           // entitlement may change access.
         }
@@ -271,9 +283,7 @@ export default function SoulCodexPlusBillingPanel() {
         setBillingMessage("Store purchases were found, but none verified for this Soul Codex account.");
       }
     } catch (error) {
-      setBillingMessage(
-        error instanceof Error ? error.message : "Soul Codex+ restore could not be completed.",
-      );
+      handleNativeFailure(error);
     } finally {
       setNativeBusy(null);
     }
@@ -318,9 +328,19 @@ export default function SoulCodexPlusBillingPanel() {
         ) : null}
 
         {!plusActive && !userLoading && !currentUser ? (
-          <BillingNotice>
-            Sign in before purchasing or restoring Soul Codex+ so the store transaction can be bound to this account across devices.
-          </BillingNotice>
+          <div className="space-y-3">
+            <BillingNotice>
+              Sign in before purchasing or restoring Soul Codex+ so the store transaction can be bound to this account across devices.
+            </BillingNotice>
+            <AppleSignInButton
+              text={sessionRecoveryNeeded ? "Reconnect Apple account to restore" : "Sign in with Apple"}
+              onSuccess={() => {
+                setSessionRecoveryNeeded(false);
+                setBillingMessage("Account connected. If you already purchased, tap Restore purchases below. You do not need to buy again.");
+                void queryClient.invalidateQueries({ queryKey: ["/api/access"] });
+              }}
+            />
+          </div>
         ) : null}
 
         {!plusActive && currentUser && nativeReady && monthly && annual ? (

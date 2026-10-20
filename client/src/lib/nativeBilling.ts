@@ -47,6 +47,14 @@ interface SoulCodexNativeBillingPlugin {
 
 const NativeBilling = registerPlugin<SoulCodexNativeBillingPlugin>("SoulCodexNativeBilling");
 
+export async function requireNativeBillingSession(expectedUserId: string): Promise<void> {
+  const response = await apiFetch("/api/auth/user", { cache: "no-store" });
+  if (!response.ok) throw new Error("authentication_required");
+  const user = await response.json();
+  if (!user?.id) throw new Error("authentication_required");
+  if (user.id !== expectedUserId) throw new Error("billing_account_changed");
+}
+
 export function currentNativeBillingPlatform(): NativeBillingPlatform | null {
   const platform = Capacitor.getPlatform();
   if (platform === "ios" || platform === "android") return platform;
