@@ -48,7 +48,8 @@ public class SoulCodexSessionHTTPPlugin: CAPPlugin, CAPBridgedPlugin, URLSession
                 return
             }
             // Do not use CapacitorHttp's comma-splitting cookie rewrite.
-            for cookie in SoulCodexSessionPolicy.cookies(from: response) {
+            let responseCookies = SoulCodexSessionPolicy.cookies(from: response)
+            for cookie in responseCookies {
                 HTTPCookieStorage.shared.setCookie(cookie)
             }
             var responseHeaders: [String: String] = [:]
@@ -68,6 +69,12 @@ public class SoulCodexSessionHTTPPlugin: CAPPlugin, CAPBridgedPlugin, URLSession
                     return
                 }
                 let group = DispatchGroup()
+                // Logout must also remove the old WebView copy, not just omit it
+                // from the remaining native cookies copied below.
+                for cookie in responseCookies where cookie.expiresDate.map({ $0 <= Date() }) == true {
+                    group.enter()
+                    cookieStore.delete(cookie) { group.leave() }
+                }
                 for cookie in HTTPCookieStorage.shared.cookies(for: url) ?? [] {
                     group.enter()
                     cookieStore.setCookie(cookie) { group.leave() }

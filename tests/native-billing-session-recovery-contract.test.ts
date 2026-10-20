@@ -16,6 +16,7 @@ test("iOS account requests bypass CapacitorHttp cookie rewriting and register th
   assert.match(bridge, /registerPluginInstance\(SoulCodexSessionHTTPPlugin\(\)\)/);
   assert.match(policy, /HTTPCookie.cookies\(withResponseHeaderFields: headers, for: url\)/);
   assert.match(plugin, /configuration.httpCookieStorage = HTTPCookieStorage.shared/);
+  assert.match(plugin, /cookieStore.delete\(cookie\)/);
   assert.match(plugin, /completionHandler\(nil\)/);
 });
 
