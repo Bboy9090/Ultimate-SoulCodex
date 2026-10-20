@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { AppleSignIn, SignInScope } from "@capawesome/capacitor-apple-sign-in";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { apiFetch, apiRequest, queryClient } from "../lib/queryClient";
 
 interface Props {
   onSuccess?: (user: any) => void;
@@ -73,6 +73,14 @@ function loadAppleWebScript(): Promise<void> {
 async function finishSoulCodexAppleLogin(identityToken: string): Promise<any> {
   const response = await apiRequest("POST", "/api/auth/apple", { identityToken });
   const loginData = await response.json() as { user: any };
+  // Confirm that the server session survives a separate request before caching it.
+  const sessionResponse = await apiFetch("/api/auth/user", { cache: "no-store" });
+  const sessionUser = sessionResponse.ok ? await sessionResponse.json() : null;
+  if (!sessionUser?.id || sessionUser.id !== loginData.user?.id) {
+    queryClient.setQueryData(["/api/user"], null);
+    queryClient.setQueryData(["/api/auth/user"], null);
+    throw new Error("Apple sign-in completed, but the app session could not be confirmed. Please reconnect your account.");
+  }
   queryClient.setQueryData(["/api/user"], loginData.user);
   queryClient.setQueryData(["/api/auth/user"], loginData.user);
   return loginData.user;
