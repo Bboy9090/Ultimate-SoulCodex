@@ -83,6 +83,11 @@ jobs:
             tests/native-session-fetch.test.ts \
             tests/native-billing-session-recovery-contract.test.ts
 
+      - name: Verify Foundation session cookie expiry and logout
+        run: |
+          swiftc ios/App/App/SoulCodexSessionPolicy.swift tests/native-session-cookie-tests.swift -o "$RUNNER_TEMP/session-cookie-tests"
+          "$RUNNER_TEMP/session-cookie-tests"
+
       - name: Resolve Swift package graph after qualification bootstrap
         run: |
           xcodebuild             -resolvePackageDependencies             -project ios/App/App.xcodeproj             -scheme "Ultimate Soul Codex"

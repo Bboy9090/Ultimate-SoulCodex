@@ -4,7 +4,7 @@ Owner screenshots show an annual TestFlight sandbox purchase completing at Apple
 
 ## Implementation
 
-iOS account, billing and access JSON calls to the configured HTTPS API use Capacitor's shared native HTTP cookie jar. Other requests retain fetch. Cookies are not copied into JavaScript storage. Apple login must survive a second server request before the account is cached; purchase and restore check the current server account before invoking StoreKit. Authentication failure exposes sign-in and guides the user to restore their existing purchase.
+iOS account, billing and access JSON calls use the registered SoulCodexSessionHTTP plugin with Foundation URLSession and its shared native cookie storage. Other requests retain fetch. The plugin permits only the production HTTPS API origin and account/billing/access paths, refuses redirects, and uses Foundation to parse complete cookie headers including Expires dates. It bypasses the pinned CapacitorHttp comma-splitting cookie rewrite identified during review. Cookies are not copied into JavaScript storage or returned through the bridge. Apple login must survive a second server request before the account is cached; purchase and restore check the current server account before invoking StoreKit. Authentication failure exposes sign-in and guides the user to restore their existing purchase.
 
 Server verification, account binding and finish-after-verification remain required. No production billing switches change.
 
