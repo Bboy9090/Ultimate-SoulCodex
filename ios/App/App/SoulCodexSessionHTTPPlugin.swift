@@ -6,7 +6,7 @@ import WebKit
 public class SoulCodexSessionHTTPPlugin: CAPPlugin, CAPBridgedPlugin, URLSessionTaskDelegate {
     public let identifier = "SoulCodexSessionHTTPPlugin"
     public let jsName = "SoulCodexSessionHTTP"
-    public let pluginMethods = [CAPPluginMethod(name: "request", returnType: CAPPluginReturnPromise)]
+    public let pluginMethods: [CAPPluginMethod] = [CAPPluginMethod(name: "request", returnType: CAPPluginReturnPromise)]
 
     @objc func request(_ call: CAPPluginCall) {
         guard let rawURL = call.getString("url"), let url = URL(string: rawURL),
