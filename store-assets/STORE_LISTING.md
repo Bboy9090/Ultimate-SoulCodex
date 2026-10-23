@@ -39,20 +39,19 @@ Not a pile of disconnected horoscopes. One sharp, integrated reading that explai
 - Free to start, no account required
 
 **Free tier includes:**
-- Sun, Moon, and Rising signs
-- Life Path number
-- Soul Archetype
-- Today's card
-- Quick compatibility check
+- Verified natal chart geometry and supported Big Three
+- Life Path and date-based numerology
+- Verified Human Design Type, Strategy, Authority, and Profile when evidence supports them
+- Evidence and provenance — including uncertainty and missing-data honesty
+- Core Soul Codex clarity and basic compatibility
 
-**Premium includes everything above plus:**
-- Full chart with houses and aspects
-- Complete Human Design profile
-- Full Soul Codex reading
-- Daily personalized guidance
-- Soul Guide AI chat
-- Compatibility deep-dives
-- Timeline and life current tracker
+**Soul Codex+ currently unlocks:**
+- Deeper interpretation layers across supported readings
+- Full-name numerology: Expression, Soul Urge, Personality, and Maturity
+- Up to five qualified Daily influences
+- Evidence-aware downloadable natal PDF report
+
+Roadmap features are not sold as current Plus access. Accuracy, evidence, and uncertainty remain available on Free.
 
 ## Keywords (iOS, 100 chars max)
 astrology,numerology,human design,birth chart,personality,soul,zodiac,compatibility,daily reading
