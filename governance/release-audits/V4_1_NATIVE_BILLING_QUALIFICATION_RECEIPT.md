@@ -94,7 +94,7 @@ Overall native billing qualification: **INCONCLUSIVE**
 ## 2026-10-23 store-console readiness note
 
 - App Store Connect version 4.1 now has build `4000011` selected and the required What's New text saved.
-- The `Soul Codex+` subscription group exists with both approved product identifiers, but both products remain `Prepare for Submission`.
+- The `Soul Codex+` subscription group exists with both configured product identifiers, but both products remain `Prepare for Submission`.
 - Monthly and annual subscription availability were observed as United States only (`1 of 175` regions) at audit time.
 - Apple requires a Review Information screenshot for the subscriptions before they can be added for review.
 - These store-metadata observations do not change the provider qualification result. Production iOS billing must remain disabled until the full current-build evidence matrix passes.
