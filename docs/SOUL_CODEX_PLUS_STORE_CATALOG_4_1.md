@@ -1,6 +1,6 @@
 # Soul Codex+ 4.1 Store Catalog Handoff
 
-This document is the operator contract for creating and qualifying the production subscription catalog. Apple account observations are recorded below. Google Play and Stripe qualification remain independent.
+This document is the operator contract for creating and qualifying the production subscription catalog. Apple account observations are recorded below. Google Play and Stripe catalog creation and availability remain unverified; their qualification remains independent.
 
 ## Commercial baseline
 
