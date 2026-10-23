@@ -1,0 +1,44 @@
+name: Soul Codex Legal Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "legal/**"
+      - ".github/workflows/legal-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: legal-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Upload static legal site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: legal
+
+      - name: Deploy legal site
+        id: deployment
+        uses: actions/deploy-pages@v4
