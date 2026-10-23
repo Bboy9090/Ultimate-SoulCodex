@@ -8,7 +8,8 @@ Do not duplicate or independently edit store copy here. Use the canonical packet
 ## Current release identity
 
 - Android: `4.1.0` / versionCode `4000012` / `soulcodex.app`
-- iOS: `4.1.0` / build `4000011` / `app.soulcodex.ios` / App Store ID `6764221944`
+- iOS: `4.1.0` / build `4000011` / `app.soulcodex.ios` / App Store ID `6764221944` (source project identity)
+- Apple submission candidate: use the Apple-managed Xcode Cloud build recorded in the current exact-head release receipt; do not assume the source project build setting is the App Store Connect build number.
 - Release authority: use the successful exact-head Store Candidate / hardening receipt for the binary being submitted; do not hard-code a moving SHA here.
 
 ## Verified public URLs

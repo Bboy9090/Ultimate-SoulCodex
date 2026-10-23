@@ -166,3 +166,18 @@ test("committed evidence template cannot carry a stale qualification SHA", () =>
   );
   assert.equal(template.releaseSha, "REPLACE_WITH_EXACT_40_CHAR_QUALIFICATION_SHA");
 });
+
+test("iOS evidence template distinguishes Apple submission build from source project build setting", () => {
+  const template = JSON.parse(
+    readFileSync(
+      "governance/release-audits/V4_1_BILLING_QUALIFICATION_EVIDENCE.template.json",
+      "utf8",
+    ),
+  );
+  assert.equal(template.appVersionBuild, "4.1.0 / Apple Xcode Cloud build 324");
+  assert.equal(template.sourceProjectBuildSetting, "4000011");
+  for (const checkpoint of ["catalog", "monthly_purchase", "annual_purchase"]) {
+    assert.equal(template.providers.ios[checkpoint].appBuild, "4.1.0 / Apple Xcode Cloud build 324");
+    assert.equal(template.providers.ios[checkpoint].sourceProjectBuildSetting, "4000011");
+  }
+});
