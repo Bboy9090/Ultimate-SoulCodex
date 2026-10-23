@@ -14,7 +14,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release | 4.1.0 / versionCode 4000011 |
+| Android release | 4.1.0 / versionCode 4000012 |
 | iOS release | 4.1.0 / build 4000011 |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
