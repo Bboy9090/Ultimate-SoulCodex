@@ -183,7 +183,7 @@
   "overrides": {
     "qs": "$qs",
     "brace-expansion": "5.0.12",
-    "dompurify": "3.4.16",
-    "ip-address": "10.7.3"
+    "dompurify": "3.4.17",
+    "ip-address": "10.7.4"
   }
 }
