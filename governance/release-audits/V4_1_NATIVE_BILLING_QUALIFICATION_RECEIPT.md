@@ -103,3 +103,35 @@ Overall native billing qualification: **INCONCLUSIVE**
 - The current App Review draft now contains `iOS 4.1` build `324`, both subscriptions, and the localized `Soul Codex+` subscription group: **4 items, Ready for Review**.
 - Final `Submit for Review` has intentionally **not** been pressed because current-build StoreKit purchase/restore/lifecycle qualification remains INCONCLUSIVE and no physical iOS device is currently online for that evidence run.
 - These store-metadata observations do not change the provider qualification result. Production iOS billing must remain disabled until the full current-build evidence matrix passes.
+
+## 2026-10-23 cross-store verification update
+
+### Apple / App Store Connect
+
+- iOS App Version 4.1 remains **Ready for Review**.
+- The attached App Store submission build is Apple-managed Xcode Cloud build `324`, version `4.1.0`.
+- No physical iOS device was connected during this verification window, so current-build StoreKit purchase/restore/lifecycle evidence remains INCONCLUSIVE.
+- Final App Review submission remains intentionally held until the real StoreKit qualification matrix is completed.
+
+### Google Play
+
+- Closed testing track **Alpha** is active with release **Soul Codex 4.1.0 (4000012) Closed Test**.
+- The active closed-test release is available to selected testers in **178 countries / regions**.
+- Tester email list `test lkist` contains **25 users**.
+- Google Play Dashboard currently reports **0 testers opted in**.
+- Production access is therefore blocked by Google's account eligibility gate: at least **12 testers must opt in and remain in the closed test for at least 14 days** before production access can be requested.
+- Tester opt-in URL: `https://play.google.com/apps/testing/soulcodex.app`.
+- Monthly subscription `soul_codex_plus_monthly`: base plan `monthly`, auto-renewing, **Active**, **175 countries / regions**.
+- Annual subscription `soul_codex_plus_annual`: base plan `annual`, yearly auto-renewing, **Active**, **175 countries / regions**.
+- Store-console catalog activation is configuration evidence only; Android catalog resolution inside the shipped app and all purchase/restore/lifecycle checkpoints remain INCONCLUSIVE until exercised through Google Play Billing on an eligible test device/account.
+- Android production billing flags must remain disabled until provider qualification is PASS.
+
+### Public legal/support surface
+
+- Store-facing GitHub Pages endpoints were verified over HTTPS with HTTP 200 responses:
+  - `https://bboy9090.github.io/Ultimate-SoulCodex/privacy/`
+  - `https://bboy9090.github.io/Ultimate-SoulCodex/support/`
+  - `https://bboy9090.github.io/Ultimate-SoulCodex/account-deletion/`
+- Independent Vercel legal-host fallback `https://soulcodex-legal.vercel.app/privacy/` was also verified HTTP 200 after correcting the Vercel project root to `legal`.
+- These public legal endpoints are independent of the application backend/runtime and do not constitute backend billing qualification.
+
