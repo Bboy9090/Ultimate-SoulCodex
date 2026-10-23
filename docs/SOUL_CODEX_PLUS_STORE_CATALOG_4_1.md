@@ -117,7 +117,7 @@ Until provider-specific sandbox evidence is recorded:
 - TestFlight identifies the binary as Soul Codex `4.1.0 (324)`, bundle `app.soulcodex.ios`.
 - Both monthly and annual products are now **Ready for Review**.
 - Both products are available in all current App Store countries/regions (`175`) and set to become available in future App Store regions automatically.
-- Apple Review Information screenshots are present for both subscription products.
-- The App Review draft now groups iOS 4.1 with both auto-renewable subscriptions: **3 items, Ready for Review**.
+- Apple Review Information screenshots are present for both subscription products. The subscription group now has an English (U.S.) localization with display name `Soul Codex+` and app name `Soul Codex`.
+- The App Review draft now groups iOS 4.1 build `324`, both auto-renewable subscriptions, and the localized `Soul Codex+` subscription group: **4 items, Ready for Review**.
 - The final submission is intentionally held because provider transaction qualification is still **INCONCLUSIVE**. No physical iOS device is currently online to prove current-build purchase, server verification, persistence, restore, reinstall, and lifecycle behavior.
 - Production iOS billing remains unauthorized until the full qualification matrix passes.
