@@ -97,9 +97,9 @@ Overall native billing qualification: **INCONCLUSIVE**
 
 - App Store Connect version 4.1 is now attached to Apple-managed Xcode Cloud build `324` (`4.1.0`) from exact SHA `805c4b30247283b34f3d22da54038e2fc612e98c`.
 - Xcode Cloud reports build `324` on `main` / workflow `Default`; the archive action succeeded. TestFlight metadata shows it was uploaded at 2026-10-23 05:47 America/New_York.
-- Both `Soul Codex+` auto-renewable subscriptions are `Ready for Review` with review screenshots present.
+- Both `Soul Codex+` auto-renewable subscriptions are `Ready for Review` with review screenshots present; the subscription group has an English (U.S.) localization with display name `Soul Codex+` and app name `Soul Codex`.
 - Monthly and annual subscription availability is now all current App Store countries/regions (`175`) with automatic future-region availability enabled.
 - The previously separate 4.1 submission was developer-cancelled so Apple could receive the first auto-renewable subscription group with the new app version as required.
-- The current App Review draft now contains `iOS 4.1` plus both subscriptions: **3 items, Ready for Review**.
+- The current App Review draft now contains `iOS 4.1` build `324`, both subscriptions, and the localized `Soul Codex+` subscription group: **4 items, Ready for Review**.
 - Final `Submit for Review` has intentionally **not** been pressed because current-build StoreKit purchase/restore/lifecycle qualification remains INCONCLUSIVE and no physical iOS device is currently online for that evidence run.
 - These store-metadata observations do not change the provider qualification result. Production iOS billing must remain disabled until the full current-build evidence matrix passes.
