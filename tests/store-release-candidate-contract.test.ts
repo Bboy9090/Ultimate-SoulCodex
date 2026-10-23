@@ -94,15 +94,16 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
 });
 
 
-test("store metadata points at the verified production domain and exact release identities", async () => {
+test("store metadata points at the verified public legal host and exact release identities", async () => {
   const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
   const listing = await text("store-assets/STORE_LISTING.md");
   const appStore = await text("app_store_metadata.md");
 
   for (const source of [packet, listing, appStore]) {
-    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/privacy/);
-    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/support/);
-    assert.match(source, /https:\/\/soulcodex\.up\.railway\.app\/account-deletion/);
+    assert.match(source, /https:\/\/bboy9090\.github\.io\/Ultimate-SoulCodex\/privacy\//);
+    assert.match(source, /https:\/\/bboy9090\.github\.io\/Ultimate-SoulCodex\/support\//);
+    assert.match(source, /https:\/\/bboy9090\.github\.io\/Ultimate-SoulCodex\/account-deletion\//);
+    assert.doesNotMatch(source, /https:\/\/soulcodex\.up\.railway\.app\/(?:privacy|support|account-deletion)/);
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
