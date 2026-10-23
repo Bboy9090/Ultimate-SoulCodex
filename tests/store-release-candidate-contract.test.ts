@@ -114,7 +114,7 @@ test("store metadata points at the verified production domain and exact release 
   assert.match(listing, /Deeper interpretation layers across supported readings/);
   assert.match(listing, /Full-name numerology: Expression, Soul Urge, Personality, and Maturity/);
   assert.match(listing, /Evidence-aware downloadable natal PDF report/);
-  assert.doesNotMatch(listing, /Premium includes everything above plus:[\\s\\S]*Full chart with houses and aspects/);
+  assert.doesNotMatch(listing, /Premium includes everything above plus:[\s\S]*Full chart with houses and aspects/);
   assert.doesNotMatch(listing, /Complete Human Design profile/);
 
   const movingSha = /\b[0-9a-f]{40}\b/i;
