@@ -77,7 +77,7 @@ if (platform === "ios") {
 if (platform === "android") {
   requireMatch("android/app/build.gradle", /applicationId\s+["']soulcodex\.app["']/, "The Android application ID must match Play Console: soulcodex.app.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000011/, "The Android versionCode must be 4000011 for the 4.1.0 store release.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000012/, "The Android versionCode must be 4000012 for the 4.1.0 Play release.");
   requireMatch("android/app/build.gradle", /versionName\s+["']4\.1\.0["']/, "The Android versionName must be 4.1.0 for the store release.");
 }
 
