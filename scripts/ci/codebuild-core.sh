@@ -61,7 +61,7 @@ node --import tsx --test \
   tests/unknown-time-input-contract.test.ts \
   tests/foundation-local-astronomy-boundary.test.ts \
   tests/profile-verification-boundary.test.ts \
-  tests/no-simulated-release-routes.test.ts \\
+  tests/no-simulated-release-routes.test.ts \
   tests/plus-promise-human-design-contract.test.ts
 
 node scripts/verify-foundation-codebuild.mjs
