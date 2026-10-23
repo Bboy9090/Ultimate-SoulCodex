@@ -19,10 +19,10 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
-| Production URL | https://soulcodex.up.railway.app |
-| Privacy policy | https://soulcodex.up.railway.app/privacy |
-| Support | https://soulcodex.up.railway.app/support |
-| Account deletion | https://soulcodex.up.railway.app/account-deletion |
+| Backend/runtime origin | Railway deployment — qualification tracked separately from store-review URLs |
+| Privacy policy | https://bboy9090.github.io/Ultimate-SoulCodex/privacy/ |
+| Support | https://bboy9090.github.io/Ultimate-SoulCodex/support/ |
+| Account deletion | https://bboy9090.github.io/Ultimate-SoulCodex/account-deletion/ |
 | Contact email | `support@soulcodex.app` |
 | Privacy email | `privacy@soulcodex.app` |
 
@@ -176,7 +176,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 
 - Final candidate SHA: take this from the successful exact-head Store Candidate / hardening receipt immediately before submission; do not copy a historical SHA from this document.
 - Railway production deployment: verify the live `/health` release SHA matches that exact candidate before submission.
-- Railway public domain: `soulcodex.up.railway.app`
+- Static store-review legal/support host: `bboy9090.github.io/Ultimate-SoulCodex` (GitHub Pages, HTTPS verified)
 - Android signed AAB: built and `jarsigner -verify` passed
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android manifest native permission surface: `android.permission.INTERNET` only
@@ -192,7 +192,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 3. In Play Console, select/create Soul Codex for package `soulcodex.app`.
 4. Upload the exact-current signed `app-release.aab` from the latest exact-head Android store artifact; verify its `RELEASE-CANDIDATE-SHA.txt` matches current release authority before upload.
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
-6. Use the verified Railway URLs for privacy, support, and account deletion unless a custom domain is attached and verified first.
+6. Use the verified GitHub Pages URLs in this packet for privacy, support, and account deletion. Backend/runtime qualification is independent and must not be inferred from the legal-host status.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
 8. For Apple, use the Apple-managed Xcode Cloud archive from the same exact qualified candidate SHA used for submission evidence. The checked-in project build setting remains `4000011`; App Store Connect may assign a separate Xcode Cloud build counter, which must be recorded in the release receipt.
 
