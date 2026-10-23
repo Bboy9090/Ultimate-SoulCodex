@@ -12,11 +12,10 @@ Do not duplicate or independently edit store copy here. Use the canonical packet
 - Apple submission candidate: use the Apple-managed Xcode Cloud build recorded in the current exact-head release receipt; do not assume the source project build setting is the App Store Connect build number.
 - Release authority: use the successful exact-head Store Candidate / hardening receipt for the binary being submitted; do not hard-code a moving SHA here.
 
-## Verified public URLs
+## Verified public store-review URLs
 
-- Production: <https://soulcodex.up.railway.app>
-- Privacy: <https://soulcodex.up.railway.app/privacy>
-- Support: <https://soulcodex.up.railway.app/support>
-- Account deletion: <https://soulcodex.up.railway.app/account-deletion>
+- Privacy: <https://bboy9090.github.io/Ultimate-SoulCodex/privacy/>
+- Support: <https://bboy9090.github.io/Ultimate-SoulCodex/support/>
+- Account deletion: <https://bboy9090.github.io/Ultimate-SoulCodex/account-deletion/>
 
-The `soulcodex.app` custom-domain URLs are not the current verified Railway production URLs and must not be used in store submission metadata until that custom domain is actually attached and verified.
+The static legal/support site is independently hosted on GitHub Pages and verified over HTTPS. The application backend/runtime origin remains a separate release dependency and must not be substituted with the static Pages host. Do not use an unverified custom domain in store metadata.
