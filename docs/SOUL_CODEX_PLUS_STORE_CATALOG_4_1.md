@@ -1,6 +1,6 @@
 # Soul Codex+ 4.1 Store Catalog Handoff
 
-This document is the operator contract for creating the production subscription catalog. Apple account observations are recorded below. Google Play and Stripe catalog creation and availability remain unverified.
+This document is the operator contract for creating and qualifying the production subscription catalog. Apple account observations are recorded below. Google Play and Stripe qualification remain independent.
 
 ## Commercial baseline
 
@@ -108,3 +108,16 @@ Until provider-specific sandbox evidence is recorded:
 - Signed local qualification build **4.1.0 (4000011)** uses source `7abb40d35a50a80134474e266a819865f0e6c156`. IPA SHA-256: `6cc5a3a15c09b23f8570cd2c737b7b71a648ce02e5c9880a1142e15e33ffba81`. Upload of this artifact was not verified.
 - Apple displayed an updated Developer Program License Agreement notice requiring Account Holder acceptance before app updates/submissions. Subsequent Apple Developer sign-in timed out; acceptance remains unverified.
 - Real purchase, restore, renewal, cancellation/expiry, refund/revocation, notifications, and second-device qualification remain outstanding. No production billing activation is authorized by this checkpoint.
+
+
+## Observed Apple review-package checkpoint — 2026-10-23
+
+- Current Apple submission-candidate source: `805c4b30247283b34f3d22da54038e2fc612e98c` on `main`.
+- Xcode Cloud workflow `Default` produced build `324` from that exact commit; the iOS archive action succeeded.
+- TestFlight identifies the binary as Soul Codex `4.1.0 (324)`, bundle `app.soulcodex.ios`.
+- Both monthly and annual products are now **Ready for Review**.
+- Both products are available in all current App Store countries/regions (`175`) and set to become available in future App Store regions automatically.
+- Apple Review Information screenshots are present for both subscription products.
+- The App Review draft now groups iOS 4.1 with both auto-renewable subscriptions: **3 items, Ready for Review**.
+- The final submission is intentionally held because provider transaction qualification is still **INCONCLUSIVE**. No physical iOS device is currently online to prove current-build purchase, server verification, persistence, restore, reinstall, and lifecycle behavior.
+- Production iOS billing remains unauthorized until the full qualification matrix passes.
