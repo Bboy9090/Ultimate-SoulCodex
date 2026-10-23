@@ -32,6 +32,8 @@ export function projectInterpretationInputsForTier(
         soulUrge: null,
         personality: null,
         maturity: null,
+        expressionNumber: null,
+        soulUrgeNumber: null,
         interpretations: numerology.interpretations && typeof numerology.interpretations === "object"
           ? {
               lifePath: numerology.interpretations.lifePath,
