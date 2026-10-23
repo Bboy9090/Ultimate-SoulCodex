@@ -74,6 +74,7 @@ jobs:
             tests/product-access-capability-contract.test.ts \
             tests/product-entitlement-contract.test.ts \
             tests/product-promise-coverage.test.ts \
+            tests/plus-promise-human-design-contract.test.ts \
             tests/astrology-atlas.test.ts \
             tests/personal-astrology-atlas.test.ts \
             tests/system-registry-contract.test.ts \
