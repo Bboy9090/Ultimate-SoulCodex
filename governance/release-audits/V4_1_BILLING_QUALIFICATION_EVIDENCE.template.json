@@ -1,6 +1,6 @@
 {
   "releaseSha": "REPLACE_WITH_EXACT_40_CHAR_QUALIFICATION_SHA",
-  "appVersionBuild": "4.1.0 / 4000011",
+  "appVersionBuild": "4.1.0 / Apple Xcode Cloud build 324",
   "testWindow": "replace when provider qualification begins",
   "providers": {
     "ios": {
@@ -8,27 +8,30 @@
         "result": "INCONCLUSIVE",
         "evidenceRef": "",
         "observedAt": "",
-        "appBuild": "4.1.0 / 4000011",
+        "appBuild": "4.1.0 / Apple Xcode Cloud build 324",
         "device": "",
-        "accountAlias": ""
+        "accountAlias": "",
+        "sourceProjectBuildSetting": "4000011"
       },
       "monthly_purchase": {
         "result": "INCONCLUSIVE",
         "evidenceRef": "",
         "serverVerification": "",
         "observedAt": "",
-        "appBuild": "4.1.0 / 4000011",
+        "appBuild": "4.1.0 / Apple Xcode Cloud build 324",
         "device": "",
-        "accountAlias": ""
+        "accountAlias": "",
+        "sourceProjectBuildSetting": "4000011"
       },
       "annual_purchase": {
         "result": "INCONCLUSIVE",
         "evidenceRef": "",
         "serverVerification": "",
         "observedAt": "",
-        "appBuild": "4.1.0 / 4000011",
+        "appBuild": "4.1.0 / Apple Xcode Cloud build 324",
         "device": "",
-        "accountAlias": ""
+        "accountAlias": "",
+        "sourceProjectBuildSetting": "4000011"
       },
       "cancelled_purchase": {
         "result": "INCONCLUSIVE",
@@ -187,5 +190,6 @@
         "evidenceRef": ""
       }
     }
-  }
+  },
+  "sourceProjectBuildSetting": "4000011"
 }
