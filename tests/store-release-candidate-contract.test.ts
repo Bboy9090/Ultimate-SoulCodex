@@ -146,14 +146,17 @@ test("Store Candidate concurrency is isolated per PR or ref", async () => {
 
 test("Google Play account-deletion page states request steps, deleted data, and retention", async () => {
   const deletion = await text("client/src/pages/AccountDeletionPage.tsx");
+  const staticDeletion = await text("legal/account-deletion/index.html");
 
-  assert.match(deletion, /Delete your Soul Codex account and data/);
-  assert.match(deletion, /How to request deletion/);
+  for (const source of [deletion, staticDeletion]) {
+    assert.match(source, /Delete your Soul Codex account and data/);
+    assert.match(source, /How to request deletion/);
+    assert.match(source, /privacy@soulcodex\.app/);
+    assert.match(source, /What will be removed/);
+    assert.match(source, /up to 7 days/);
+    assert.match(source, /No scheduled production database backups are currently enabled/);
+    assert.match(source, /legally required period/);
+  }
   assert.match(deletion, /Permanently Delete My Data/);
-  assert.match(deletion, /privacy@soulcodex\.app/);
-  assert.match(deletion, /What will be removed/);
   assert.match(deletion, /What may be kept and for how long/);
-  assert.match(deletion, /up to 7 days/);
-  assert.match(deletion, /No scheduled production database backups are currently enabled/);
-  assert.match(deletion, /legally required period/);
 });
