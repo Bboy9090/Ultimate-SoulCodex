@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, jsonb, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, jsonb, boolean, integer, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -61,6 +61,22 @@ export const profiles = pgTable("soul_profiles", {
   updatedAt: timestamp("updated_at").default(sql`now()`),
 });
 
+export const galacticCodeRecords = pgTable("galactic_code_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: varchar("profile_id").notNull(),
+  userId: varchar("user_id"),
+  sessionId: varchar("session_id"),
+  revision: varchar("revision", { length: 64 }).notNull(),
+  version: text("version").notNull(),
+  result: jsonb("result").notNull(),
+  generatedAt: timestamp("generated_at").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  profileUnique: uniqueIndex("galactic_code_records_profile_unique").on(table.profileId),
+  ownerIndex: index("galactic_code_records_owner_idx").on(table.userId, table.sessionId),
+}));
+
 export const assessmentResponses = pgTable("assessment_responses", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
@@ -78,6 +94,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Profile = typeof profiles.$inferSelect;
+export type GalacticCodeRecord = typeof galacticCodeRecords.$inferSelect;
+export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 

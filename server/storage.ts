@@ -7,6 +7,7 @@ import {
   accessCodeRedemptions,
   localUsers,
   publicProfileShares,
+  galacticCodeRecords,
   billingSubjects,
   billingTransactionEvents,
   entitlementGrants,
@@ -18,6 +19,8 @@ import {
   type Assessment,
   type InsertAssessment,
   type PublicProfileShare,
+  type GalacticCodeRecord,
+  type InsertGalacticCodeRecord,
   type BillingSubject,
   type BillingTransactionEvent,
   type EntitlementGrant,
@@ -47,6 +50,9 @@ export interface IStorage {
   getPublicProfileShareByToken(token: string): Promise<PublicProfileShare | undefined>;
   listPublicProfileShares(profileId: string, limit?: number): Promise<PublicProfileShare[]>;
   revokePublicProfileShare(token: string): Promise<PublicProfileShare | undefined>;
+  getGalacticCodeRecord(profileId: string): Promise<GalacticCodeRecord | undefined>;
+  upsertGalacticCodeRecord(record: InsertGalacticCodeRecord): Promise<GalacticCodeRecord>;
+  deleteGalacticCodeRecordsForProfiles(profileIds: string[]): Promise<void>;
   getBillingSubjectByUserId(userId: string): Promise<BillingSubject | undefined>;
   getOrCreateBillingSubject(userId: string): Promise<BillingSubject>;
   getBillingTransactionEventById(id: string): Promise<BillingTransactionEvent | undefined>;
@@ -64,6 +70,7 @@ export class MemStorage implements IStorage {
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
   private publicShares = new Map<string, PublicProfileShare>();
+  private galacticRecords = new Map<string, GalacticCodeRecord>();
   private billingSubjects = new Map<string, BillingSubject>();
   private billingEvents = new Map<string, BillingTransactionEvent>();
   private entitlementRecords = new Map<string, EntitlementGrant>();
@@ -124,6 +131,11 @@ export class MemStorage implements IStorage {
     for (const [id, profile] of this.profiles) {
       if (profile.sessionId === sessionId && !profile.userId) {
         this.profiles.set(id, { ...profile, userId, sessionId: null, updatedAt: new Date() });
+      }
+    }
+    for (const [profileId, record] of this.galacticRecords) {
+      if (record.sessionId === sessionId && !record.userId) {
+        this.galacticRecords.set(profileId, { ...record, userId, sessionId: null, updatedAt: new Date() });
       }
     }
   }
@@ -224,6 +236,30 @@ export class MemStorage implements IStorage {
     this.publicShares.set(token, revoked);
     return revoked;
   }
+  async getGalacticCodeRecord(profileId: string) {
+    return this.galacticRecords.get(profileId);
+  }
+  async upsertGalacticCodeRecord(input: InsertGalacticCodeRecord): Promise<GalacticCodeRecord> {
+    const now = new Date();
+    const existing = this.galacticRecords.get(input.profileId);
+    const record: GalacticCodeRecord = {
+      id: existing?.id ?? input.id ?? randomUUID(),
+      profileId: input.profileId,
+      userId: input.userId ?? null,
+      sessionId: input.sessionId ?? null,
+      revision: input.revision,
+      version: input.version,
+      result: input.result,
+      generatedAt: input.generatedAt,
+      createdAt: existing?.createdAt ?? input.createdAt ?? now,
+      updatedAt: now,
+    };
+    this.galacticRecords.set(record.profileId, record);
+    return record;
+  }
+  async deleteGalacticCodeRecordsForProfiles(profileIds: string[]): Promise<void> {
+    for (const profileId of profileIds) this.galacticRecords.delete(profileId);
+  }
   async getBillingSubjectByUserId(userId: string) {
     return [...this.billingSubjects.values()].find((subject) => subject.userId === userId);
   }
@@ -312,6 +348,7 @@ export class MemStorage implements IStorage {
     for (const [token, share] of this.publicShares) {
       if (profileIds.includes(share.profileId)) this.publicShares.delete(token);
     }
+    await this.deleteGalacticCodeRecordsForProfiles(profileIds);
     for (const [id, profile] of this.profiles) {
       if (profile.sessionId === sessionId) this.profiles.delete(id);
     }
@@ -326,6 +363,7 @@ export class MemStorage implements IStorage {
     for (const [token, share] of this.publicShares) {
       if (profileIds.includes(share.profileId)) this.publicShares.delete(token);
     }
+    await this.deleteGalacticCodeRecordsForProfiles(profileIds);
     for (const [id, profile] of this.profiles) {
       if (profile.userId === userId) this.profiles.delete(id);
     }
@@ -372,6 +410,9 @@ class PostgresStorage implements IStorage {
     await db.update(profiles)
       .set({ userId, sessionId: null, updatedAt: new Date() })
       .where(and(eq(profiles.sessionId, sessionId), isNull(profiles.userId)));
+    await db.update(galacticCodeRecords)
+      .set({ userId, sessionId: null, updatedAt: new Date() })
+      .where(and(eq(galacticCodeRecords.sessionId, sessionId), isNull(galacticCodeRecords.userId)));
     await db.update(accessCodeRedemptions)
       .set({ userId, sessionId: null })
       .where(and(eq(accessCodeRedemptions.sessionId, sessionId), isNull(accessCodeRedemptions.userId)));
@@ -426,6 +467,34 @@ class PostgresStorage implements IStorage {
       .set({ revokedAt: new Date() })
       .where(eq(publicProfileShares.token, token))
       .returning())[0];
+  }
+  async getGalacticCodeRecord(profileId: string) {
+    const db = await this.db();
+    return (await db.select().from(galacticCodeRecords)
+      .where(eq(galacticCodeRecords.profileId, profileId)).limit(1))[0];
+  }
+  async upsertGalacticCodeRecord(record: InsertGalacticCodeRecord): Promise<GalacticCodeRecord> {
+    const db = await this.db();
+    return (await db.insert(galacticCodeRecords)
+      .values(record)
+      .onConflictDoUpdate({
+        target: galacticCodeRecords.profileId,
+        set: {
+          userId: record.userId ?? null,
+          sessionId: record.sessionId ?? null,
+          revision: record.revision,
+          version: record.version,
+          result: record.result,
+          generatedAt: record.generatedAt,
+          updatedAt: new Date(),
+        },
+      })
+      .returning())[0];
+  }
+  async deleteGalacticCodeRecordsForProfiles(profileIds: string[]): Promise<void> {
+    if (!profileIds.length) return;
+    const db = await this.db();
+    await db.delete(galacticCodeRecords).where(inArray(galacticCodeRecords.profileId, profileIds));
   }
   async getBillingSubjectByUserId(userId: string) {
     const db = await this.db();
@@ -514,6 +583,7 @@ class PostgresStorage implements IStorage {
     if (ids.length) {
       await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
       await db.delete(publicProfileShares).where(inArray(publicProfileShares.profileId, ids));
+      await db.delete(galacticCodeRecords).where(inArray(galacticCodeRecords.profileId, ids));
     }
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.sessionId, sessionId));
     await db.delete(profiles).where(eq(profiles.sessionId, sessionId));
@@ -525,6 +595,7 @@ class PostgresStorage implements IStorage {
     if (ids.length) {
       await db.delete(assessmentResponses).where(inArray(assessmentResponses.profileId, ids));
       await db.delete(publicProfileShares).where(inArray(publicProfileShares.profileId, ids));
+      await db.delete(galacticCodeRecords).where(inArray(galacticCodeRecords.profileId, ids));
     }
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
     await db.delete(profiles).where(eq(profiles.userId, userId));

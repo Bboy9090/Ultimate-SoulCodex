@@ -102,6 +102,22 @@ export const publicProfileShares = pgTable("public_profile_shares", {
   revokedAt: timestamp("revoked_at"),
 });
 
+export const galacticCodeRecords = pgTable("galactic_code_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  profileId: varchar("profile_id").notNull(),
+  userId: varchar("user_id"),
+  sessionId: varchar("session_id"),
+  revision: varchar("revision", { length: 64 }).notNull(),
+  version: text("version").notNull(),
+  result: jsonb("result").notNull(),
+  generatedAt: timestamp("generated_at").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  profileUnique: uniqueIndex("galactic_code_records_profile_unique").on(table.profileId),
+  ownerIndex: index("galactic_code_records_owner_idx").on(table.userId, table.sessionId),
+}));
+
 
 export const billingSubjects = pgTable("billing_subjects", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -326,6 +342,8 @@ export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 export type PublicProfileShare = typeof publicProfileShares.$inferSelect;
+export type GalacticCodeRecord = typeof galacticCodeRecords.$inferSelect;
+export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type BillingSubject = typeof billingSubjects.$inferSelect;
 export type BillingTransactionEvent = typeof billingTransactionEvents.$inferSelect;
 export type EntitlementGrant = typeof entitlementGrants.$inferSelect;
