@@ -138,7 +138,6 @@
     "react-hook-form": "^7.55.0",
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
-    "recharts": "^2.15.2",
     "sharp": "0.35.5",
     "stripe": "^20.1.0",
     "tailwind-merge": "^2.6.0",
