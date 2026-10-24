@@ -1,23 +1,24 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
 import type { IStorage } from "../storage";
-import { generateEntitledGalacticCode } from "../services/galactic-code-entitled";
+import { getOrGenerateEntitledGalacticCode } from "../services/galactic-code-cache";
 
-type GenerateEntitled = typeof generateEntitledGalacticCode;
+type GenerateEntitled = typeof getOrGenerateEntitledGalacticCode;
 
 /**
- * Dormant HTTP admission boundary for Galactic Code.
+ * Production HTTP admission boundary for Galactic Code.
  *
- * This handler is intentionally not registered in the production router yet.
  * It accepts no caller-supplied evidence or birth-data overrides: the profile id
  * is resolved from the URL and all synthesis inputs are reconstructed server-side.
+ * Persisted results pass through ownership, revision, version, shape, and current
+ * entitlement gates before they can be returned.
  */
 export function galacticCodeHandler(dependencies: {
-  storage: Pick<IStorage, "getProfile" | "getUser" | "getLatestEntitlementGrant">;
+  storage: Pick<IStorage, "getProfile" | "getGalacticCodeRecord" | "upsertGalacticCodeRecord" | "getUser" | "getLatestEntitlementGrant">;
   requireDurableFeature(res: Response): boolean;
   generate?: GenerateEntitled;
 }) {
-  const generate = dependencies.generate ?? generateEntitledGalacticCode;
+  const generate = dependencies.generate ?? getOrGenerateEntitledGalacticCode;
 
   return async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "private, no-store, max-age=0");
@@ -53,7 +54,7 @@ export function galacticCodeHandler(dependencies: {
         result: result.result,
       });
     } catch (error) {
-      console.error("[GalacticCode] dormant handler failed", error);
+      console.error("[GalacticCode] handler failed", error);
       return res.status(503).json({
         message: "Galactic Code is temporarily unavailable.",
       });

@@ -41,14 +41,22 @@ export async function trustedGalacticInputFromProfile(
   // Recompute against the current birth data; stored verification flags are untrusted.
   const latitude = profile.latitude == null ? undefined : Number(profile.latitude);
   const longitude = profile.longitude == null ? undefined : Number(profile.longitude);
+  const validLatitude =
+    typeof latitude === "number" && Number.isFinite(latitude) && Math.abs(latitude) <= 90
+      ? latitude
+      : undefined;
+  const validLongitude =
+    typeof longitude === "number" && Number.isFinite(longitude) && Math.abs(longitude) <= 180
+      ? longitude
+      : undefined;
   let astrology: Awaited<ReturnType<typeof calculateVerifiedAstrology>>;
   try {
     astrology = await calculateVerifiedAstrology({
     birthDate,
     birthTime: profile.birthTime || undefined,
     timezone: profile.timezone || undefined,
-    latitude: Number.isFinite(latitude) && Math.abs(latitude) <= 90 ? latitude : undefined,
-    longitude: Number.isFinite(longitude) && Math.abs(longitude) <= 180 ? longitude : undefined,
+    latitude: validLatitude,
+    longitude: validLongitude,
   });
   } catch {
     // Ephemeris or reference-service failure cannot promote old stored evidence.
@@ -63,11 +71,16 @@ export async function trustedGalacticInputFromProfile(
   // from persisted user-editable JSON or a stale verification receipt.
   // The existing calculator validates the civil instant and approved trust record.
   let hd: Data = {};
-  if (hasBirthTime && profile.timezone && Number.isFinite(latitude) && Math.abs(latitude) <= 90 && Number.isFinite(longitude) && Math.abs(longitude) <= 180) {
+  if (
+    hasBirthTime &&
+    profile.timezone &&
+    typeof validLatitude === "number" &&
+    typeof validLongitude === "number"
+  ) {
     try {
       hd = record(calculateProfileHumanDesign({
         birthDate, birthTime: profile.birthTime!, timezone: profile.timezone,
-        latitude, longitude,
+        latitude: validLatitude, longitude: validLongitude,
       }));
     } catch {
       hd = {};
