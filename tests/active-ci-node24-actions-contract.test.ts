@@ -17,7 +17,8 @@ test("active qualification workflows avoid Node 20 action majors", () => {
   for (const path of activeWorkflows) {
     const workflow = readFileSync(path, "utf8");
     assert.doesNotMatch(workflow, /actions\/checkout@v4/);
-    assert.doesNotMatch(workflow, /actions\/setup-node@v4/);
+    assert.match(workflow, /actions\/setup-node@v7/);
+    assert.doesNotMatch(workflow, /actions\/setup-node@v[45]/);
     assert.doesNotMatch(workflow, /actions\/upload-artifact@v4/);
   }
 });
