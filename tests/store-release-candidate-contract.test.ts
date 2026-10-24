@@ -67,7 +67,7 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.doesNotMatch(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ github\.sha \}\}/);
   assert.doesNotMatch(workflow, /SHA=\$\{GITHUB_SHA\}/);
   assert.doesNotMatch(workflow, /RELEASE-CANDIDATE-SHA\.txt[\s\S]{0,200}\$GITHUB_SHA/);
-  assert.match(workflow, /actions\/setup-node@v5/);
+  assert.match(workflow, /actions\/setup-node@v7/);
   assert.match(workflow, /actions\/setup-java@v5/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
   assert.match(workflow, /steps\.play\.outputs\.available/);

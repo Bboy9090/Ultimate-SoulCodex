@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -118,7 +118,7 @@ jobs:
         shell: bash
         run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -253,7 +253,7 @@ jobs:
         shell: bash
         run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
       - name: Setup Node 22
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
