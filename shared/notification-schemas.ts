@@ -17,11 +17,11 @@ export const NotificationTypeEnum = z.enum([
 
 export const sendTestNotificationSchema = z.object({
   type: NotificationTypeEnum.default("daily_guidance"),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
 });
 
 export const broadcastNotificationSchema = z.object({
   type: NotificationTypeEnum.default("astrological_event"),
-  context: z.record(z.any()).optional(),
+  context: z.record(z.string(), z.any()).optional(),
   targetUsers: z.array(z.string()).optional(),
 });

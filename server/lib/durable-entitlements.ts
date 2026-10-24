@@ -26,7 +26,7 @@ const safeDiagnosticValueSchema = z.union([
   z.null(),
 ]);
 
-const diagnosticMetadataSchema = z.record(safeDiagnosticValueSchema).superRefine((value, context) => {
+const diagnosticMetadataSchema = z.record(z.string(), safeDiagnosticValueSchema).superRefine((value, context) => {
   const forbidden = /(receipt|signed.?payload|jws|jwt|token|card|cvc|cvv|pan|secret|password)/i;
   for (const key of Object.keys(value)) {
     if (forbidden.test(key)) {
