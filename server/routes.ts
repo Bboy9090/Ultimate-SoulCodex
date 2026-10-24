@@ -23,6 +23,7 @@ import {
 import { calculateNumerology } from "./services/numerology";
 import { calculateProfileHumanDesign, ProfileHumanDesignError } from "./services/profile-human-design";
 import { storedProfileVerificationHandler } from "./routes/stored-profile-verification";
+import { galacticCodeHandler } from "./routes/galactic-code-entitled";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import {
@@ -99,6 +100,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerConsumerAuthRoutes(app);
   registerBillingRoutes(app);
   app.post("/api/profiles/:id/verify-systems", rateLimit({ windowMs: 60_000, max: 5 }), storedProfileVerificationHandler({ storage, requireDurableFeature }));
+  app.post(
+    "/api/profiles/:id/galactic-code",
+    rateLimit({
+      windowMs: 60_000,
+      limit: 10,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      message: {
+        message: "Too many Galactic Code requests. Please try again later.",
+        code: "galactic_code_rate_limited",
+      },
+    }),
+    galacticCodeHandler({ storage, requireDurableFeature }),
+  );
 
   app.get("/api/access", async (req: any, res) => {
     try {
@@ -502,10 +517,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // second naked-sign or Human Design compatibility path here: alternate routes
   // become alternate truth policies.
 
-  // Galactic Code remains an internal deterministic service until a
-  // server-owned evidence adapter can supply verified astrology, deterministic
-  // numerology, assessed behavior, and a verified Human Design trust record.
-  // Do not mount its legacy caller-supplied route as a production synthesis
-  // boundary: clients cannot self-attest that candidate values are verified.
+  // Galactic Code is exposed only through the profile-owned route registered
+  // above. The legacy caller-supplied /api/galactic-code/generate route remains
+  // unregistered: clients cannot self-attest that candidate values are verified.
   return createServer(app);
 }
