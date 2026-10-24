@@ -19,10 +19,13 @@ test("lazy routes have a bounded loading failure instead of an endless Opening s
 });
 
 
-test("People route is proactively preloaded during idle time without preloading contacts", () => {
+test("People and Tools routes are proactively preloaded during idle time without preloading contacts", () => {
   assert.match(app, /requestIdleCallback/);
+  assert.match(app, /preloadPrimaryRoutes/);
   assert.match(app, /import\("\.\/pages\/ConnectionsPage"\)/);
-  assert.match(app, /route-preload/);
+  assert.match(app, /import\("\.\/pages\/CodexToolsPage"\)/);
+  assert.match(app, /People route did not preload/);
+  assert.match(app, /Tools route did not preload/);
   assert.doesNotMatch(app, /deviceContactPicker/);
 });
 
