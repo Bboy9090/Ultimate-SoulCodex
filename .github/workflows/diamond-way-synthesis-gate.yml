@@ -24,10 +24,10 @@ jobs:
     timeout-minutes: 35
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -112,7 +112,7 @@ jobs:
           } > DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
 
       - name: Upload synthesis receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: diamond-way-synthesis-receipt
           path: DIAMOND-WAY-SYNTHESIS-RECEIPT.txt
