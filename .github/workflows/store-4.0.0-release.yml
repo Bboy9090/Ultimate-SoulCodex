@@ -93,7 +93,7 @@ jobs:
           API contract=foundation-v4
           EOF
       - name: Upload release-gate receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-release-gate
           path: STORE-CANDIDATE-RECEIPT.txt
@@ -197,7 +197,7 @@ jobs:
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
       - name: Upload Android artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-android
           path: |
@@ -232,7 +232,7 @@ jobs:
           fi
 
       - name: Upload Google Play production handoff receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-google-play-production-handoff
           path: google-play-production-handoff.txt
@@ -285,7 +285,7 @@ jobs:
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
       - name: Upload iOS qualification receipt
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-ios-qualification
           path: ios-store-state.txt

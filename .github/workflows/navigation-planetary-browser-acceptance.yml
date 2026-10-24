@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -40,7 +40,7 @@ jobs:
           echo "$EXPECTED_SHA" > navigation-browser-candidate-sha.txt
 
       - name: Setup Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -69,7 +69,7 @@ jobs:
 
       - name: Upload browser acceptance evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: navigation-planetary-browser-${{ github.run_id }}
           path: |
