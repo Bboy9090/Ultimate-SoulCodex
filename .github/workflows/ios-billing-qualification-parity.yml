@@ -121,7 +121,7 @@ jobs:
 
       - name: Upload qualification parity receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-ios-billing-qualification-parity
           path: ios-billing-qualification-parity-receipt.txt
