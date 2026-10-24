@@ -59,6 +59,16 @@ export default defineConfig({
           ) {
             return "vendor-ui";
           }
+          if (id.includes("/@tanstack/react-query/")) {
+            return "vendor-data";
+          }
+          if (
+            id.includes("/recharts/") ||
+            id.includes("/victory-vendor/") ||
+            id.includes("/d3-")
+          ) {
+            return "vendor-charts";
+          }
           return undefined;
         },
       },
