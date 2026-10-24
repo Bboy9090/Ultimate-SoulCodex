@@ -21,8 +21,11 @@ async function withServer(run: (base: string) => Promise<void>) {
   }
 }
 
-test("Galactic Code remains unregistered in production until trusted evidence is integrated", () => {
+test("production exposes only the profile-owned Galactic Code boundary", () => {
   assert.doesNotMatch(productionRoutes, /registerGalacticCodeRoutes\(app\)/);
+  assert.match(productionRoutes, /\/api\/profiles\/:id\/galactic-code/);
+  assert.match(productionRoutes, /galacticCodeHandler\(\{ storage, requireDurableFeature \}\)/);
+  assert.match(productionRoutes, /galactic_code_rate_limited/);
 });
 
 test("client-asserted verified inputs never generate a Galactic Code", async () => {
