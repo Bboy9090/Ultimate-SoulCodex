@@ -5,6 +5,7 @@ import express from "express";
 import { registerGalacticCodeRoutes } from "../server/routes/galactic-code.ts";
 
 const productionRoutes = readFileSync("server/routes.ts", "utf8");
+const galacticProductionRoute = readFileSync("server/routes/galactic-code-production.ts", "utf8");
 
 async function withServer(run: (base: string) => Promise<void>) {
   const app = express();
@@ -23,9 +24,10 @@ async function withServer(run: (base: string) => Promise<void>) {
 
 test("production exposes only the profile-owned Galactic Code boundary", () => {
   assert.doesNotMatch(productionRoutes, /registerGalacticCodeRoutes\(app\)/);
-  assert.match(productionRoutes, /\/api\/profiles\/:id\/galactic-code/);
-  assert.match(productionRoutes, /galacticCodeHandler\(\{ storage, requireDurableFeature \}\)/);
-  assert.match(productionRoutes, /galactic_code_rate_limited/);
+  assert.match(productionRoutes, /registerProfileGalacticCodeRoute\(app, \{ storage, requireDurableFeature \}\)/);
+  assert.match(galacticProductionRoute, /\/api\/profiles\/:id\/galactic-code/);
+  assert.match(galacticProductionRoute, /galacticCodeHandler\(dependencies\)/);
+  assert.match(galacticProductionRoute, /galactic_code_rate_limited/);
 });
 
 test("client-asserted verified inputs never generate a Galactic Code", async () => {

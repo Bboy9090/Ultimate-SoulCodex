@@ -37,6 +37,8 @@ jobs:
         run: >-
           node --import tsx --test
           tests/trusted-mutation-origin.test.ts
+          tests/galactic-code-http-abuse.test.ts
+          tests/galactic-code-production-boundary.test.ts
           tests/production-schema-preflight.test.ts
           tests/billing-security.test.ts
           tests/web-checkout-pricing-contract.test.ts

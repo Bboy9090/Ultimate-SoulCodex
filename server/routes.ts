@@ -23,7 +23,7 @@ import {
 import { calculateNumerology } from "./services/numerology";
 import { calculateProfileHumanDesign, ProfileHumanDesignError } from "./services/profile-human-design";
 import { storedProfileVerificationHandler } from "./routes/stored-profile-verification";
-import { galacticCodeHandler } from "./routes/galactic-code-entitled";
+import { registerProfileGalacticCodeRoute } from "./routes/galactic-code-production";
 import { calculateEnneagram, calculateMBTI } from "./services/personality";
 import { synthesizeArchetype } from "./services/archetype";
 import {
@@ -100,20 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerConsumerAuthRoutes(app);
   registerBillingRoutes(app);
   app.post("/api/profiles/:id/verify-systems", rateLimit({ windowMs: 60_000, max: 5 }), storedProfileVerificationHandler({ storage, requireDurableFeature }));
-  app.post(
-    "/api/profiles/:id/galactic-code",
-    rateLimit({
-      windowMs: 60_000,
-      limit: 10,
-      standardHeaders: "draft-8",
-      legacyHeaders: false,
-      message: {
-        message: "Too many Galactic Code requests. Please try again later.",
-        code: "galactic_code_rate_limited",
-      },
-    }),
-    galacticCodeHandler({ storage, requireDurableFeature }),
-  );
+  registerProfileGalacticCodeRoute(app, { storage, requireDurableFeature });
 
   app.get("/api/access", async (req: any, res) => {
     try {
