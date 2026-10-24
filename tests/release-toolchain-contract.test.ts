@@ -64,7 +64,7 @@ test("store workflow constructs and validates both Capacitor native payloads", a
   const workflow = await text(storeWorkflowPath);
   assert.match(workflow, /pull_request:[\s\S]*release\/ios-4\.0\.0-final-truth-fix/);
   assert.match(workflow, /actions\/checkout@v5/);
-  assert.match(workflow, /actions\/setup-node@v5/);
+  assert.match(workflow, /actions\/setup-node@v7/);
   assert.match(workflow, /npm run build:capacitor/);
   assert.match(workflow, /npm run mobile:validate:android/);
   assert.match(workflow, /npm run mobile:validate:ios/);
