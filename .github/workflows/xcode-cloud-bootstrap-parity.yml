@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload parity receipt
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: soulcodex-4.1.0-xcode-cloud-parity
           path: xcode-cloud-parity-receipt.txt
