@@ -93,9 +93,9 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
   },
   cross_system_synthesis: {
     minimumTier: "plus",
-    availability: "planned",
+    availability: "live",
     label: "Cross-system synthesis",
-    upgradeReason: "Unlock deeper synthesis across qualified astrology, numerology, Human Design, and behavioral evidence.",
+    upgradeReason: "Unlock the deeper pattern map across qualified astrology, numerology, Human Design, and behavioral evidence.",
   },
   premium_exports: {
     minimumTier: "plus",
