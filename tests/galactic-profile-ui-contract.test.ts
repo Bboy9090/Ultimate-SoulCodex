@@ -9,8 +9,20 @@ const profile = readFileSync(new URL("../client/src/pages/profile.tsx", import.m
 
 test("profile wires the qualified profile-owned Galactic endpoint", () => {
   assert.match(profile, /GalacticCodePanel/);
-  assert.match(panel, /apiRequest\("POST", `\/api\/profiles\/\$\{profileId\}\/galactic-code`, \{\}\)/);
+  assert.match(panel, /encodeURIComponent\(profileId\)/);
+  assert.match(panel, /apiRequest\("POST", `\/api\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/galactic-code`, \{\}\)/);
   assert.match(panel, /saved profile/i);
+});
+
+test("Galactic profile errors distinguish evidence, throttling, outage, and ownership states", () => {
+  assert.match(panel, /status === "422"/);
+  assert.match(panel, /needs more verified evidence/);
+  assert.match(panel, /status === "429"/);
+  assert.match(panel, /Too many synthesis requests/);
+  assert.match(panel, /status === "503"/);
+  assert.match(panel, /temporarily unavailable/);
+  assert.match(panel, /status === "404"/);
+  assert.match(panel, /not available for synthesis/);
 });
 
 test("Free receives the clear brief without private fingerprint fields", () => {

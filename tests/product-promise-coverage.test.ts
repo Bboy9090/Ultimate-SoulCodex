@@ -46,7 +46,7 @@ test("every live Plus promise has a concrete implementation surface", () => {
 
   assert.equal(SOUL_CODEX_CAPABILITIES.cross_system_synthesis.availability, "live");
   assert.match(profile, /GalacticCodePanel/);
-  assert.match(galacticPanel, /\/api\/profiles\/\$\{profileId\}\/galactic-code/);
+  assert.match(galacticPanel, /\/api\/profiles\/\$\{encodeURIComponent\(profileId\)\}\/galactic-code/);
   assert.match(galacticPanel, /cross_system_synthesis/);
   assert.match(galacticPanel, /GalacticCodeMap/);
   assert.match(pricing, /Deep Soul Codex pattern map/);

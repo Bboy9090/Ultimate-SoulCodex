@@ -28,6 +28,40 @@ function coverageLabel(value: "complete" | "partial" | "missing") {
   return "Not available";
 }
 
+function galacticErrorCopy(error: Error | null) {
+  const status = error?.message.match(/^(\d{3}):/)?.[1];
+
+  if (status === "422") {
+    return {
+      title: "This synthesis needs more verified evidence.",
+      body: "Verify more of the profile first, then try again. Soul Codex will not substitute guessed placements for missing evidence.",
+    };
+  }
+  if (status === "429") {
+    return {
+      title: "Too many synthesis requests.",
+      body: "Give this profile a moment before trying again. Your saved profile and existing evidence are unchanged.",
+    };
+  }
+  if (status === "503") {
+    return {
+      title: "Synthesis is temporarily unavailable.",
+      body: "The service could not complete the request right now. Try again later; Soul Codex will not fall back to guessed evidence.",
+    };
+  }
+  if (status === "404") {
+    return {
+      title: "This profile is not available for synthesis.",
+      body: "The saved profile could not be found for the current account or session. Reopen the profile and try again.",
+    };
+  }
+
+  return {
+    title: "This synthesis could not be built.",
+    body: "Try again. If the problem continues, verify the saved profile and its evidence before retrying.",
+  };
+}
+
 export default function GalacticCodePanel({
   profileId,
   tier,
@@ -38,13 +72,14 @@ export default function GalacticCodePanel({
   const canSeeDepth = tierAllowsCapability(tier, "cross_system_synthesis");
   const mutation = useMutation<GalacticCodeResponse, Error>({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/profiles/${profileId}/galactic-code`, {});
+      const response = await apiRequest("POST", `/api/profiles/${encodeURIComponent(profileId)}/galactic-code`, {});
       return await response.json();
     },
   });
 
   const result = mutation.data?.result;
   const fullResult = result && isFullGalacticCode(result) ? result : null;
+  const errorCopy = galacticErrorCopy(mutation.error);
 
   return (
     <section className="mt-8" aria-labelledby="galactic-code-heading">
@@ -92,9 +127,9 @@ export default function GalacticCodePanel({
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line)] bg-white/[0.025] p-4">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-danger)]" />
             <div>
-              <p className="font-medium text-[var(--sc-ivory)]">This synthesis is not ready yet.</p>
+              <p className="font-medium text-[var(--sc-ivory)]">{errorCopy.title}</p>
               <p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">
-                Verify more of the profile first, then try again. Soul Codex will not substitute guessed placements for missing evidence.
+                {errorCopy.body}
               </p>
             </div>
           </div>
