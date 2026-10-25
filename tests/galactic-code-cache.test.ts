@@ -138,3 +138,112 @@ test("anonymous session never inherits account entitlement", async () => {
   if (result.status === "ready") assert.equal(result.tier, "free");
   assert.equal(billingReads, 0);
 });
+
+
+test("stale persisted revision is never replayed when current evidence cannot requalify", async () => {
+  let upserted = false;
+  let entitlementReads = 0;
+  const result = await getOrGenerateEntitledGalacticCode("p1", { userId: "owner" }, {
+    getProfile: async () => profile,
+    getGalacticCodeRecord: async () => ({
+      profileId: "p1",
+      userId: "owner",
+      sessionId: null,
+      revision: "0".repeat(64),
+      version: "galactic-code-v1",
+      result: fullResult,
+    }),
+    upsertGalacticCodeRecord: async () => {
+      upserted = true;
+      throw new Error("unqualified regeneration must not persist");
+    },
+    getUser: async () => { entitlementReads++; return { id: "owner" }; },
+    getLatestEntitlementGrant: async () => { entitlementReads++; return plusGrant(); },
+  } as any);
+
+  assert.deepEqual(result, { status: "insufficient_verified_evidence" });
+  assert.equal(upserted, false);
+  assert.equal(entitlementReads, 0);
+});
+
+function plusGrant(overrides: Record<string, unknown> = {}) {
+  const now = Date.now();
+  return {
+    capability: "soul_codex_plus",
+    status: "active",
+    plan: "monthly",
+    sourceProvider: "stripe",
+    effectiveAt: new Date(now - 60_000),
+    expiresAt: new Date(now + 86_400_000),
+    revokedAt: null,
+    lastVerifiedAt: new Date(now - 1_000),
+    ...overrides,
+  } as any;
+}
+
+function storedCurrentResult() {
+  return {
+    profileId: "p1",
+    userId: "owner",
+    sessionId: null,
+    revision: profileRevision,
+    version: "galactic-code-v1",
+    result: fullResult,
+  };
+}
+
+test("current Plus entitlement re-projects the same stored result to full depth", async () => {
+  const result = await getOrGenerateEntitledGalacticCode("p1", { userId: "owner" }, {
+    getProfile: async () => profile,
+    getGalacticCodeRecord: async () => storedCurrentResult(),
+    upsertGalacticCodeRecord: async () => { throw new Error("fresh cache should not be rewritten"); },
+    getUser: async () => ({ id: "owner" }),
+    getLatestEntitlementGrant: async () => plusGrant(),
+  } as any);
+
+  assert.equal(result.status, "ready");
+  if (result.status === "ready") {
+    assert.equal(result.tier, "plus");
+    assert.equal("fingerprint" in result.result, true);
+    assert.equal((result.result as GalacticCodeResult).fingerprint, fullResult.fingerprint);
+  }
+});
+
+test("expired Plus entitlement immediately downgrades the same cache replay to the Free brief", async () => {
+  const result = await getOrGenerateEntitledGalacticCode("p1", { userId: "owner" }, {
+    getProfile: async () => profile,
+    getGalacticCodeRecord: async () => storedCurrentResult(),
+    upsertGalacticCodeRecord: async () => { throw new Error("fresh cache should not be rewritten"); },
+    getUser: async () => ({ id: "owner" }),
+    getLatestEntitlementGrant: async () => plusGrant({
+      status: "expired",
+      expiresAt: new Date(Date.now() - 1_000),
+    }),
+  } as any);
+
+  assert.equal(result.status, "ready");
+  if (result.status === "ready") {
+    assert.equal(result.tier, "free");
+    assert.equal("fingerprint" in result.result, false);
+    assert.equal("axes" in result.result, false);
+  }
+});
+
+test("revoked Plus entitlement cannot replay full-depth cached output", async () => {
+  const result = await getOrGenerateEntitledGalacticCode("p1", { userId: "owner" }, {
+    getProfile: async () => profile,
+    getGalacticCodeRecord: async () => storedCurrentResult(),
+    upsertGalacticCodeRecord: async () => { throw new Error("fresh cache should not be rewritten"); },
+    getUser: async () => ({ id: "owner" }),
+    getLatestEntitlementGrant: async () => plusGrant({
+      status: "revoked",
+      revokedAt: new Date(Date.now() - 1_000),
+    }),
+  } as any);
+
+  assert.equal(result.status, "ready");
+  if (result.status === "ready") {
+    assert.equal(result.tier, "free");
+    assert.equal("fingerprint" in result.result, false);
+  }
+});
