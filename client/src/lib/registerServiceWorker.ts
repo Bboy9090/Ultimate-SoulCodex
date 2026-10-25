@@ -7,6 +7,15 @@ function serviceWorkerUrls(): { script: URL; scope: string } {
   return { script, scope };
 }
 
+function whenWindowLoaded(callback: () => void): void {
+  if (document.readyState === "complete") {
+    callback();
+    return;
+  }
+
+  window.addEventListener("load", callback, { once: true });
+}
+
 async function clearNativePwaResidue(): Promise<void> {
   // Capacitor ships a bundled web app. A browser/PWA service worker must never
   // control the native WebView after an App Store update.
@@ -37,7 +46,7 @@ export function registerSoulCodexServiceWorker(): void {
   if (import.meta.env.DEV) return;
 
   if (Capacitor.isNativePlatform()) {
-    window.addEventListener("load", () => {
+    whenWindowLoaded(() => {
       void clearNativePwaResidue();
     });
     return;
@@ -45,7 +54,7 @@ export function registerSoulCodexServiceWorker(): void {
 
   if (!("serviceWorker" in navigator)) return;
 
-  window.addEventListener("load", () => {
+  whenWindowLoaded(() => {
     const { script, scope } = serviceWorkerUrls();
 
     navigator.serviceWorker

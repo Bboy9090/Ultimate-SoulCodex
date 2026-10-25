@@ -13,6 +13,9 @@ test("native store builds cannot register the browser PWA service worker", async
   assert.match(source, /registration\.unregister\(\)/);
   assert.match(source, /key\.startsWith\("soulcodex-shell-"\)/);
   assert.match(source, /return;\s*}\s*\n\s*if \(!\("serviceWorker" in navigator\)\)/);
+  assert.match(source, /document\.readyState === "complete"/);
+  assert.match(source, /window\.addEventListener\("load", callback, \{ once: true \}\)/);
+  assert.match(source, /whenWindowLoaded\(\(\) => \{/);
 });
 
 test("iOS hotfix metadata is a fresh App Store version/build", async () => {
@@ -57,8 +60,9 @@ test("tiny bootstrap dynamically loads the React application before the heavy gr
 
 test("secondary routes are lazy so home first paint does not evaluate the whole product", async () => {
   const source = await readFile("client/src/App.tsx", "utf8");
-  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/offline-profile"\)\)/);
-  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/AstrologyAtlasPage"\)\)/);
-  assert.match(source, /lazy\(\(\) => import\("\.\/pages\/CompatibilityRoute"\)\)/);
+  assert.match(source, /lazyRoute\(\(\) => import\("\.\/pages\/offline-profile"\), "offline-profile"\)/);
+  assert.match(source, /lazyRoute\(\(\) => import\("\.\/pages\/AstrologyAtlasPage"\), "astrology-atlas"\)/);
+  assert.match(source, /lazyRoute\(\(\) => import\("\.\/pages\/CompatibilityRoute"\), "compatibility"\)/);
+  assert.match(source, /route_chunk_timeout/);
   assert.match(source, /<Suspense fallback=/);
 });
