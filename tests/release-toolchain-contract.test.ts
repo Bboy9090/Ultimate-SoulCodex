@@ -41,7 +41,7 @@ test("iOS parity records the exact candidate SHA as a retained artifact", async 
   const workflow = await text(xcodeParityWorkflowPath);
   assert.match(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ github\.sha \}\}/);
   assert.match(workflow, /SHA=\$\{GITHUB_SHA\}/);
-  assert.match(workflow, /actions\/upload-artifact@v4/);
+  assert.match(workflow, /actions\/upload-artifact@v6/);
   assert.match(workflow, /retention-days:\s*90/);
 });
 
@@ -68,7 +68,9 @@ test("store workflow constructs and validates both Capacitor native payloads", a
   assert.match(workflow, /npm run build:capacitor/);
   assert.match(workflow, /npm run mobile:validate:android/);
   assert.match(workflow, /npm run mobile:validate:ios/);
-  assert.match(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ github\.sha \}\}/);
+  assert.match(workflow, /CANDIDATE_SHA:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
+  assert.match(workflow, /ref:\s*\$\{\{ env\.CANDIDATE_SHA \}\}/);
+  assert.match(workflow, /VITE_RELEASE_SHA:\s*\$\{\{ env\.CANDIDATE_SHA \}\}/);
 });
 
 test("Google Play qualification requires signed main candidates and records a deferred publishing handoff", async () => {
