@@ -10,6 +10,7 @@ const compatibilityRoute = readFileSync(new URL("../server/routes/compatibility.
 const routes = readFileSync(new URL("../server/routes.ts", import.meta.url), "utf8");
 const diamondClosure = readFileSync(new URL("../client/src/components/DiamondClosure.tsx", import.meta.url), "utf8");
 const pricing = readFileSync(new URL("../client/src/pages/PricingPage.tsx", import.meta.url), "utf8");
+const galacticPanel = readFileSync(new URL("../client/src/components/GalacticCodePanel.tsx", import.meta.url), "utf8");
 
 test("every Free promise has a concrete implementation surface", () => {
   assert.match(profile, /Your Big 3/);
@@ -43,6 +44,13 @@ test("every live Plus promise has a concrete implementation surface", () => {
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT/);
   assert.match(timeline, /See all five influences/);
 
+  assert.equal(SOUL_CODEX_CAPABILITIES.cross_system_synthesis.availability, "live");
+  assert.match(profile, /GalacticCodePanel/);
+  assert.match(galacticPanel, /\/api\/profiles\/\$\{profileId\}\/galactic-code/);
+  assert.match(galacticPanel, /cross_system_synthesis/);
+  assert.match(galacticPanel, /GalacticCodeMap/);
+  assert.match(pricing, /Deep Soul Codex pattern map/);
+
   assert.equal(SOUL_CODEX_CAPABILITIES.premium_exports.availability, "live");
   assert.match(routes, /\/api\/pdf\/profile\/:id/);
   assert.match(routes, /premium_exports/);
@@ -55,7 +63,6 @@ test("planned capabilities are visibly excluded from the current paid promise", 
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
-    "cross_system_synthesis",
     "premium_tarot",
   ] as const) {
     assert.equal(SOUL_CODEX_CAPABILITIES[capability].availability, "planned");

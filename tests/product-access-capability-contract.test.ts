@@ -29,6 +29,7 @@ test("live Plus capabilities gate depth rather than accuracy", () => {
     "interpretation_depth",
     "full_name_numerology",
     "advanced_daily",
+    "cross_system_synthesis",
     "premium_exports",
   ] as const) {
     assert.equal(SOUL_CODEX_CAPABILITIES[capability].minimumTier, "plus");
@@ -45,7 +46,6 @@ test("planned Plus capabilities cannot be unlocked or sold yet", () => {
     "advanced_transits",
     "timeline_history",
     "advanced_connections",
-    "cross_system_synthesis",
     "premium_tarot",
   ] as const) {
     assert.equal(SOUL_CODEX_CAPABILITIES[capability].minimumTier, "plus");

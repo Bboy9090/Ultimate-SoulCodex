@@ -29,7 +29,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
     <div className="space-y-6">
       {/* Top 5 Axes */}
       <div className="rounded-lg border border-gold-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Galactic Axes</h2>
+        <h2 className="text-lg font-bold text-gold-200 mb-4">Your strongest patterns</h2>
 
         <div className="space-y-3">
           {code.axes.slice(0, 5).map((axis, idx) => (
@@ -54,7 +54,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
 
       {/* Behavioral Sequence */}
       <div className="rounded-lg border border-purple-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-purple-200 mb-4 uppercase tracking-wider">Behavioral Sequence</h2>
+        <h2 className="text-lg font-bold text-purple-200 mb-4">How the pattern tends to move</h2>
 
         <div className="flex items-center justify-between">
           {code.behavioralSequence.map((step, idx) => (
@@ -74,7 +74,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
 
       {/* Element Matrix */}
       <div className="rounded-lg border border-gold-500/30 bg-gradient-to-br from-slate-950 to-purple-950 p-6">
-        <h2 className="text-lg font-bold text-gold-200 mb-4 uppercase tracking-wider">Element Matrix</h2>
+        <h2 className="text-lg font-bold text-gold-200 mb-4">Element balance</h2>
 
         <div className="grid grid-cols-4 gap-3">
           {Object.entries(elementColors).map(([element, colors]) => (
@@ -89,7 +89,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
 
       {/* Legacy Function */}
       <div className="rounded-lg border border-emerald-500/30 bg-gradient-to-br from-slate-950 to-emerald-950 p-6">
-        <h2 className="text-lg font-bold text-emerald-200 mb-2 uppercase tracking-wider">Legacy Function</h2>
+        <h2 className="text-lg font-bold text-emerald-200 mb-2">Long-term theme</h2>
         <p className="text-lg text-emerald-100 font-semibold">{code.legacyFunction}</p>
         <p className="text-sm text-emerald-300/70 mt-2">Long-term trajectory and generational impact</p>
       </div>
@@ -97,7 +97,7 @@ export function GalacticCodeMap({ code }: GalacticCodeMapProps) {
       {/* Source Evidence */}
       {code.evidence.length > 0 && (
         <div className="rounded-lg border border-slate-500/30 bg-gradient-to-br from-slate-950 to-slate-900 p-6">
-          <h2 className="text-lg font-bold text-slate-200 mb-3 uppercase tracking-wider">Evidence</h2>
+          <h2 className="text-lg font-bold text-slate-200 mb-3">What this is based on</h2>
           <div className="flex flex-wrap gap-2">
             {code.evidence.map((item, idx) => (
               <span key={idx} className="inline-block rounded-full bg-slate-800/50 border border-slate-600/50 px-3 py-1 text-xs text-slate-300">
