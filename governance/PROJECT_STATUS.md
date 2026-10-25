@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-10-24
 **Current Branch:** `main`
-**Current Main:** `8ee3757df895abe806c3fa1a2ee048d4fc84e392`
+**Release-authority main snapshot:** `8ee3757df895abe806c3fa1a2ee048d4fc84e392`
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / provider qualification
 
 ---
@@ -21,15 +21,15 @@
 
 ## Current Release Authority
 
-Current merged main:
+Release-authority merged-main snapshot:
 
 `8ee3757df895abe806c3fa1a2ee048d4fc84e392`
 
-Latest exact-head qualified source:
+Latest frozen exact-head binary qualification source:
 
 `00c38dcc540ab730830462fad8c681eb84fdbc87`
 
-The merged main tree is file-identical to that qualified source head.
+At the authority freeze, the merged main tree was file-identical to that qualified source head. Later documentation/test-only merges do not automatically replace binary release authority; a new signed/native artifact receipt must do that explicitly.
 
 Canonical current receipt:
 
