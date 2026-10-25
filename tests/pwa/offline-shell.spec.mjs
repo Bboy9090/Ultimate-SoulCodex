@@ -51,6 +51,8 @@ async function createLocalCodex(page) {
   await expect(page.locator('input[placeholder="40.7128"]')).toHaveValue("40.8448");
   await expect(page.locator('input[placeholder="-74.0060"]')).toHaveValue("-73.8648");
   await expect(page.locator('input[placeholder="America/New_York"]')).toHaveValue("America/New_York");
+  await page.getByTestId("button-onboarding-next").click();
+  await expect(page.getByTestId("button-create-profile")).toBeVisible();
 
   await Promise.all([
     page.waitForURL(/\/profile\/local-/),
