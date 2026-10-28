@@ -53,6 +53,8 @@ Not a pile of disconnected horoscopes. One sharp, integrated reading that explai
 
 Roadmap features are not sold as current Plus access. Accuracy, evidence, and uncertainty remain available on Free.
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
 ## Keywords (iOS, 100 chars max)
 astrology,numerology,human design,birth chart,personality,soul,zodiac,compatibility,daily reading
 
