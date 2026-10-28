@@ -28,7 +28,7 @@ const BODY_PRACTICE: Record<string, { gift: string; tension: string; practice: s
 
 /** Call only with evidence-qualified placements; this function never calculates a chart. */
 export function chartPlacementReading(body: string, sign: string, house: number | null, evidence: string, expanded = false): ChartPlacementReading | null {
-  if (!PLANET_FUNCTIONS[body] || !ATLAS_SIGNS.includes(sign as AtlasSign)) return null;
+  if (!Object.hasOwn(PLANET_FUNCTIONS, body) || !ATLAS_SIGNS.includes(sign as AtlasSign)) return null;
   const style = atlasSignMeaning(sign as AtlasSign);
   const label = body.charAt(0).toUpperCase() + body.slice(1);
   const validHouse = Number.isInteger(house) && Number(house) >= 1 && Number(house) <= 12;

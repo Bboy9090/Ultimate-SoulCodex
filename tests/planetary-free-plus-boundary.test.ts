@@ -36,6 +36,9 @@ test("invalid or unknown houses never create a house claim", () => {
     assert.match(reading.meaning, /house is unresolved/);
   }
   assert.equal(chartPlacementReading("moon", "NotASign", 1, "invalid"), null);
+  for (const body of ["fake", "constructor", "toString", "__proto__", "hasOwnProperty"]) {
+    assert.equal(chartPlacementReading(body, "Virgo", 11, "invalid", true), null);
+  }
 });
 
 test("Free retains a complete placement answer while Plus adds separate supported depth", () => {
