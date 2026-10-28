@@ -161,3 +161,16 @@ test("Google Play account-deletion page states request steps, deleted data, and 
   assert.match(deletion, /Permanently Delete My Data/);
   assert.match(deletion, /What may be kept and for how long/);
 });
+
+
+test("subscription listing descriptions retain the Apple EULA required by App Review", async () => {
+  const eula = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  const listing = await text("store-assets/STORE_LISTING.md");
+  const packetDescription = packet.split("### Full description")[1]?.split("### iOS keywords")[0];
+  const listingDescription = listing.split("## Full Description")[1]?.split("## Keywords")[0];
+  for (const [name, description] of [["canonical packet", packetDescription], ["store copy", listingDescription]] as const) {
+    assert.ok(description?.includes(eula), name + " must include the functional EULA URL inside the copy-paste description");
+  }
+  assert.match(packet, /every enabled App Store localization/);
+});
