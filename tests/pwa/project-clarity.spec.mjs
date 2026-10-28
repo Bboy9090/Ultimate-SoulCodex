@@ -72,7 +72,7 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
 
-test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page }, testInfo) => {
+test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page, browserName }, testInfo) => {
   test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
   const runtimeErrors = [];
   page.on("pageerror", error => runtimeErrors.push(error.message));
@@ -123,11 +123,20 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
   await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
   await expect(page.getByRole("complementary", { name: "Free and Plus placement access", exact: true })).toBeVisible();
   await page.evaluate(() => navigator.serviceWorker.ready);
-  await page.context().setOffline(true);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  if (browserName === "webkit") {
+    await page.request.post("/__test/navigation-unavailable");
+    const directNetwork = await page.request.get(page.url(), { headers: { Accept: "text/html" } });
+    expect(directNetwork.status()).toBe(503);
+  } else {
+    await page.context().setOffline(true);
+  }
   await page.reload();
   await expect(page.getByRole("region", { name: "Your planetary placement readings", exact: true })).toContainText("Mercury in Virgo · House 11");
   await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
-  await page.context().setOffline(false);
+  if (browserName === "webkit") await page.request.delete("/__test/navigation-unavailable");
+  else await page.context().setOffline(false);
+  await testInfo.attach("network-recovery-mode", { body: Buffer.from(browserName === "webkit" ? "WebKit: direct navigation returns 503; service worker restores saved reading. Physical Safari offline remains required." : "Chromium: strict context offline; service worker restores saved reading."), contentType: "text/plain" });
   await page.request.post("/__test/owner-access");
   await page.reload();
   const depth = page.getByTestId("planetary-plus-depth").first();

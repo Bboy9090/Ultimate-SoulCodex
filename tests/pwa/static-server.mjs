@@ -59,6 +59,21 @@ const server = http.createServer(async (request, response) => {
   const method = request.method ?? "GET";
   const requestUrl = new URL(request.url ?? "/", `http://${HOST}:${PORT}`);
 
+  // Linux WebKit's offline switch aborts navigation before service-worker fallback.
+  // Return a real unavailable navigation response instead; cached app recovery
+  // must still succeed. This fault injection exists only in the explicit harness.
+  if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/__test/navigation-unavailable" && ["POST", "DELETE"].includes(method)) {
+    request.resume();
+    response.writeHead(200, { "Set-Cookie": `sc-test-navigation-offline=${method === "POST" ? "1" : ""}; Path=/; SameSite=Lax${method === "DELETE" ? "; Max-Age=0" : ""}`, "Cache-Control": "no-store" });
+    response.end();
+    return;
+  }
+  if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && /(?:^|;\s*)sc-test-navigation-offline=1(?:;|$)/.test(request.headers.cookie || "") && request.headers.accept?.includes("text/html")) {
+    response.writeHead(503, { "Cache-Control": "no-store", "Content-Type": "text/plain" });
+    response.end("Navigation intentionally unavailable in the test harness");
+    return;
+  }
+
   if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/__test/owner-access" && method === "POST") {
     request.resume();
     response.writeHead(200, { "Set-Cookie": "sc-test-owner=1; Path=/; SameSite=Lax", "Cache-Control": "no-store", "Content-Type": "application/json" });
