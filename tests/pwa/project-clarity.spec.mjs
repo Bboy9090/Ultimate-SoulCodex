@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
 async function createProfile(page, birthTime = "11:11") {
@@ -74,11 +73,8 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
 });
 
 test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page }) => {
-  // Test-only retained independent-reference response; no production calculator is mocked.
-  const partial = JSON.parse(readFileSync(new URL("./fixtures/partial-chart.json", import.meta.url), "utf8"));
-  await page.route("**/api/verification/profile", async (route) => {
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(partial) });
-  });
+  test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
+  // The fixture is served by the harness over HTTP, including through the PWA service worker.
   await createProfile(page, "10:10");
   await page.getByRole("button", { name: "Verify complete profile systems", exact: true }).click();
   await expect(page.getByTestId("verified-natal-chart")).toBeVisible();

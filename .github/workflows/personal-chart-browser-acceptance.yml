@@ -40,6 +40,8 @@ jobs:
       - run: npm run build:workspaces
       - run: npm run build
       - name: Test saved profiles and partial chart readings in Chromium and WebKit
+        env:
+          SOUL_CODEX_TEST_PARTIAL_CHART: "1"
         run: npx playwright test project-clarity.spec.mjs --config=tests/pwa/playwright.config.mjs
       - name: Retain browser evidence
         if: always()

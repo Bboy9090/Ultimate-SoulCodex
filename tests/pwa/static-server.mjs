@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createReadStream } from "node:fs";
-import { access, stat } from "node:fs/promises";
+import { access, stat, readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,6 +58,23 @@ function sendFile(request, response, filePath) {
 const server = http.createServer(async (request, response) => {
   const method = request.method ?? "GET";
   const requestUrl = new URL(request.url ?? "/", `http://${HOST}:${PORT}`);
+
+  // Explicit test-only backend fixture. Serve it through the real HTTP/service-worker
+  // path: page.route interception cannot reliably see requests handled by WebKit's SW.
+  if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/api/verification/profile" && method === "POST") {
+    let raw = "";
+    for await (const chunk of request) raw += chunk;
+    let inputs;
+    try { inputs = JSON.parse(raw); } catch { inputs = {}; }
+    if (inputs.birthDate !== "1990-09-17" || inputs.birthTime !== "10:10" || inputs.timezone !== "America/New_York") {
+      response.writeHead(422, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+      response.end(JSON.stringify({ message: "Test fixture requires the exact regression instant." }));
+      return;
+    }
+    response.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" });
+    response.end(await readFile(new URL("./fixtures/partial-chart.json", import.meta.url), "utf8"));
+    return;
+  }
 
   // Gate 4 needs one explicit server-backed success path so the real consumer
   // deletion flow can be exercised through the service-worker/network stack.
