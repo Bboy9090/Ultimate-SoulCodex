@@ -313,7 +313,7 @@ export default function TimelinePage() {
               {hiddenInfluenceCount} additional qualified influence{hiddenInfluenceCount === 1 ? "" : "s"} available in Soul Codex+.
             </p>
             <button type="button" className="text-sm font-semibold text-[var(--sc-gold-bright)]" onClick={() => navigate("/pricing")}>
-              See all five influences
+              See all {currentInfluences.length} influences
             </button>
           </div>
         ) : null}

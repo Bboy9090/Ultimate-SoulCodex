@@ -46,6 +46,7 @@ function verifiedChart() {
     planetaryHouses: { sun: 11 },
     midheaven: {
       sign: "Leo",
+      evidenceArtifactId: "equal-house-test-artifact",
       verificationStatus: "verified",
       policyId: "ASTRO-EQUAL-HOUSE-v1",
     },
@@ -70,6 +71,7 @@ function verifiedChart() {
       house: 9,
       policyId: "ASTRO-CHIRON-v1",
       qualificationMethod: "live-jpl-qualified-against-swiss",
+      evidenceArtifactId: "chiron-test-artifact",
       verificationStatus: "verified",
     },
   };

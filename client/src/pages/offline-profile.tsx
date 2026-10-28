@@ -56,8 +56,8 @@ export default function OfflineProfilePage() {
     return () => window.removeEventListener("soulcodex:profile-updated", refreshProfile);
   }, [id, queryClient]);
 
-  const requestOnlineVerification = async () => {
-    if (!reconciledProfile || verificationAttempt === "running" || !profileNeedsOnlineVerification(reconciledProfile)) return;
+  const requestOnlineVerification = async (recheck = false) => {
+    if (!reconciledProfile || verificationAttempt === "running" || (!recheck && !profileNeedsOnlineVerification(reconciledProfile))) return;
     if (!reconciledProfile.timezone?.trim()) {
       setVerificationAttempt("deferred");
       return;
@@ -145,6 +145,7 @@ export default function OfflineProfilePage() {
   const numerology = profile.numerologyData;
   const archetype = profile.archetypeData;
   const hasVerifiedCore = Boolean(verifiedSun && verifiedMoon);
+  const supportedPlanetCount = ultimateCodex.placements.length;
   const hasRangeEvidence = Boolean(
     !profile.birthTime &&
     verifiedAstrology &&
@@ -235,6 +236,17 @@ export default function OfflineProfilePage() {
             <div className="relative mx-auto flex aspect-square w-full max-w-[260px] items-center justify-center rounded-full border border-[var(--sc-line-gold)] bg-black/20 shadow-[inset_0_0_60px_rgba(123,97,255,.08)]"><div className="absolute inset-4 rounded-full border border-dashed border-[rgba(154,116,220,.25)]" /><Crown className="h-12 w-12 text-[var(--sc-gold-bright)]" /><div className="absolute bottom-8 text-center"><p className="sc-eyebrow justify-center">governed identity</p><p className="mt-1 max-w-[210px] text-sm font-semibold text-[var(--sc-ivory)]">{identityTitle}</p></div></div>
           </div>
         </section>
+
+        <details className="sc-panel mb-5 p-5">
+          <summary className="cursor-pointer font-semibold">Check the birth inputs behind this chart</summary>
+          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div><dt>Birth date and time</dt><dd>{profile.birthDate} · {reconciledProfile.birthTimeStatus === "unknown" ? "Unknown time" : profile.birthTime || "Unknown time"}</dd></div>
+            <div><dt>Birthplace timezone</dt><dd>{profile.timezone || "Unresolved"}</dd></div>
+            <div><dt>Birthplace coordinates</dt><dd>{profile.latitude ?? "Unresolved"}, {profile.longitude ?? "Unresolved"}</dd></div>
+          </dl>
+          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first.</p>
+          {!needsOnlineVerification && canRequestOnlineEvidence && <button type="button" className="sc-button-secondary mt-4" disabled={verificationAttempt === "running"} onClick={() => void requestOnlineVerification(true)}>Recheck this saved chart online</button>}
+        </details>
 
         {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested profile-system verification. Soul Codex is calculating the qualified natal chart and governed Human Design core while your local reading remains available.</span></div>}
         {verificationAttempt === "deferred" && !verifiedFullNatal && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">The requested online verification could not complete. Local symbolic layers remain visible; any unsupported planets, Rising, MC, houses, aspects, nodes, and Chiron stay unresolved rather than guessed.</div>}
@@ -380,7 +392,7 @@ export default function OfflineProfilePage() {
           </section>
         )}
 
-        {verifiedFullNatal && verifiedAstrology && (
+        {supportedPlanetCount > 0 && verifiedAstrology && (
           <div className="mb-6">
             <Suspense fallback={<DeepChartFallback label="verified natal wheel" />}>
               <VerifiedNatalChart astrology={verifiedAstrology as Record<string, any>} synthesis={ultimateCodex} interpretationDepth={canSeeInterpretationDepth} />
@@ -461,12 +473,12 @@ export default function OfflineProfilePage() {
         )}
 
         <section className="mb-6 grid gap-4 lg:grid-cols-[360px_1fr]">
-          {verifiedFullNatal ? (
+          {supportedPlanetCount > 0 ? (
             <div className="sc-panel flex min-h-[300px] items-center justify-center p-6" data-testid="verified-astrology-atlas-panel">
               <div className="max-w-[290px] text-center">
                 <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] text-[var(--sc-gold-bright)]"><Compass className="h-7 w-7" /></div>
                 <p className="sc-eyebrow mt-5 justify-center">Personal Astrology Atlas</p>
-                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Explore every verified sign-and-house placement.</h2>
+                <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Explore your supported sign-and-house placements.</h2>
                 <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">Your verified planets and points open into detailed meanings, gifts, tensions, questions, and practices without turning symbolic interpretation into fact.</p>
                 <Link href="/systems/atlas" className="sc-button-secondary mt-5 inline-flex">Open your Atlas</Link>
               </div>
@@ -486,7 +498,9 @@ export default function OfflineProfilePage() {
 
         <div className="mb-6 rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.04)] p-5"><div className="flex gap-3"><ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--sc-teal)]" /><div><p className="font-semibold text-[var(--sc-ivory)]">Evidence boundary</p><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">{verifiedFullNatal
                 ? "Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Rising, Midheaven, Equal House cusps, planetary house assignments, major aspects, Mean North/South Nodes, and Chiron are evidence-qualified or deterministically derived from verified inputs. Chiron uses live JPL Horizons qualified against Swiss Ephemeris; no approximation fallback is used."
-                : hasVerifiedCore
+                : supportedPlanetCount > 0
+                  ? `${ultimateCodex.placements.length} planetary placements are evidence-qualified. Supported placements stay visible while unresolved components await independent verification. Symbolic meanings are reflection prompts, not measured personality effects.`
+                  : hasVerifiedCore
                   ? "Sun and Moon are independently verified. Exact-input profiles can now request the full qualified natal chart; any still-unverified planets, Rising, Midheaven, houses, aspects, nodes, and Chiron remain withheld."
                   : hasRangeEvidence
                     ? "Unknown-time range analysis is complete. Stable-across-range placements may influence synthesis with explicit range provenance. Conditional placements remain branch-only; houses and Midheaven stay unavailable until birth time is known."

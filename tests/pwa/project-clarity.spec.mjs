@@ -1,13 +1,14 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 
-async function createProfile(page) {
+async function createProfile(page, birthTime = "11:11") {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("input-name")).toBeVisible();
   await expect(page.getByTestId("button-onboarding-next")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Clarity Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
-  await page.getByTestId("input-birth-time").fill("11:11");
+  await page.getByTestId("input-birth-time").fill(birthTime);
   await page.getByTestId("button-onboarding-next").click();
   await page.getByTestId("input-birth-location").fill("Bronx, New York");
   await page.getByTestId("button-location-lookup").click();
@@ -70,4 +71,29 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   // contract here is graceful degradation, not a fabricated offline match.
   await expect(page.getByRole("heading", { name: "Compatibility is unavailable" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
+});
+
+test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page }) => {
+  // Test-only retained independent-reference response; no production calculator is mocked.
+  const partial = JSON.parse(readFileSync(new URL("./fixtures/partial-chart.json", import.meta.url), "utf8"));
+  await page.route("**/api/verification/profile", async (route) => {
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(partial) });
+  });
+  await createProfile(page, "10:10");
+  await page.getByRole("button", { name: "Verify complete profile systems", exact: true }).click();
+  await expect(page.getByTestId("verified-natal-chart")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Unavailable locally without verified placements.", exact: true })).toHaveCount(0);
+  const system = page.getByTestId("interactive-planetary-system");
+  await system.getByRole("button", { name: "☿ Mercury Virgo · verified", exact: true }).click();
+  const selected = system.getByTestId("planetary-system-selection");
+  await expect(selected).toContainText("Mercury in Virgo");
+  await expect(selected).toContainText("House 11");
+  await expect(selected).toContainText("perception, language, learning");
+  await expect(selected).toContainText("Try this in your life");
+  await page.getByRole("link", { name: "Open the full Free reading", exact: true }).click();
+  const readings = page.getByRole("region", { name: "Your planetary placement readings", exact: true });
+  await expect(readings).toContainText("Sun in Virgo · House 11");
+  await expect(readings).toContainText("Moon in Virgo · House 11");
+  await expect(readings).toContainText("Mercury in Virgo · House 11");
+  await expect(readings).toContainText("friendships, groups, collective projects");
 });

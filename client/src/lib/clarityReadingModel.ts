@@ -1,3 +1,4 @@
+import { chartPlacementReading, type ChartPlacementReading } from "./chartPlacementReading";
 import { calcExpression, calcLifePath, calcSoulUrge, hasCompleteMinuteRangeEvidence } from "@soulcodex/core";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { getSynthesisPlacement } from "./placementVerification";
@@ -36,6 +37,7 @@ export interface ClarityReadingModel {
   groundedAction: string;
   signals: ClaritySignal[];
   limitations: string[];
+  planetaryReadings?: ChartPlacementReading[];
 }
 
 export type ClarityReadingAccess = {
@@ -347,7 +349,7 @@ export function buildClarityReadingModel(
       ) ?? freeTitle
     : freeTitle;
 
-  const summary = interpretationDepth
+  let summary = interpretationDepth
     ? firstSupportedText(
         depth.summary,
         sectionText(depth.claritySummary),
@@ -382,13 +384,30 @@ export function buildClarityReadingModel(
     depth.protectiveFunction?.claimKind === "observed" ||
     protectiveEvidenceIds.some((id: string) => behavioralEvidenceIds.has(id));
 
+  const planetaryReadings = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"].flatMap((body) => {
+    const placement = getSynthesisPlacement(verified.planets?.[body] ?? verified[body]);
+    if (!placement) return [];
+    const house = placement.evidenceState === "verified" && verifiedEqualHouses(verified) && validHouse(verified.planetaryHouses?.[body])
+      ? verified.planetaryHouses[body] : null;
+    const reading = chartPlacementReading(body, placement.sign, house,
+      placement.evidenceState === "verified" ? "Verified placement · symbolic interpretation" : "Stable across full birth-time range · symbolic interpretation");
+    return reading ? [reading] : [];
+  });
+  const identityReading = planetaryReadings.find((row) => row.key === "sun") ?? planetaryReadings[0];
+  const emotionalReading = planetaryReadings.find((row) => row.key === "moon");
+  const connectionReading = planetaryReadings.find((row) => row.key === "venus") ?? planetaryReadings.find((row) => row.key === "mercury");
+
+  if (identityReading) {
+    summary = `Your reading follows ${identityReading.title}${emotionalReading && emotionalReading.key !== identityReading.key ? ` alongside ${emotionalReading.title}` : ""}. Each placement below connects its planetary function, zodiac style, and supported life area to a practice you can test. These symbolic themes describe possibilities, not facts about your behavior.`;
+  }
+
   const baseVisible = firstSupportedText(
     sectionText(depth.visiblePattern),
     sectionText(depth.behavior),
     sectionText(depth.behaviorPattern),
     archetype.strengths?.[0],
     archetype.gifts?.[0],
-  ) ?? FALLBACKS.visiblePattern;
+  ) ?? identityReading?.meaning ?? FALLBACKS.visiblePattern;
   const baseProtective = protectiveBehavioralSupport
     ? firstSupportedText(sectionText(depth.protectiveFunction)) ?? FALLBACKS.protectiveFunction
     : FALLBACKS.protectiveFunction;
@@ -397,19 +416,19 @@ export function buildClarityReadingModel(
     sectionText(depth.healthyExpression),
     archetype.gifts?.[0],
     archetype.strengths?.[0],
-  ) ?? FALLBACKS.gift;
+  ) ?? identityReading?.gift ?? FALLBACKS.gift;
   const baseCost = firstSupportedText(
     sectionText(depth.cost),
     sectionText(depth.shadow),
     archetype.shadows?.[0],
     archetype.growthAreas?.[0],
-  ) ?? FALLBACKS.cost;
+  ) ?? (emotionalReading ?? identityReading)?.tension ?? FALLBACKS.cost;
   const baseRelationship = firstSupportedText(
     sectionText(depth.relationshipImpact),
     sectionText(depth.relationships),
     sectionText(personality.relationshipStyle),
     sectionText(archetype.relationshipImpact),
-  ) ?? FALLBACKS.relationshipImpact;
+  ) ?? connectionReading?.meaning ?? FALLBACKS.relationshipImpact;
 
   const progressive = makeProgressiveSections(summary, {
     visiblePattern: appendTheme(
@@ -542,9 +561,10 @@ export function buildClarityReadingModel(
           sectionText(depth.groundedAction),
           sectionText(depth.action),
           profile.dailyGuidance,
-        ) ?? DEFAULT_ACTION
-      : DEFAULT_ACTION,
+        ) ?? identityReading?.action ?? DEFAULT_ACTION
+      : identityReading?.action ?? DEFAULT_ACTION,
     signals,
+    planetaryReadings,
     limitations,
   };
 }
