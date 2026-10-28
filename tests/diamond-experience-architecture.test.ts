@@ -80,7 +80,7 @@ test("today surface enforces tier-aware influence budgets", () => {
   const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT/);
   assert.match(timeline, /Your chart today/);
-  assert.match(timeline, /See all five influences/);
+  assert.match(timeline, /See all \{currentInfluences\.length\} influences/);
   assert.match(timeline, /advanced_daily/);
   assert.match(timeline, /DiamondClosure/);
 });

@@ -42,7 +42,7 @@ test("every live Plus promise has a concrete implementation surface", () => {
 
   assert.equal(SOUL_CODEX_CAPABILITIES.advanced_daily.availability, "live");
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT/);
-  assert.match(timeline, /See all five influences/);
+  assert.match(timeline, /See all \{currentInfluences\.length\} influences/);
 
   assert.equal(SOUL_CODEX_CAPABILITIES.cross_system_synthesis.availability, "live");
   assert.match(profile, /GalacticCodePanel/);
