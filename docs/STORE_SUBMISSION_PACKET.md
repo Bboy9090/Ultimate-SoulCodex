@@ -14,8 +14,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release | 4.1.0 / versionCode 4000013 |
-| iOS source project release | 4.1.0 / build 4000011 (source setting) |
+| Android release | 4.1.0 / versionCode 4000014 |
+| iOS source project release | 4.1.0 / build 4000012 (source setting) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -72,9 +72,17 @@ What makes it different:
 
 Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
 ### iOS keywords
 
 `astrology,numerology,human design,birth chart,personality,zodiac,compatibility,daily reading`
+
+## iOS subscription metadata gate
+
+Include the Terms of Use (EULA) link above in the App Description for every enabled App Store localization. Verify that the saved live description contains the link before submitting or resubmitting an app with auto-renewable subscriptions. A privacy-policy URL alone does not satisfy this requirement.
+
+Apple's October 24, 2026 Guideline 3.1.2 rejection identified this exact missing metadata. The live English (U.S.) description was corrected on October 28 and build 346 was resubmitted. Future uploads must preserve the correction. If custom terms are introduced, configure the custom EULA in App Store Connect and reconcile this packet before submission.
 
 ## Asset Inventory
 
@@ -194,7 +202,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
 6. Use the verified GitHub Pages URLs in this packet for privacy, support, and account deletion. Backend/runtime qualification is independent and must not be inferred from the legal-host status.
 7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
-8. For Apple, use the Apple-managed Xcode Cloud archive from the same exact qualified candidate SHA used for submission evidence. The checked-in project build setting remains `4000011`; App Store Connect may assign a separate Xcode Cloud build counter, which must be recorded in the release receipt.
+8. For Apple, use the Apple-managed Xcode Cloud archive from the same exact qualified candidate SHA used for submission evidence. The checked-in project build setting remains `4000012`; App Store Connect may assign a separate Xcode Cloud build counter, which must be recorded in the release receipt.
 
 
 ## Soul Codex+ 4.1 subscription catalog

@@ -131,7 +131,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pdfkit": "^0.18.0",
-    "qs": "^6.16.0",
+    "qs": "6.17.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -184,6 +184,8 @@
     "brace-expansion": "5.0.12",
     "dompurify": "3.4.17",
     "ip-address": "10.7.4",
-    "body-parser": "1.20.9"
+    "body-parser": "1.20.9",
+    "postcss-selector-parser": "6.1.5",
+    "esbuild": "$esbuild"
   }
 }

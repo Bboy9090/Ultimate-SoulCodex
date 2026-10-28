@@ -6,6 +6,7 @@ on:
       - release/4.1.0-rc1
       - hotfix/ios-4.1.0-native-load
       - fix/profile-narrative-refresh-federation
+      - fix/personal-chart-release-integrity
   workflow_dispatch:
 
 permissions:
@@ -248,14 +249,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000011"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000012"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000011"
+            echo "buildNumber=4000012"
             echo "native_pwa_service_worker_registration=disabled"
             echo "simulator_launch=passed"
           } > IOS-4.1.0-HOTFIX-RECEIPT.txt
@@ -450,14 +451,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000011"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000012"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000011"
+            echo "buildNumber=4000012"
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"

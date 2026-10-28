@@ -205,7 +205,7 @@ export default function Home() {
           <DiamondClosure
             clarity={dailyGuidance || "Start with the strongest supported signal. Ignore the noise. Make one useful move."}
             depth="Today combines only the timing and profile signals that have enough evidence to be shown. Symbolic meaning stays separate from verified calculation."
-            nextMove="Open Today, inspect the three to five strongest current influences, then choose one action small enough to test in real life."
+            nextMove="Open Today, inspect the supported timing and saved natal context, then choose one action small enough to test in real life."
             nextHref="/timeline"
             nextLabel="Open Today"
           />

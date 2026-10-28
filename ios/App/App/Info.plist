@@ -21,7 +21,7 @@
 	<key>CFBundleShortVersionString</key>
 	<string>4.1.0</string>
 	<key>CFBundleVersion</key>
-	<string>4000011</string>
+	<string>4000012</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSContactsUsageDescription</key>

@@ -17,13 +17,13 @@ test("Soul Codex platform release identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000013/);
+  assert.match(android, /versionCode\s+4000014/);
   assert.match(android, /versionName\s+"4\.1\.0"/);
   assert.match(android, /applicationId\s+"soulcodex\.app"/);
   assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
   assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.0<\/string>/);
-  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000011<\/string>/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000011;/);
+  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000012<\/string>/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000012;/);
   assert.match(project, /MARKETING_VERSION = 4\.1\.0;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.1\.0"/);
@@ -79,7 +79,7 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.doesNotMatch(workflow, /track:\s*production/);
   assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.0/);
   assert.match(workflow, /iOS marketingVersion=4\.1\.0/);
-  assert.match(workflow, /iOS build=4000011/);
+  assert.match(workflow, /iOS build=4000012/);
   assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
 });
 
@@ -87,8 +87,8 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /releaseVersion !== "4\.1\.0"/);
   assert.match(validator, /android\/app\/build\.gradle/);
-  assert.match(validator, /versionCode\\s\+4000013/);
-  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000011/);
+  assert.match(validator, /versionCode\\s\+4000014/);
+  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000012/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });
@@ -107,8 +107,8 @@ test("store metadata points at the verified public legal host and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.0 \/ versionCode 4000013/);
-  assert.match(packet, /4\.1\.0 \/ build 4000011/);
+  assert.match(packet, /4\.1\.0 \/ versionCode 4000014/);
+  assert.match(packet, /4\.1\.0 \/ build 4000012/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
   assert.match(listing, /Verified Human Design Type, Strategy, Authority, and Profile/);
@@ -160,4 +160,17 @@ test("Google Play account-deletion page states request steps, deleted data, and 
   }
   assert.match(deletion, /Permanently Delete My Data/);
   assert.match(deletion, /What may be kept and for how long/);
+});
+
+
+test("subscription listing descriptions retain the Apple EULA required by App Review", async () => {
+  const eula = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  const listing = await text("store-assets/STORE_LISTING.md");
+  const packetDescription = packet.split("### Full description")[1]?.split("### iOS keywords")[0];
+  const listingDescription = listing.split("## Full Description")[1]?.split("## Keywords")[0];
+  for (const [name, description] of [["canonical packet", packetDescription], ["store copy", listingDescription]] as const) {
+    assert.ok(description?.includes(eula), name + " must include the functional EULA URL inside the copy-paste description");
+  }
+  assert.match(packet, /every enabled App Store localization/);
 });

@@ -177,7 +177,7 @@ export default function TimelinePage() {
     if (profileContext.hdVerified) {
       influences.push({
         label: `${profileContext.hdType} · ${profileContext.hdAuthority}`,
-        detail: "Verified Human Design context · symbolic decision framework",
+        detail: "Saved Human Design context · symbolic decision framework, not a current transit",
       });
     }
 
@@ -189,7 +189,7 @@ export default function TimelinePage() {
       ].filter(Boolean);
       influences.push({
         label: chartBits.join(" · "),
-        detail: "Verified natal context · background lens, not a prediction",
+        detail: "Saved natal context · birth chart background, not a current transit",
       });
     }
 
@@ -203,7 +203,7 @@ export default function TimelinePage() {
   const aureonTimelineState: AureonState = selectedInfluenceIndex !== null
     ? "explaining"
     : visibleInfluences.length > 0
-      ? "confirming"
+      ? "focusing"
       : "observing";
 
   if (isLoading) {
@@ -263,19 +263,20 @@ export default function TimelinePage() {
       </SoulReveal>
 
       <SoulReveal>
-      <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your chart today">
+      <section className="sc-panel sc-panel-gold p-6 sm:p-8" aria-label="Your timing and natal context">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 gap-4">
             <AureonAvatar state={aureonTimelineState} compact />
             <div>
             <div className="sc-eyebrow">Today</div>
-            <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--sc-ivory)]">Your chart today</h2>
+            <h2 className="mt-2 font-serif text-3xl font-semibold text-[var(--sc-ivory)]">Your timing and natal context</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--sc-stone)]">
               {phase
                 ? `${phase.label} is the larger numerology theme. The useful move is to read the strongest qualified signals together without treating any symbolic layer as a forecast.`
                 : "Soul Codex is showing only the current influences supported by the data available for this profile."}
             </p>
-            <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]" aria-live="polite">{selectedInfluenceIndex !== null ? "Aureon is explaining the influence you selected." : "Aureon confirms the qualified signals currently available."}</p>
+            <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">Numerology cycles change with the calendar. Saved natal and Human Design context remain background; this list does not calculate current planetary transits.</p>
+            <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]" aria-live="polite">{selectedInfluenceIndex !== null ? "Aureon is explaining the influence you selected." : "Aureon is showing the supported timing and saved natal context."}</p>
             </div>
           </div>
           <span className="sc-trust-chip">{visibleInfluences.length} current influence{visibleInfluences.length === 1 ? "" : "s"}</span>
