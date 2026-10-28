@@ -1,0 +1,53 @@
+name: Personal Chart Browser Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/**"
+      - "tests/pwa/**"
+      - ".github/workflows/personal-chart-browser-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-chart-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  personal-chart-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Record exact source
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          echo "$CANDIDATE_SHA" > personal-chart-candidate-sha.txt
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm install --no-save --package-lock=false @playwright/test@1.54.1
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run build:workspaces
+      - run: npm run build
+      - name: Test saved profiles and partial chart readings in Chromium and WebKit
+        run: npx playwright test project-clarity.spec.mjs --config=tests/pwa/playwright.config.mjs
+      - name: Retain browser evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: personal-chart-browser-${{ github.run_id }}
+          path: |
+            personal-chart-candidate-sha.txt
+            playwright-report
+            test-results/pwa
+          retention-days: 30
