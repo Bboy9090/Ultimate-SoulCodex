@@ -37,7 +37,7 @@ test("opening an offline profile never triggers verification as a background eff
   )?.[1] ?? "";
   assert.ok(refreshEffect, "profile refresh effect must remain inspectable");
   assert.doesNotMatch(refreshEffect, /apiFetch|requestOnlineVerification/);
-  assert.match(profileSource, /const requestOnlineVerification = async \(recheck = false\) =>/);
+  assert.match(profileSource, /const requestOnlineVerification = async \(\) =>/);
   assert.match(profileSource, /data-testid="button-verify-online-profile"/);
   assert.match(profileSource, /onClick=\{\(\) => void requestOnlineVerification\(\)\}/);
 });

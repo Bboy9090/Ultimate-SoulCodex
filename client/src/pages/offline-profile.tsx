@@ -56,8 +56,8 @@ export default function OfflineProfilePage() {
     return () => window.removeEventListener("soulcodex:profile-updated", refreshProfile);
   }, [id, queryClient]);
 
-  const requestOnlineVerification = async (recheck = false) => {
-    if (!reconciledProfile || verificationAttempt === "running" || (!recheck && !profileNeedsOnlineVerification(reconciledProfile))) return;
+  const requestOnlineVerification = async () => {
+    if (!reconciledProfile || verificationAttempt === "running") return;
     if (!reconciledProfile.timezone?.trim()) {
       setVerificationAttempt("deferred");
       return;
@@ -245,7 +245,7 @@ export default function OfflineProfilePage() {
             <div><dt>Birthplace coordinates</dt><dd>{profile.latitude ?? "Unresolved"}, {profile.longitude ?? "Unresolved"}</dd></div>
           </dl>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first.</p>
-          {!needsOnlineVerification && canRequestOnlineEvidence && <button type="button" className="sc-button-secondary mt-4" disabled={verificationAttempt === "running"} onClick={() => void requestOnlineVerification(true)}>Recheck this saved chart online</button>}
+          {!needsOnlineVerification && canRequestOnlineEvidence && <button type="button" className="sc-button-secondary mt-4" disabled={verificationAttempt === "running"} onClick={() => void requestOnlineVerification()}>Recheck this saved chart online</button>}
         </details>
 
         {verificationAttempt === "running" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.05)] p-4 text-sm text-[var(--sc-stone)]"><Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-[var(--sc-gold)]" /><span>You requested profile-system verification. Soul Codex is calculating the qualified natal chart and governed Human Design core while your local reading remains available.</span></div>}
