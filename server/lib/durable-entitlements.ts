@@ -81,6 +81,7 @@ export type VerifiedBillingEvent = z.infer<typeof verifiedBillingEventSchema>;
 
 export type ProductEntitlementSource =
   | "free"
+  | "owner"
   | "stripe"
   | "apple"
   | "google_play";
@@ -248,6 +249,18 @@ export async function resolveProductEntitlementForUser(
   if (!userId) return entitlementFromGrant(null, now);
   const user = await storage.getUser(userId);
   if (!user) return entitlementFromGrant(null, now);
+  // Explicit owner-authorized, server-only exception; never fabricate a paid event.
+  // Account UUIDs survive Apple private relay/email changes and cannot be supplied
+  // by a client access flag. An absent/deleted account was already rejected above.
+  let ownerIds: string[] = [];
+  try {
+    const parsed = z.array(z.string().uuid()).max(10).safeParse(JSON.parse(process.env.SOUL_CODEX_OWNER_USER_IDS || "[]"));
+    if (parsed.success) ownerIds = parsed.data;
+  } catch { /* malformed configuration fails closed */ }
+  if (ownerIds.includes(user.id)) {
+    return { tier: "plus", source: "owner", verified: true, plan: null,
+      status: "complimentary_lifetime", expiresAt: null, lastVerifiedAt: now.toISOString() };
+  }
   const grant = await storage.getLatestEntitlementGrant(
     userId,
     SOUL_CODEX_PLUS_CAPABILITY,

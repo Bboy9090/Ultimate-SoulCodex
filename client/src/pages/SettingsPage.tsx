@@ -136,6 +136,7 @@ export default function SettingsPage() {
         <section className="mt-4 grid gap-4 lg:grid-cols-2">
           <article className="sc-panel p-6">
             <SectionHeading icon={<CircleUserRound className="h-5 w-5" />} eyebrow="Identity" title="Account" />
+            {currentUser && <p className="mb-3 break-all text-xs leading-6 text-[var(--sc-stone)]">Account reference: <code>{currentUser.id}</code></p>}
             {userLoading ? (
               <p className="mt-5 text-sm text-[var(--sc-stone)]">Checking account status…</p>
             ) : currentUser ? (

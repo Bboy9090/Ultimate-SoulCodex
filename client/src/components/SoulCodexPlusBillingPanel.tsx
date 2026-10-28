@@ -318,10 +318,10 @@ export default function SoulCodexPlusBillingPanel() {
         {plusActive ? (
           <div className="rounded-xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
             <strong className="text-[var(--sc-ivory)]">
-              Soul Codex+ active · {access.plan === "annual" ? "Annual" : "Monthly"}
+              Soul Codex+ active · {access.source === "owner" ? "Complimentary lifetime owner access" : access.plan === "annual" ? "Annual" : "Monthly"}
             </strong>
             <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-stone)]">
-              Verified through {access.source === "apple" ? "Apple" : access.source === "google_play" ? "Google Play" : "web billing"}.
+              Verified through {access.source === "owner" ? "your approved owner account" : access.source === "apple" ? "Apple" : access.source === "google_play" ? "Google Play" : "web billing"}.
               {access.expiresAt ? ` Current period through ${new Date(access.expiresAt).toLocaleDateString()}.` : ""}
             </p>
           </div>
@@ -412,10 +412,10 @@ export default function SoulCodexPlusBillingPanel() {
       {plusActive ? (
         <div className="rounded-xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.05)] p-4">
           <strong className="text-[var(--sc-ivory)]">
-            Soul Codex+ active · {access.plan === "annual" ? "Annual" : "Monthly"}
+            Soul Codex+ active · {access.source === "owner" ? "Complimentary lifetime owner access" : access.plan === "annual" ? "Annual" : "Monthly"}
           </strong>
           <p className="mb-0 mt-2 text-sm leading-6 text-[var(--sc-stone)]">
-            Verified through {access.source === "stripe" ? "web billing" : access.source === "apple" ? "Apple" : "Google Play"}.
+            Verified through {access.source === "owner" ? "your approved owner account" : access.source === "stripe" ? "web billing" : access.source === "apple" ? "Apple" : "Google Play"}.
             {access.expiresAt ? ` Current period through ${new Date(access.expiresAt).toLocaleDateString()}.` : ""}
           </p>
         </div>

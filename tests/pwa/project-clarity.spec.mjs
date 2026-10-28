@@ -92,4 +92,15 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
   await expect(readings).toContainText("Moon in Virgo · House 11");
   await expect(readings).toContainText("Mercury in Virgo · House 11");
   await expect(readings).toContainText("friendships, groups, collective projects");
+  await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
+  await expect(page.getByRole("complementary", { name: "Free and Plus placement access", exact: true })).toBeVisible();
+  await page.request.post("/__test/owner-access");
+  await page.reload();
+  const depth = page.getByTestId("planetary-plus-depth").first();
+  await expect(depth).toBeVisible();
+  await depth.locator("summary").click();
+  await expect(depth.getByRole("heading", { name: "Relationship context", exact: true })).toBeVisible();
+  await expect(depth.getByRole("heading", { name: "Decision worksheet", exact: true })).toBeVisible();
+  await page.goto("/pricing");
+  await expect(page.getByText("Soul Codex+ active · Complimentary lifetime owner access", { exact: true })).toBeVisible();
 });

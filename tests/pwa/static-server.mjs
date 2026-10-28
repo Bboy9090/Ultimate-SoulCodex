@@ -59,6 +59,18 @@ const server = http.createServer(async (request, response) => {
   const method = request.method ?? "GET";
   const requestUrl = new URL(request.url ?? "/", `http://${HOST}:${PORT}`);
 
+  if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/__test/owner-access" && method === "POST") {
+    request.resume();
+    response.writeHead(200, { "Set-Cookie": "sc-test-owner=1; Path=/; SameSite=Lax", "Cache-Control": "no-store", "Content-Type": "application/json" });
+    response.end(JSON.stringify({ testFixture: true }));
+    return;
+  }
+  if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/api/access" && /(?:^|;\s*)sc-test-owner=1(?:;|$)/.test(request.headers.cookie || "")) {
+    response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    response.end(JSON.stringify({ tier: "plus", source: "owner", verified: true, status: "complimentary_lifetime", plan: null, expiresAt: null, resolvedAt: new Date().toISOString(), lastVerifiedAt: new Date().toISOString() }));
+    return;
+  }
+
   // Explicit test-only backend fixture. Serve it through the real HTTP/service-worker
   // path: page.route interception cannot reliably see requests handled by WebKit's SW.
   if (process.env.SOUL_CODEX_TEST_PARTIAL_CHART === "1" && requestUrl.pathname === "/api/verification/profile" && method === "POST") {

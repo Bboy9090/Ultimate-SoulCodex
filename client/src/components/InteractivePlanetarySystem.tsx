@@ -1,3 +1,6 @@
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
+import PlanetaryDepthPanel from "./PlanetaryDepthPanel";
 import { chartPlacementReading } from "@/lib/chartPlacementReading";
 import { useId, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
@@ -39,6 +42,8 @@ export default function InteractivePlanetarySystem({
 }: {
   synthesis: UltimateCodexSynthesis;
 }) {
+  const { tier } = useProductAccess();
+  const expanded = tierAllowsCapability(tier, "interpretation_depth");
   const prefersReducedMotion = useReducedMotion();
   const [motionPaused, setMotionPaused] = useState(false);
   const reducedMotion = prefersReducedMotion || motionPaused;
@@ -60,7 +65,7 @@ export default function InteractivePlanetarySystem({
     synthesis.placements[0] ??
     null;
 
-  const selectedReading = selected ? chartPlacementReading(selected.key, selected.sign, selected.house, placementSummary(selected)) : null;
+  const selectedReading = selected ? chartPlacementReading(selected.key, selected.sign, selected.house, placementSummary(selected), expanded) : null;
 
   return (
     <section className="sc-panel sc-panel-gold mb-6 overflow-hidden p-5 sm:p-7" data-testid="interactive-planetary-system">
@@ -203,6 +208,7 @@ export default function InteractivePlanetarySystem({
                 <div><h4 className="font-semibold text-[var(--sc-gold-bright)]">Watch the tradeoff</h4><p>{selectedReading.tension}</p></div>
                 <div><h4 className="font-semibold text-[var(--sc-gold-bright)]">Try this in your life</h4><p>{selectedReading.action}</p></div>
               </div>}
+              <PlanetaryDepthPanel depth={selectedReading?.depth} />
               <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
                 Tap another planet to move through the supported chart. Evidence state stays visible; unresolved houses or degrees remain unresolved.
               </p>

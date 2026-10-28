@@ -390,7 +390,7 @@ export function buildClarityReadingModel(
     const house = placement.evidenceState === "verified" && verifiedEqualHouses(verified) && validHouse(verified.planetaryHouses?.[body])
       ? verified.planetaryHouses[body] : null;
     const reading = chartPlacementReading(body, placement.sign, house,
-      placement.evidenceState === "verified" ? "Verified placement · symbolic interpretation" : "Stable across full birth-time range · symbolic interpretation");
+      placement.evidenceState === "verified" ? "Verified placement · symbolic interpretation" : "Stable across full birth-time range · symbolic interpretation", interpretationDepth);
     return reading ? [reading] : [];
   });
   const identityReading = planetaryReadings.find((row) => row.key === "sun") ?? planetaryReadings[0];

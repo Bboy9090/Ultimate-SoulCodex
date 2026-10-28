@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { SoulCodexTier } from "@shared/product-access";
+import { verifiedProductTier, type SoulCodexTier } from "@shared/product-access";
 import { apiFetch } from "../lib/queryClient";
 import {
   clearOfflineEntitlementCache,
@@ -9,7 +9,7 @@ import {
 
 export type ProductAccessResponse = {
   tier: SoulCodexTier;
-  source: "free" | "stripe" | "apple" | "google_play";
+  source: "free" | "owner" | "stripe" | "apple" | "google_play";
   verified: boolean;
   plan: "monthly" | "annual" | null;
   status: string | null;
@@ -46,6 +46,7 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
   }
 
   const source =
+    payload.source === "owner" ||
     payload.source === "stripe" ||
     payload.source === "apple" ||
     payload.source === "google_play"
@@ -64,6 +65,7 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
     offlineCache: false,
   };
 
+  access.tier = verifiedProductTier(access);
   if (access.tier === "plus" && access.verified) rememberVerifiedPlus(access);
   else clearOfflineEntitlementCache();
 
