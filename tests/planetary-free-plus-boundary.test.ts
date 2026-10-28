@@ -3,6 +3,40 @@ import test from "node:test";
 import { chartPlacementReading } from "../client/src/lib/chartPlacementReading";
 import { buildClarityReadingModel } from "../client/src/lib/clarityReadingModel";
 import { verifiedProductTier } from "../shared/product-access";
+import { ATLAS_SIGNS } from "../client/src/lib/astrologyAtlas";
+
+const bodies = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
+
+test("all 1,440 planet/sign/house combinations retain distinct core functions and the tier boundary", () => {
+  for (const sign of ATLAS_SIGNS) {
+    for (let house = 1; house <= 12; house++) {
+      const outputs = bodies.map(body => {
+        const free = chartPlacementReading(body, sign, house, "qualified", false)!;
+        const plus = chartPlacementReading(body, sign, house, "qualified", true)!;
+        const { depth, ...core } = plus;
+        assert.deepEqual(core, free);
+        assert.ok(depth?.relationships && depth.decisions && depth.reflection);
+        assert.match(free.meaning, new RegExp(`House ${house} focuses`));
+        assert.doesNotMatch(JSON.stringify(free), /undefined|NaN|\[object Object\]/);
+        return free;
+      });
+      // Remove labels so a cosmetic planet-name substitution cannot pass.
+      for (const field of ["gift", "tension", "action"] as const) {
+        const prose = outputs.map(item => field === "action" ? item[field] : item[field].replace(/^[^:]+: /, ""));
+        assert.equal(new Set(prose).size, bodies.length, `${sign} House ${house}: ${field} repeated between planets`);
+      }
+    }
+  }
+});
+
+test("invalid or unknown houses never create a house claim", () => {
+  for (const house of [null, 0, -1, 13, 1.5, NaN, Infinity]) {
+    const reading = chartPlacementReading("moon", "Virgo", house, "sign-only", true)!;
+    assert.doesNotMatch(JSON.stringify(reading), /House \d/);
+    assert.match(reading.meaning, /house is unresolved/);
+  }
+  assert.equal(chartPlacementReading("moon", "NotASign", 1, "invalid"), null);
+});
 
 test("Free retains a complete placement answer while Plus adds separate supported depth", () => {
   const free = chartPlacementReading("mercury", "Virgo", 11, "verified", false)!;

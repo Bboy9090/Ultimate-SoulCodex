@@ -3,7 +3,8 @@ import { tierAllowsCapability } from "@shared/product-access";
 import PlanetaryDepthPanel from "./PlanetaryDepthPanel";
 import { chartPlacementReading } from "@/lib/chartPlacementReading";
 import { useId, useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { UltimateCodexPlacement, UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 const GLYPH: Record<string, string> = {
@@ -88,8 +89,8 @@ export default function InteractivePlanetarySystem({
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,520px)_1fr] lg:items-center">
         <div className="relative mx-auto aspect-square w-full max-w-[520px]">
           <motion.div aria-hidden="true" className="pointer-events-none absolute inset-[8%] rounded-full bg-[radial-gradient(ellipse_at_30%_35%,rgba(139,92,246,.28),transparent_55%),radial-gradient(ellipse_at_70%_65%,rgba(45,212,191,.16),transparent_55%)] blur-xl"
-            animate={reducedMotion ? undefined : { opacity: [0.45, 0.85, 0.45], scale: [0.96, 1.06, 0.96] }}
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }} />
+            animate={reducedMotion ? { opacity: 0.65, scale: 1 } : { opacity: [0.45, 0.85, 0.45], scale: [0.96, 1.06, 0.96] }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 12, repeat: Infinity, ease: "easeInOut" }} />
           <svg viewBox="0 0 360 360" className="h-full w-full overflow-visible" role="img" aria-label="Interactive zodiac planetary map">
             <defs>
               <radialGradient id={coreGradientId} cx="50%" cy="50%" r="50%">
@@ -99,7 +100,7 @@ export default function InteractivePlanetarySystem({
               </radialGradient>
             </defs>
 
-            <motion.g aria-hidden="true" animate={reducedMotion ? undefined : { rotate: [0, -360] }} transition={{ duration: 180, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "180px 180px" }}>
+            <motion.g aria-hidden="true" animate={reducedMotion ? { rotate: 0 } : { rotate: [0, -360] }} transition={reducedMotion ? { duration: 0 } : { duration: 180, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "180px 180px" }}>
               {Array.from({length: 36}, (_, i) => { const star = pointFor(i * 137.508, 35 + (i * 31 % 125)); return <circle key={i} cx={star.x} cy={star.y} r={i % 3 === 0 ? 1.3 : 0.7} fill={i % 2 ? "#c4b5fd" : "#99f6e4"} opacity={0.25 + (i % 4) * 0.12} />; })}
             </motion.g>
             <circle cx="180" cy="180" r="156" fill="none" stroke="rgba(255,255,255,.08)" />
@@ -119,8 +120,8 @@ export default function InteractivePlanetarySystem({
             })}
 
             <motion.g
-              animate={reducedMotion ? undefined : { rotate: [0, 360] }}
-              transition={reducedMotion ? undefined : { duration: 90, repeat: Infinity, ease: "linear" }}
+              animate={reducedMotion ? { rotate: 0 } : { rotate: [0, 360] }}
+              transition={reducedMotion ? { duration: 0 } : { duration: 90, repeat: Infinity, ease: "linear" }}
               style={{ transformOrigin: "180px 180px" }}
               aria-hidden="true"
             >
@@ -146,8 +147,8 @@ export default function InteractivePlanetarySystem({
                       setSelectedKey(placement.key);
                     }
                   }}
-                  animate={reducedMotion ? undefined : { y: [0, index % 2 === 0 ? -2.5 : 2.5, 0] }}
-                  transition={reducedMotion ? undefined : { duration: 2.6 + index * 0.13, repeat: Infinity, ease: "easeInOut" }}
+                  animate={reducedMotion ? { y: 0 } : { y: [0, index % 2 === 0 ? -2.5 : 2.5, 0] }}
+                  transition={reducedMotion ? { duration: 0 } : { duration: 2.6 + index * 0.13, repeat: Infinity, ease: "easeInOut" }}
                   className="cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
                 >
                   <circle
@@ -179,8 +180,8 @@ export default function InteractivePlanetarySystem({
               r="28"
               fill="rgba(217,182,111,.08)"
               stroke="rgba(217,182,111,.32)"
-              animate={reducedMotion ? undefined : { r: [27, 30, 27], opacity: [0.7, 1, 0.7] }}
-              transition={reducedMotion ? undefined : { duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+              animate={reducedMotion ? { r: 28, opacity: 1 } : { r: [27, 30, 27], opacity: [0.7, 1, 0.7] }}
+              transition={reducedMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
             />
             <text x="180" y="181" textAnchor="middle" dominantBaseline="middle" fill="#efd08d" fontSize="18" aria-hidden="true">✦</text>
           </svg>

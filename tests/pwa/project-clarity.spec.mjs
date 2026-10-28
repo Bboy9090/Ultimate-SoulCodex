@@ -72,8 +72,10 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
 
-test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page }) => {
+test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page }, testInfo) => {
   test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
+  const runtimeErrors = [];
+  page.on("pageerror", error => runtimeErrors.push(error.message));
   // The fixture is served by the harness over HTTP, including through the PWA service worker.
   await createProfile(page, "10:10");
   await page.getByRole("button", { name: "Verify complete profile systems", exact: true }).click();
@@ -86,6 +88,32 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
   await expect(selected).toContainText("House 11");
   await expect(selected).toContainText("perception, language, learning");
   await expect(selected).toContainText("Try this in your life");
+  for (const width of [320, 390, 768, 1365]) {
+    await page.setViewportSize({ width, height: 900 });
+    const geometry = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
+    expect(geometry.scroll, `personal chart overflow at ${width}px`).toBeLessThanOrEqual(geometry.width + 1);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const pause = system.getByRole("button", { name: "Pause cosmic motion", exact: true });
+  await pause.click();
+  await expect(system.getByRole("button", { name: "Resume cosmic motion", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(system.getByRole("button", { name: /cosmic motion/ })).toHaveCount(0);
+  const motionSamples = await system.locator("svg").evaluate(async svg => {
+    const sample = () => [...svg.querySelectorAll("g, circle")].map(node => `${node.getAttribute("style")}:${node.getAttribute("r")}`);
+    // Compare several rendered frames to prove the loops stopped, not just the label.
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
+    const before = sample();
+    for (let i = 0; i < 8; i++) await new Promise(requestAnimationFrame);
+    return { before, after: sample() };
+  });
+  expect(motionSamples.after).toEqual(motionSamples.before);
+  await system.locator('g[aria-label="Moon in Virgo"]').evaluate(node => node.focus());
+  await page.keyboard.press("Enter");
+  await expect(selected).toContainText("emotional needs");
+  await system.getByRole("button", { name: "☉ Sun Virgo · verified", exact: true }).click();
+  await expect(selected).toContainText("identity, vitality");
+  await testInfo.attach("personal-chart-phone.png", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
   await page.getByRole("link", { name: "Open the full Free reading", exact: true }).click();
   const readings = page.getByRole("region", { name: "Your planetary placement readings", exact: true });
   await expect(readings).toContainText("Sun in Virgo · House 11");
@@ -94,6 +122,12 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
   await expect(readings).toContainText("friendships, groups, collective projects");
   await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
   await expect(page.getByRole("complementary", { name: "Free and Plus placement access", exact: true })).toBeVisible();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.context().setOffline(true);
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Your planetary placement readings", exact: true })).toContainText("Mercury in Virgo · House 11");
+  await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
+  await page.context().setOffline(false);
   await page.request.post("/__test/owner-access");
   await page.reload();
   const depth = page.getByTestId("planetary-plus-depth").first();
@@ -103,4 +137,5 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
   await expect(depth.getByRole("heading", { name: "Decision worksheet", exact: true })).toBeVisible();
   await page.goto("/pricing");
   await expect(page.getByText("Soul Codex+ active · Complimentary lifetime owner access", { exact: true })).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
 });

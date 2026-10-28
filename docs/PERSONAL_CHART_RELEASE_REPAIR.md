@@ -24,3 +24,18 @@ Risk: symbolic wording may not fit the user; it must remain open to correction. 
 Rollback: revert this branch's commit. Existing successful stored evidence is preserved; no destructive migration is performed.
 
 Passing code/build checks does not establish physical-device validation, signed-artifact distribution, purchase/restore qualification, store approval, or public-release readiness. Keep the PR draft until the exact-head remote and browser/native evidence is available.
+
+## Pre-submission audit follow-up — October 28, 2026
+
+Two additional defects were reproduced and corrected during the requested deeper audit:
+
+1. Planets sharing a sign had identical strength/tradeoff prose and could share an exercise. Ten distinct planetary functions now supply their own strength, tension and practice, combined with the admitted sign and house. The corpus checks all 1,440 planet/sign/house combinations, removes cosmetic name prefixes before checking uniqueness, checks Free/Plus core equality and verifies invalid/unknown houses never acquire a house claim.
+2. The installed Framer Motion reduced-motion hook captured the initial preference without rerendering on a later OS change. The personal planet system and natal chart now use a reactive media-query subscription with cleanup. Decorative loops explicitly transition to static values at zero duration when paused or reduced; merely removing an animation target did not establish that running loops stopped.
+
+The strengthened browser journey checks 320/390/768/1365px overflow, pause semantics, changing reduced motion while mounted, stable SVG values across rendered frames, keyboard selection, screenshot evidence, offline reading reload, absence of Plus fields on Free, and the existing verified-owner expansion fixture. The fixture remains isolated to the test HTTP server; it does not verify astronomy or activate a real owner account. Local Chromium passed both journeys. Local WebKit is blocked by missing system libraries; hosted WebKit qualification is required on the new candidate.
+
+The independent calculation was repeated with Swiss Ephemeris 2.10.03 / FLG_MOSEPH at 1990-09-17T14:10:00Z, Bronx coordinates 40.8448/-73.8648. All ten planetary candidates agree within 0.005 degrees (largest difference: Uranus, approximately 0.001269 degrees). A new regression retains these independent longitudes alongside the existing Scorpio Ascendant reference. This comparison does not upgrade production candidates or replace live reference verification. Equal House placements are conditional on that declared house system; they must not be compared as if they were Placidus placements.
+
+Both full-tree and production-only dependency audits have zero high/critical findings. Eight moderate findings remain in the full tree, including two in production. They are recorded as residual findings rather than silently removed with forced dependency changes.
+
+Submission remains held. Required remaining evidence includes exact new-head hosted workflows, named native-device runtime checks, new unused platform build identifiers and distributable artifacts, actual purchase/restore qualification before paid billing is enabled, and post-deploy smoke. Account linking/owner activation is still incomplete. PR #605's separate App Store EULA guard must also be included in the eventual combined release candidate and validated at that combined head; #606 does not incorporate it automatically.
