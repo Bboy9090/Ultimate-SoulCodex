@@ -72,9 +72,17 @@ What makes it different:
 
 Soul Codex is intended for self-reflection and entertainment. It does not provide medical, legal, financial, or other professional advice.
 
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
+
 ### iOS keywords
 
 `astrology,numerology,human design,birth chart,personality,zodiac,compatibility,daily reading`
+
+## iOS subscription metadata gate
+
+Include the Terms of Use (EULA) link above in the App Description for every enabled App Store localization. Verify that the saved live description contains the link before submitting or resubmitting an app with auto-renewable subscriptions. A privacy-policy URL alone does not satisfy this requirement.
+
+Apple's October 24, 2026 Guideline 3.1.2 rejection identified this exact missing metadata. The live English (U.S.) description was corrected on October 28 and build 346 was resubmitted. Future uploads must preserve the correction. If custom terms are introduced, configure the custom EULA in App Store Connect and reconcile this packet before submission.
 
 ## Asset Inventory
 
