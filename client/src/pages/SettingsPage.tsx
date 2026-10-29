@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Navigation from "@/components/navigation";
 import AppleSignInButton from "@/components/AppleSignInButton";
+import EmailAccountAuth from "@/components/EmailAccountAuth";
 import { clearActiveProfile } from "../lib/ActiveProfileRepository";
 import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 import { clearOfflineProfiles } from "../lib/offlineProfileStore";
@@ -40,7 +41,9 @@ type CurrentUser = {
 
 export default function SettingsPage() {
   const [, navigate] = useLocation();
-  const nativeApple = Capacitor.isNativePlatform();
+  const platform = Capacitor.getPlatform();
+  const nativeApple = platform === "ios";
+  const showAppleSignIn = platform !== "android";
   const [reflectionLens, setReflectionLens] = useState<ReflectionLens>(() => readReflectionLens());
   const [telemetryConsent, setTelemetryConsent] = useState<TelemetryConsentState>(() =>
     typeof window === "undefined" ? "unset" : readPersistedTelemetryConsent(window.localStorage),
@@ -127,8 +130,10 @@ export default function SettingsPage() {
             </p>
             <div className="mt-5 border-t border-white/[0.07] pt-4 text-xs leading-5 text-[var(--sc-stone)]">
               {nativeApple
-                ? "Native Apple authentication is available on this device."
-                : "Web Apple authentication becomes available when the production Apple Services ID is configured."}
+                ? "Native Apple authentication is available on this iPhone or iPad."
+                : platform === "android"
+                  ? "Email account sign-in is available on Android. Google sign-in can be added once the Google OAuth client is configured."
+                  : "Email account sign-in is available. Web Apple authentication also becomes available when the production Apple Services ID is configured."}
             </div>
           </section>
         </header>
@@ -144,7 +149,7 @@ export default function SettingsPage() {
                 <div className="rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.055)] p-4">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[var(--sc-teal)] shadow-[0_0_14px_rgba(114,216,197,.5)]" />
-                    <strong>{currentUser.authProvider === "apple" ? "Signed in with Apple" : "Signed in"}</strong>
+                    <strong>{currentUser.authProvider === "apple" ? "Signed in with Apple" : currentUser.authProvider === "local" ? "Signed in with email" : "Signed in"}</strong>
                   </div>
                   <p className="mb-0 mt-2 text-sm text-[var(--sc-stone)]">{currentUser.email || "Private Apple account"}</p>
                 </div>
@@ -155,11 +160,14 @@ export default function SettingsPage() {
             ) : (
               <div className="mt-5">
                 <p className="text-sm leading-6 text-[var(--sc-stone)]">
-                  Your local profile works without sign-in. Apple sign-in can attach server-backed data to one account without changing the local-first profile model. On the web, the button activates only after the production Apple Services ID is configured.
+                  Your local profile works without sign-in. Connect an account to restore server-backed data and verified purchases across devices.
                 </p>
-                <AppleSignInButton
-                  onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" })}
-                />
+                {showAppleSignIn && (
+                  <AppleSignInButton
+                    onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" })}
+                  />
+                )}
+                <EmailAccountAuth />
               </div>
             )}
           </article>
