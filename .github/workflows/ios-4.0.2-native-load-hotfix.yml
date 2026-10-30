@@ -38,8 +38,8 @@ jobs:
       - name: Select Xcode 27 for the App Review crash environment
         run: |
           set -euo pipefail
-          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
-          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          XCODE=/Applications/Xcode_27.app
+          test -d "$XCODE" || { echo "Stable Xcode 27.0 is required for the reviewed iOS 27.0 runtime"; exit 1; }
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphonesimulator --show-sdk-version
@@ -159,16 +159,7 @@ jobs:
               print(boot.stdout)
               print(boot.stderr, file=sys.stderr)
 
-          try:
-              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
-              print(bootstatus.stdout)
-          except SystemExit as exc:
-              print(f"Boot failure detail: {exc}")
-              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
-              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
-
-          # A booted headless device may not have a ready display service yet.
-          # Open the simulator so screenshot capture has an initialized surface.
+          # Initialize this device display before waiting for full system boot.
           developer_dir = pathlib.Path(run(["xcode-select", "-p"], timeout=15).stdout.strip())
           ui_candidates = [
               developer_dir.parent / "Applications" / "DeviceHub.app",
@@ -179,13 +170,29 @@ jobs:
           if simulator_ui is None:
               raise SystemExit("SELECTED_XCODE_SIMULATOR_UI_NOT_FOUND")
           print(f"Opening selected Xcode device UI: {simulator_ui}")
-          run(["open", "-a", str(simulator_ui)], timeout=30)
+          run(["open", "-a", str(simulator_ui), "--args", "-CurrentDeviceUDID", udid], timeout=30)
+
+          try:
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
+              print(bootstatus.stdout)
+          except SystemExit as exc:
+              print(f"Boot failure detail: {exc}")
+              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
+              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():
               raise SystemExit("SIMULATOR_APP_PATH_MISSING")
 
-          run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+          try:
+              run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+          except SystemExit:
+              try:
+                  diagnostic = run(["xcrun", "simctl", "spawn", udid, "log", "show", "--last", "5m", "--style", "compact", "--predicate", 'process == "installd" OR eventMessage CONTAINS "app.soulcodex.ios"'], timeout=45, check=False)
+                  pathlib.Path("simulator-install-diagnostics.log").write_text(diagnostic.stdout + diagnostic.stderr, encoding="utf-8")
+              except SystemExit as diagnostic_error:
+                  pathlib.Path("simulator-install-diagnostics.log").write_text(str(diagnostic_error), encoding="utf-8")
+              raise
 
           launch = run(
               ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
@@ -316,6 +323,7 @@ jobs:
             simulator-process.txt
             simulator-build.log
             simulator-probe.log
+            simulator-install-diagnostics.log
             simulator-app-path.txt
             native-web-payload.txt
             IOS-4.1.0-HOTFIX-RECEIPT.txt
@@ -344,8 +352,8 @@ jobs:
       - name: Select Xcode 27 for the App Review crash environment
         run: |
           set -euo pipefail
-          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
-          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          XCODE=/Applications/Xcode_27.app
+          test -d "$XCODE" || { echo "Stable Xcode 27.0 is required for the reviewed iOS 27.0 runtime"; exit 1; }
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphonesimulator --show-sdk-version

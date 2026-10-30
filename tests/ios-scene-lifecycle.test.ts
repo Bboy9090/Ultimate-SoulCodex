@@ -43,6 +43,9 @@ test("launch qualification covers iPhone and iPad on the reviewed OS and rejects
   assert.match(workflow, /device: \[iPhone, iPad\]/);
   assert.match(workflow, /DeviceHub\.app/);
   assert.match(workflow, /xcode-select/);
+  assert.match(workflow, /XCODE=\/Applications\/Xcode_27\.app/);
+  assert.match(workflow, /simulator-install-diagnostics\.log/);
+  assert.ok(workflow.indexOf('"-CurrentDeviceUDID", udid') < workflow.indexOf('bootstatus = run'));
   assert.doesNotMatch(workflow, /"open", "-a", "Simulator"/);
   assert.match(workflow, /iOS-27-0/);
   assert.match(workflow, /iPad Air/);
