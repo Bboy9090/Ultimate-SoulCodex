@@ -36,13 +36,14 @@ test("Navigation and planetary browser acceptance: clickable routes, alias, and 
   for (const viewport of [
     { name: "desktop", width: 1365, height: 850 },
     { name: "mobile", width: 390, height: 844 },
+    { name: "tablet", width: 820, height: 1180 },
   ]) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
 
     for (const destination of destinations) {
       await page.goto("/", { waitUntil: "domcontentloaded" });
       const start = Date.now();
-      if (viewport.name === "mobile") {
+      if (viewport.width < 1280) {
         await page.getByTestId("button-menu").click();
         // A real pointer click must wait for the Radix drawer to finish sliding in.
         await page.getByTestId(`link-${destination.label.toLowerCase()}-mobile`).click();
@@ -136,6 +137,14 @@ test("Navigation and planetary browser acceptance: saved Identity keeps personal
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("interactive-planetary-system")).toBeVisible();
   await expect(page.getByTestId("interactive-planetary-system")).toContainText("0 supported placements");
+  // Tablet portrait must keep Settings reachable with the longer saved-profile nav.
+  await page.setViewportSize({ width: 820, height: 1180 });
+  await expect(page.getByTestId("button-menu")).toBeVisible();
+  await page.getByTestId("button-menu").click();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole("heading", { name: /Your Codex, under your control/ })).toBeVisible();
+  await assertNoOverflow(page, "tablet saved-profile Settings access");
   expect(pageErrors).toEqual([]);
   await testInfo.attach("profiled-planetary-journey.json", {
     body: Buffer.from(JSON.stringify({ noBirthTime: true, verifiedDegreesDrawn: 0, pageErrors }, null, 2)),
