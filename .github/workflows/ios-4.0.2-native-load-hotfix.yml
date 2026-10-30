@@ -128,7 +128,7 @@ jobs:
           candidate = None
           family = os.environ["SIMULATOR_DEVICE_FAMILY"]
           for runtime, rows in sorted(devices.get("devices", {}).items(), reverse=True):
-              if "iOS-27" not in runtime:
+              if runtime != "com.apple.CoreSimulator.SimRuntime.iOS-27-0":
                   continue
               for row in rows:
                   if family in row.get("name", "") and row.get("isAvailable", True):
@@ -187,9 +187,12 @@ jobs:
 
           time.sleep(12)
           launched_pid = re.search(r"app\.soulcodex\.ios:\s*(\d+)", launch.stdout).group(1)
-          processes = run(["xcrun", "simctl", "spawn", udid, "launchctl", "list"], timeout=30).stdout
-          if not re.search(rf"^\s*{launched_pid}\s+\S+\s+.*app\.soulcodex\.ios", processes, re.M):
+          # Simulator app PIDs are host PIDs. Avoid launchctl inside the iOS 27
+          # simulator, where the process-list command can hang after a successful launch.
+          process = run(["ps", "-p", launched_pid, "-o", "comm="], timeout=15, check=False)
+          if process.returncode != 0 or not process.stdout.strip().endswith("/Ultimate Soul Codex.app/Ultimate Soul Codex"):
               raise SystemExit("APP_PROCESS_DID_NOT_SURVIVE_LAUNCH")
+          pathlib.Path("simulator-process.txt").write_text(process.stdout, encoding="utf-8")
 
           screenshot = pathlib.Path("ios-4.1.0-launch.png")
           run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=120)
@@ -300,6 +303,7 @@ jobs:
             ios-4.1.0-launch.png
             ios-4.1.0-runtime.log
             simulator-launch.txt
+            simulator-process.txt
             simulator-build.log
             simulator-probe.log
             simulator-app-path.txt

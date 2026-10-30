@@ -40,3 +40,5 @@ References: https://developer.apple.com/documentation/uikit/transitioning-to-the
 ## First Xcode 27 harness result
 
 Run40997501821 compiled the scene-enabled app with Xcode27.2 and booted iOS27.0, but failed before app installation because the inherited harness called `open -a Simulator`. Xcode27 replaces that UI with DeviceHub. This is not an app-launch result. The follow-up resolves DeviceHub/Simulator from the selected Xcode bundle and retains strict installation, survival, screenshot and crash checks. The iPad diagnostic artifact12952515736 ZIP SHA256 is7fc026fdacc7296fa64652e1c941ff98839bc86dbfed60bcdcdc5883b20a46cd.
+
+The DeviceHub follow-up b006 compiled, installed and launched the iPhone app, but its in-simulator launchctl-list survival query timed out. The next harness revision validates the returned PID and executable identity with host ps (simulator PIDs are host PIDs), retains first-paint/fatal-log gates, and pins both device families to the reviewed iOS27.0 rather than choosing the later iPhoneDuo27.1 runtime. This is a harness correction, not permission to skip runtime checks.

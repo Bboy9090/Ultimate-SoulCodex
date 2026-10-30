@@ -44,7 +44,10 @@ test("launch qualification covers iPhone and iPad on the reviewed OS and rejects
   assert.match(workflow, /DeviceHub\.app/);
   assert.match(workflow, /xcode-select/);
   assert.doesNotMatch(workflow, /"open", "-a", "Simulator"/);
-  assert.match(workflow, /iOS-27/);
+  assert.match(workflow, /iOS-27-0/);
+  assert.match(workflow, /"ps", "-p", launched_pid, "-o", "comm="/);
+  assert.match(workflow, /APP_PROCESS_DID_NOT_SURVIVE_LAUNCH/);
+  assert.doesNotMatch(workflow, /"launchctl", "list"/);
   assert.match(workflow, /NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY/);
   assert.match(workflow, /SIGTRAP\|NoSceneLifecycleAdoption\|UIScene life cycle is required/);
   assert.match(workflow, /soulcodex-4\.1\.0-ios-launch-proof-\$\{\{ matrix\.device \}\}/);
