@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A11B1AA12E00000000000009 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B1AA12E0000000000000A /* SceneDelegate.swift */; };
 		A11B1AA12E00000000000005 /* SoulCodexSessionHTTPPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B1AA12E00000000000006 /* SoulCodexSessionHTTPPlugin.swift */; };
 		A11B1AA12E00000000000007 /* SoulCodexSessionPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11B1AA12E00000000000008 /* SoulCodexSessionPolicy.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		A11B1AA12E0000000000000A /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		A11B1AA12E00000000000006 /* SoulCodexSessionHTTPPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoulCodexSessionHTTPPlugin.swift; sourceTree = "<group>"; };
 		A11B1AA12E00000000000008 /* SoulCodexSessionPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoulCodexSessionPolicy.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 			children = (
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				A11B1AA12E0000000000000A /* SceneDelegate.swift */,
 				A11B1AA12E00000000000002 /* SoulCodexNativeBillingPlugin.swift */,
 				A11B1AA12E00000000000004 /* SoulCodexBridgeViewController.swift */,
 				A11B1AA12E00000000000006 /* SoulCodexSessionHTTPPlugin.swift */,
@@ -172,6 +175,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				A11B1AA12E00000000000009 /* SceneDelegate.swift in Sources */,
 				A11B1AA12E00000000000001 /* SoulCodexNativeBillingPlugin.swift in Sources */,
 				A11B1AA12E00000000000003 /* SoulCodexBridgeViewController.swift in Sources */,
 				A11B1AA12E00000000000005 /* SoulCodexSessionHTTPPlugin.swift in Sources */,
@@ -335,7 +339,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4000012;
+				CURRENT_PROJECT_VERSION = 4000013;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Soul Codex";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
@@ -361,7 +365,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4000012;
+				CURRENT_PROJECT_VERSION = 4000013;
 				DEVELOPMENT_TEAM = 86NUJ8M3B8;
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Soul Codex";

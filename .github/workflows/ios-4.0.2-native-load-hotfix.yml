@@ -23,11 +23,26 @@ env:
 
 jobs:
   simulator-launch:
-    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [iPhone, iPad]
+    runs-on: xcode-27
+    env:
+      SIMULATOR_DEVICE_FAMILY: ${{ matrix.device }}
     timeout-minutes: 65
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v4
+
+      - name: Select Xcode 27 for the App Review crash environment
+        run: |
+          set -euo pipefail
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
+          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
@@ -43,7 +58,7 @@ jobs:
 
       - name: Native load and identity contracts
         run: |
-          node --import tsx --test tests/ios-native-load-hotfix.test.ts
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts
           npm run check
 
       - name: Build and sync exact iOS payload
@@ -111,20 +126,21 @@ jobs:
 
           devices = json.loads(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=15).stdout)
           candidate = None
-          for runtime, rows in devices.get("devices", {}).items():
-              if "iOS" not in runtime:
+          family = os.environ["SIMULATOR_DEVICE_FAMILY"]
+          for runtime, rows in sorted(devices.get("devices", {}).items(), reverse=True):
+              if runtime != "com.apple.CoreSimulator.SimRuntime.iOS-27-0":
                   continue
-              for row in rows:
-                  if "iPhone" in row.get("name", "") and row.get("isAvailable", True):
+              for row in sorted(rows, key=lambda device: ("iPad Air" not in device.get("name", ""), device.get("name", ""))):
+                  if family in row.get("name", "") and row.get("isAvailable", True):
                       candidate = row
                       break
               if candidate:
                   break
           if not candidate:
-              raise SystemExit("NO_AVAILABLE_IPHONE_SIMULATOR")
+              raise SystemExit("NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY")
 
           udid = candidate["udid"]
-          print(f"Using simulator: {candidate.get('name')} {udid}")
+          print(f"Using simulator: {candidate.get('name')} {udid}; runtime={runtime}")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
               handle.write(f"SIMULATOR_UDID={udid}\n")
 
@@ -136,14 +152,26 @@ jobs:
               print(boot.stderr, file=sys.stderr)
 
           try:
-              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=120, check=True)
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
               print(bootstatus.stdout)
           except SystemExit as exc:
+              print(f"Boot failure detail: {exc}")
+              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
               raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
           # A booted headless device may not have a ready display service yet.
           # Open the simulator so screenshot capture has an initialized surface.
-          run(["open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", udid], timeout=30)
+          developer_dir = pathlib.Path(run(["xcode-select", "-p"], timeout=15).stdout.strip())
+          ui_candidates = [
+              developer_dir.parent / "Applications" / "DeviceHub.app",
+              developer_dir / "Applications" / "DeviceHub.app",
+              developer_dir / "Applications" / "Simulator.app",
+          ]
+          simulator_ui = next((path for path in ui_candidates if path.is_dir()), None)
+          if simulator_ui is None:
+              raise SystemExit("SELECTED_XCODE_SIMULATOR_UI_NOT_FOUND")
+          print(f"Opening selected Xcode device UI: {simulator_ui}")
+          run(["open", "-a", str(simulator_ui)], timeout=30)
 
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():
@@ -160,6 +188,13 @@ jobs:
               raise SystemExit("SIMULATOR_LAUNCH_DID_NOT_RETURN_PID")
 
           time.sleep(12)
+          launched_pid = re.search(r"app\.soulcodex\.ios:\s*(\d+)", launch.stdout).group(1)
+          # Simulator app PIDs are host PIDs. Avoid launchctl inside the iOS 27
+          # simulator, where the process-list command can hang after a successful launch.
+          process = run(["ps", "-p", launched_pid, "-o", "comm="], timeout=15, check=False)
+          if process.returncode != 0 or not process.stdout.strip().endswith("/Ultimate Soul Codex.app/Ultimate Soul Codex"):
+              raise SystemExit("APP_PROCESS_DID_NOT_SURVIVE_LAUNCH")
+          pathlib.Path("simulator-process.txt").write_text(process.stdout, encoding="utf-8")
 
           screenshot = pathlib.Path("ios-4.1.0-launch.png")
           run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=120)
@@ -177,7 +212,7 @@ jobs:
           )
           runtime_log = logs.stdout + logs.stderr
           pathlib.Path("ios-4.1.0-runtime.log").write_text(runtime_log, encoding="utf-8")
-          if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|dyld.*Library not loaded", runtime_log, re.I):
+          if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|SIGTRAP|NoSceneLifecycleAdoption|UIScene life cycle is required|dyld.*Library not loaded", runtime_log, re.I):
               raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
           prepaint_blank = re.search(
               r"Making the view blank because of a JS prompt before the first paint",
@@ -249,14 +284,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000012"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000013"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000012"
+            echo "buildNumber=4000013"
             echo "native_pwa_service_worker_registration=disabled"
             echo "simulator_launch=passed"
           } > IOS-4.1.0-HOTFIX-RECEIPT.txt
@@ -265,11 +300,12 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-ios-launch-proof
+          name: soulcodex-4.1.0-ios-launch-proof-${{ matrix.device }}
           path: |
             ios-4.1.0-launch.png
             ios-4.1.0-runtime.log
             simulator-launch.txt
+            simulator-process.txt
             simulator-build.log
             simulator-probe.log
             simulator-app-path.txt
@@ -280,7 +316,7 @@ jobs:
 
   signed-app-store-ipa:
     needs: simulator-launch
-    runs-on: macos-15
+    runs-on: xcode-27
     timeout-minutes: 75
     steps:
       - name: Checkout exact candidate
@@ -290,6 +326,15 @@ jobs:
         run: |
           printf '%s\n' "$GITHUB_SHA" > release-candidate-sha.txt
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Select Xcode 27 for the App Review crash environment
+        run: |
+          set -euo pipefail
+          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
+          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
@@ -304,7 +349,7 @@ jobs:
         run: |
           sh ios/App/ci_scripts/ci_post_clone.sh
           npm run mobile:validate:ios
-          node --import tsx --test tests/ios-native-load-hotfix.test.ts
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts
 
       - name: Resolve Swift packages
         run: |
@@ -451,14 +496,14 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000012"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000013"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000012"
+            echo "buildNumber=4000013"
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"

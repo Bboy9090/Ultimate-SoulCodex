@@ -47,11 +47,11 @@
     "billing:qualification:evidence": "node scripts/validate-billing-qualification-evidence.mjs"
   },
   "dependencies": {
-    "@capacitor/android": "8.4.3",
-    "@capacitor/cli": "8.4.3",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/cli": "8.6.0",
     "@capacitor/contacts": "^1.0.1",
-    "@capacitor/core": "8.4.3",
-    "@capacitor/ios": "8.4.3",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",

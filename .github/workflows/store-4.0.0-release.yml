@@ -88,7 +88,7 @@ jobs:
           Android versionCode=4000014
           iOS marketingVersion=4.1.0
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000012
+          iOS build=4000013
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -280,7 +280,7 @@ jobs:
           {
             echo "SHA=${CANDIDATE_SHA}"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000012"
+            echo "buildNumber=4000013"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
