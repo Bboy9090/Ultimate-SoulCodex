@@ -388,6 +388,7 @@ jobs:
           set -euo pipefail
           test -n "$IOS_CERTIFICATE_P12" || { echo IOS_CERTIFICATE_P12_MISSING; exit 1; }
           test -n "$IOS_CERTIFICATE_PASSWORD" || { echo IOS_CERTIFICATE_PASSWORD_MISSING; exit 1; }
+          umask 077
           P12="$RUNNER_TEMP/soulcodex.p12"
           CERTS="$RUNNER_TEMP/certs.pem"
           KEY="$RUNNER_TEMP/key.pem"
@@ -396,8 +397,8 @@ jobs:
           LEAF="$RUNNER_TEMP/leaf.pem"
           MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          openssl pkcs12 -legacy -in "$P12" -passin env:IOS_CERTIFICATE_PASSWORD -nokeys -out "$CERTS"
+          openssl pkcs12 -legacy -in "$P12" -passin env:IOS_CERTIFICATE_PASSWORD -nocerts -nodes -out "$KEY"
           grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY"
           awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
           openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
@@ -409,7 +410,8 @@ jobs:
           test -n "$MATCHED"
           openssl x509 -in "$LEAF" -noout -checkend 0
           openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
-          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout env:IOS_CERTIFICATE_PASSWORD
+          rm -f "$KEY"
 
       - name: Import signing identity
         env:
