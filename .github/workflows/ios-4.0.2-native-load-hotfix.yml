@@ -130,7 +130,7 @@ jobs:
           for runtime, rows in sorted(devices.get("devices", {}).items(), reverse=True):
               if runtime != "com.apple.CoreSimulator.SimRuntime.iOS-27-0":
                   continue
-              for row in rows:
+              for row in sorted(rows, key=lambda device: ("iPad Air" not in device.get("name", ""), device.get("name", ""))):
                   if family in row.get("name", "") and row.get("isAvailable", True):
                       candidate = row
                       break
@@ -152,9 +152,11 @@ jobs:
               print(boot.stderr, file=sys.stderr)
 
           try:
-              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=120, check=True)
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
               print(bootstatus.stdout)
           except SystemExit as exc:
+              print(f"Boot failure detail: {exc}")
+              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
               raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
           # A booted headless device may not have a ready display service yet.

@@ -45,6 +45,8 @@ test("launch qualification covers iPhone and iPad on the reviewed OS and rejects
   assert.match(workflow, /xcode-select/);
   assert.doesNotMatch(workflow, /"open", "-a", "Simulator"/);
   assert.match(workflow, /iOS-27-0/);
+  assert.match(workflow, /iPad Air/);
+  assert.match(workflow, /timeout=300, check=True/);
   assert.match(workflow, /"ps", "-p", launched_pid, "-o", "comm="/);
   assert.match(workflow, /APP_PROCESS_DID_NOT_SURVIVE_LAUNCH/);
   assert.doesNotMatch(workflow, /"launchctl", "list"/);
