@@ -87,6 +87,20 @@ const statements = [
     "updated_at" timestamp DEFAULT now()
   )`,
   `ALTER TABLE "soul_profiles" ADD COLUMN IF NOT EXISTS "full_birth_name" text`,
+  `CREATE TABLE IF NOT EXISTS "galactic_code_records" (
+  "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+  "profile_id" varchar NOT NULL,
+  "user_id" varchar,
+  "session_id" varchar,
+  "revision" varchar(64) NOT NULL,
+  "version" text NOT NULL,
+  "result" jsonb NOT NULL,
+  "generated_at" timestamp NOT NULL,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+)`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "galactic_code_records_profile_unique" ON "galactic_code_records" ("profile_id")`,
+  `CREATE INDEX IF NOT EXISTS "galactic_code_records_owner_idx" ON "galactic_code_records" ("user_id", "session_id")`,
   `CREATE TABLE IF NOT EXISTS "assessment_responses" (
     "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
     "profile_id" varchar NOT NULL,
@@ -203,6 +217,18 @@ const requiredSchema = {
     numerology_data: "jsonb",
     personality_data: "jsonb",
     human_design_data: "jsonb",
+  },
+  galactic_code_records: {
+    id: "character varying",
+    profile_id: "character varying",
+    user_id: "character varying",
+    session_id: "character varying",
+    revision: "character varying",
+    version: "text",
+    result: "jsonb",
+    generated_at: "timestamp without time zone",
+    created_at: "timestamp without time zone",
+    updated_at: "timestamp without time zone",
   },
   assessment_responses: {
     id: "character varying",
