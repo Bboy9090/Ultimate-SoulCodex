@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Input } from "@/components/ui/input";
 
 type Mode = "signin" | "signup";
 
@@ -69,13 +70,13 @@ export default function EmailAccountAuth() {
       <form className="mt-4 grid gap-3" onSubmit={submit}>
         {mode === "signup" && (
           <label className="grid gap-1 text-xs text-[var(--sc-stone)]">
-            Name <input className="sc-input" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
+            Name <Input className="min-h-12 text-base md:text-base" value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
           </label>
         )}
         <label className="grid gap-1 text-xs text-[var(--sc-stone)]">
           Email
-          <input
-            className="sc-input"
+          <Input
+            className="min-h-12 text-base md:text-base"
             type="email"
             required
             value={email}
@@ -86,8 +87,8 @@ export default function EmailAccountAuth() {
         </label>
         <label className="grid gap-1 text-xs text-[var(--sc-stone)]">
           Password
-          <input
-            className="sc-input"
+          <Input
+            className="min-h-12 text-base md:text-base"
             type="password"
             required
             minLength={6}
