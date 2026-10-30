@@ -139,12 +139,20 @@ jobs:
           if not candidate:
               raise SystemExit("NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY")
 
-          udid = candidate["udid"]
+          # Reused hosted iPad images repeatedly stalled in simctl install.
+          # Create an isolated device; never reset another job's simulator.
+          types = json.loads(run(["xcrun", "simctl", "list", "devicetypes", "-j"], timeout=15).stdout)
+          device_type = next((row["identifier"] for row in types.get("devicetypes", []) if row.get("name") == candidate.get("name")), None)
+          if not device_type:
+              raise SystemExit("SIMULATOR_DEVICE_TYPE_NOT_FOUND")
+          device_name = f"SoulCodex-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-{family}"
+          udid = run(["xcrun", "simctl", "create", device_name, device_type, runtime], timeout=30).stdout.strip()
+          if not udid:
+              raise SystemExit("SIMULATOR_CREATION_RETURNED_NO_UDID")
           print(f"Using simulator: {candidate.get('name')} {udid}; runtime={runtime}")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
               handle.write(f"SIMULATOR_UDID={udid}\n")
 
-          run(["xcrun", "simctl", "shutdown", "all"], timeout=20, check=False)
 
           boot = run(["xcrun", "simctl", "boot", udid], timeout=30, check=False)
           if boot.returncode not in (0, 149):
@@ -313,6 +321,12 @@ jobs:
             IOS-4.1.0-HOTFIX-RECEIPT.txt
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Remove only this run's simulator
+        if: always() && env.SIMULATOR_UDID != ''
+        run: |
+          xcrun simctl shutdown "$SIMULATOR_UDID" || true
+          xcrun simctl delete "$SIMULATOR_UDID"
 
   signed-app-store-ipa:
     needs: simulator-launch
