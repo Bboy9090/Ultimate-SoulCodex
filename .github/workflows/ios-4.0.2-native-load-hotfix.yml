@@ -159,7 +159,17 @@ jobs:
 
           # A booted headless device may not have a ready display service yet.
           # Open the simulator so screenshot capture has an initialized surface.
-          run(["open", "-a", "Simulator", "--args", "-CurrentDeviceUDID", udid], timeout=30)
+          developer_dir = pathlib.Path(run(["xcode-select", "-p"], timeout=15).stdout.strip())
+          ui_candidates = [
+              developer_dir.parent / "Applications" / "DeviceHub.app",
+              developer_dir / "Applications" / "DeviceHub.app",
+              developer_dir / "Applications" / "Simulator.app",
+          ]
+          simulator_ui = next((path for path in ui_candidates if path.is_dir()), None)
+          if simulator_ui is None:
+              raise SystemExit("SELECTED_XCODE_SIMULATOR_UI_NOT_FOUND")
+          print(f"Opening selected Xcode device UI: {simulator_ui}")
+          run(["open", "-a", str(simulator_ui)], timeout=30)
 
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():

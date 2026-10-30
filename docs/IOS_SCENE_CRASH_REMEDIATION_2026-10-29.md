@@ -36,3 +36,7 @@ Raw device crash reports remain private attachments; they are not committed to t
 Keep PR 606 draft until fresh exact-head native runtime/archive/signature evidence exists. Earlier c06 artifacts cannot qualify this revision. Revert this commit to roll back; build 346 remains rejected and must not be resubmitted as a repaired binary.
 
 References: https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle and https://capacitorjs.com/docs/updating/8-5 (scene adoption), https://github.blog/changelog/2026-10-15-xcode-27-runner-image-generally-available/ (runner).
+
+## First Xcode 27 harness result
+
+Run40997501821 compiled the scene-enabled app with Xcode27.2 and booted iOS27.0, but failed before app installation because the inherited harness called `open -a Simulator`. Xcode27 replaces that UI with DeviceHub. This is not an app-launch result. The follow-up resolves DeviceHub/Simulator from the selected Xcode bundle and retains strict installation, survival, screenshot and crash checks. The iPad diagnostic artifact12952515736 ZIP SHA256 is7fc026fdacc7296fa64652e1c941ff98839bc86dbfed60bcdcdc5883b20a46cd.

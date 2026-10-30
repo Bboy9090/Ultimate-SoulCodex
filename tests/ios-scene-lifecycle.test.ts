@@ -41,6 +41,9 @@ test("scene startup preserves the custom native bridge and forwards cold and war
 test("launch qualification covers iPhone and iPad on the reviewed OS and rejects scene traps", () => {
   const workflow = read(".github/workflows/ios-4.0.2-native-load-hotfix.yml");
   assert.match(workflow, /device: \[iPhone, iPad\]/);
+  assert.match(workflow, /DeviceHub\.app/);
+  assert.match(workflow, /xcode-select/);
+  assert.doesNotMatch(workflow, /"open", "-a", "Simulator"/);
   assert.match(workflow, /iOS-27/);
   assert.match(workflow, /NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY/);
   assert.match(workflow, /SIGTRAP\|NoSceneLifecycleAdoption\|UIScene life cycle is required/);
