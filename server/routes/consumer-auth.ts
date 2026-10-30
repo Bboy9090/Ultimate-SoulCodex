@@ -126,11 +126,10 @@ export function registerConsumerAuthRoutes(
 
     const email = parsed.data.email.trim().toLowerCase();
     const username = `email:${email}`;
-    if (await deps.storage.getUserByUsername(username)) {
-      return res.status(409).json({ message: "Email already in use" });
-    }
-
     try {
+      if (await deps.storage.getUserByUsername(username)) {
+        return res.status(409).json({ message: "Email already in use" });
+      }
       const previousSessionId = req.sessionID;
       const passwordHash = await hashPassword(parsed.data.password);
       const user = await deps.storage.createEmailUser(email, passwordHash, parsed.data.name?.trim() || null);

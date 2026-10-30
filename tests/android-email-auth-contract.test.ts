@@ -98,3 +98,66 @@ test("Settings treats Android as Android rather than Apple-capable native", () =
   assert.match(source, /<EmailAccountAuth \/>/);
   assert.doesNotMatch(source, /const nativeApple = Capacitor\.isNativePlatform\(\)/);
 });
+
+test("signup storage lookup failure returns a bounded error and leaves the server healthy", async () => {
+  const previousDatabaseUrl = process.env.DATABASE_URL;
+  const previousDemoMode = process.env.DEMO_MODE;
+  delete process.env.DATABASE_URL;
+  process.env.DEMO_MODE = "true";
+  try {
+    class FailingLookupStorage extends MemStorage {
+      override async getUserByUsername(_username: string): Promise<never> {
+        throw new Error("test_storage_lookup_unavailable");
+      }
+    }
+    const app = express();
+    app.use(express.json());
+    app.use(session({ secret: "review-auth-error-contract", resave: false, saveUninitialized: true }));
+    registerConsumerAuthRoutes(app, { storage: new FailingLookupStorage(), verifyApple: async () => ({ subject: "unused" }) });
+    app.get("/health-proof", (_req, res) => res.json({ healthy: true }));
+    await withServer(app, async (baseUrl) => {
+      const response = await fetch(`${baseUrl}/api/auth/signup`, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "review@example.com", password: "strong-test-only-password" }),
+        signal: AbortSignal.timeout(5000),
+      });
+      assert.equal(response.status, 500);
+      assert.deepEqual(await response.json(), { message: "Could not create account" });
+      assert.equal((await fetch(`${baseUrl}/health-proof`)).status, 200);
+    });
+  } finally {
+    if (previousDatabaseUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previousDatabaseUrl;
+    if (previousDemoMode === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = previousDemoMode;
+  }
+});
+
+test("six and seven character server-accepted passwords can sign in and the form has the same minimum", async () => {
+  const previousDatabaseUrl = process.env.DATABASE_URL;
+  const previousDemoMode = process.env.DEMO_MODE;
+  delete process.env.DATABASE_URL;
+  process.env.DEMO_MODE = "true";
+  try {
+    const app = express();
+    app.use(express.json());
+    app.use(session({ secret: "review-auth-password-contract", resave: false, saveUninitialized: true }));
+    registerConsumerAuthRoutes(app, { storage: new MemStorage(), verifyApple: async () => ({ subject: "unused" }) });
+    await withServer(app, async (baseUrl) => {
+      for (const password of ["abc123", "abc1234"]) {
+        const body = JSON.stringify({ email: `length${password.length}@example.com`, password });
+        for (const endpoint of ["signup", "login"]) {
+          const response = await fetch(`${baseUrl}/api/auth/${endpoint}`, {
+            method: "POST", headers: { "content-type": "application/json" }, body,
+          });
+          assert.equal(response.status, 200, await response.clone().text());
+          assert.equal("password" in (await response.json() as any).user, false);
+        }
+      }
+    });
+    const source = readFileSync(new URL("../client/src/components/EmailAccountAuth.tsx", import.meta.url), "utf8");
+    assert.match(source, /minLength=\{6\}/);
+    assert.doesNotMatch(source, /minLength=\{8\}/);
+  } finally {
+    if (previousDatabaseUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = previousDatabaseUrl;
+    if (previousDemoMode === undefined) delete process.env.DEMO_MODE; else process.env.DEMO_MODE = previousDemoMode;
+  }
+});
