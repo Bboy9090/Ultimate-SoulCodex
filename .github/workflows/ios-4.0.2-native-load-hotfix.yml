@@ -8,13 +8,23 @@ on:
       - fix/profile-narrative-refresh-federation
       - fix/personal-chart-release-integrity
       - fix/complimentary-review-access
+      - qualification/ios-billing-*
   workflow_dispatch:
+    inputs:
+      billing_qualification:
+        description: Build a sandbox-only owner QA artifact (never auto-uploaded)
+        type: boolean
+        default: false
+      qualification_build_number:
+        description: Unique App Store build number reserved by the release owner
+        type: string
+        default: ""
 
 permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-ios-4-1-0-hotfix
+  group: soulcodex-ios-4-1-0-hotfix-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -51,6 +61,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Resolve bounded billing qualification build
+        env:
+          QUALIFICATION_REQUEST: ${{ inputs.billing_qualification || 'false' }}
+          QUALIFICATION_BUILD_NUMBER: ${{ inputs.qualification_build_number || '' }}
+        run: node scripts/resolve-ios-qualification-build.mjs
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
@@ -59,7 +75,7 @@ jobs:
 
       - name: Native load and identity contracts
         run: |
-          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts tests/ios-signed-qualification-workflow.test.mjs
           npm run check
 
       - name: Build and sync exact iOS payload
@@ -307,6 +323,10 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000014"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
+          if [ "$VITE_BILLING_QUALIFICATION_MODE" = true ]; then
+            grep -rl 'X-SoulCodex-Billing-Qualification' "$APP_PATH/public/assets" > build/export/QUALIFICATION-MARKER-FILES.txt
+            test -s build/export/QUALIFICATION-MARKER-FILES.txt
+          fi
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
@@ -369,6 +389,12 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Resolve bounded billing qualification build
+        env:
+          QUALIFICATION_REQUEST: ${{ inputs.billing_qualification || 'false' }}
+          QUALIFICATION_BUILD_NUMBER: ${{ inputs.qualification_build_number || '' }}
+        run: node scripts/resolve-ios-qualification-build.mjs
+
       - name: Bootstrap exact native tree
         env:
           CI_PRIMARY_REPOSITORY_PATH: ${{ github.workspace }}
@@ -376,7 +402,7 @@ jobs:
         run: |
           sh ios/App/ci_scripts/ci_post_clone.sh
           npm run mobile:validate:ios
-          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts
+          node --import tsx --test tests/ios-native-load-hotfix.test.ts tests/ios-scene-lifecycle.test.ts tests/ios-signed-qualification-workflow.test.mjs
 
       - name: Resolve Swift packages
         run: |
@@ -489,12 +515,16 @@ jobs:
             <key>uploadSymbols</key><true/>
           </dict></plist>
           EOF
+          if [ "$VITE_BILLING_QUALIFICATION_MODE" = true ]; then
+            /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $IOS_BUILD_NUMBER" ios/App/App/Info.plist
+          fi
           xcodebuild \
             -project ios/App/App.xcodeproj \
             -scheme "Ultimate Soul Codex" \
             -configuration Release \
             -destination 'generic/platform=iOS' \
             -archivePath build/SoulCodex.xcarchive \
+            CURRENT_PROJECT_VERSION="$IOS_BUILD_NUMBER" \
             DEVELOPMENT_TEAM=86NUJ8M3B8 \
             CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Apple Distribution" \
@@ -525,14 +555,21 @@ jobs:
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000014"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "$IOS_BUILD_NUMBER"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
+          if [ "$VITE_BILLING_QUALIFICATION_MODE" = true ]; then
+            grep -rl 'X-SoulCodex-Billing-Qualification' "$APP_PATH/public/assets" > build/export/QUALIFICATION-MARKER-FILES.txt
+            test -s build/export/QUALIFICATION-MARKER-FILES.txt
+          fi
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000014"
+            echo "buildNumber=$IOS_BUILD_NUMBER"
+            echo "billing_qualification=$VITE_BILLING_QUALIFICATION_MODE"
+            echo "provider_transactions=not_tested"
+            echo "distribution=artifact_only_owner_QA_handoff"
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"
@@ -541,12 +578,13 @@ jobs:
       - name: Upload signed IPA
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-signed-app-store-ipa
+          name: soulcodex-4.1.0-${{ env.VITE_BILLING_QUALIFICATION_MODE == 'true' && 'billing-qualification' || 'signed-app-store' }}-ipa-${{ env.IOS_BUILD_NUMBER }}
           path: |
             build/export/*.ipa
             build/export/IPA-SHA256.txt
             build/export/RELEASE-CANDIDATE-SHA.txt
             build/export/IOS-4.1.0-SIGNED-RECEIPT.txt
+            build/export/QUALIFICATION-MARKER-FILES.txt
           if-no-files-found: error
           retention-days: 90
 
