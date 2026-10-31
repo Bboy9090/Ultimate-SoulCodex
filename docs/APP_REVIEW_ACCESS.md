@@ -1,16 +1,12 @@
-# App Review access gate
+# App Review access
+Guest local-profile features require no account. Account-backed features use the dedicated ordinary email/password account supplied privately to the stores. Never provide the owner's Apple/Google credentials, grant an administrative role, fabricate a subscription or add reviewers to the owner allowlist.
 
-Observed in App Store Connect on October29: Sign-in required is unchecked; contact details and Notes are populated. Build346 was rejected for a native launch crash, not an authentication failure. Guest access does not by itself qualify account/subscription review.
+## Complimentary content access
+Approved ordinary accounts can receive time-limited complimentary Plus content through server-only SOUL_CODEX_COMPLIMENTARY_GRANTS. This general content grant is available for approved promotional and review access; the binary has no reviewer detection or alternate product behavior. Each configuration entry contains exact existing userId UUID, startsAt and expiresAt in UTC. Grants expire after at most 90 days, permit no more than 20 unique users, and reject unknown fields, malformed values, wildcards and duplicate users. Missing/deleted users, future grants and expired grants receive normal paid/Free resolution. Removal revokes the grant; the existing in-memory offline cache remains bounded to 15 minutes and never exceeds grant expiry.
 
-The Free local-profile journey is available without login. Account-backed and subscription flows must have working reviewer access matching the actual submitted binary/backend. The email/password route in PR607 is not in main or the current native candidate. Do not enter invented credentials in App Store Connect or mark a review account tested before it works in the submitted app.
+Responses truthfully identify source complimentary, status complimentary_time_limited, null plan and expiry. No billing event, transaction, subscription or owner/admin permission is created. Both native and hosted consumers recognize this server-verified source and label it as complimentary, not monthly/annual billing. Deployment must precede activation; native binaries must include the matching source before full-access review certification.
 
-Before resubmission:
-1. Qualify and deploy the real account path, preserving Apple sign-in and local-first storage.
-2. Create a dedicated ordinary reviewer account containing only synthetic review data. Never provide the owner's personal Apple/Google password, grant admin access, or use the owner complimentary allowlist as a reviewer bypass.
-3. Verify sign-in, sign-out, profile ownership, account deletion and access from the actual native candidate. Keep its credentials outside GitHub, build logs and public artifacts.
-4. For subscription review, qualify the actual sandbox purchase/restore/expiry paths. Do not invent an expired purchase record or claim that a Free account had a real subscription.
-5. Set the App Review sign-in fields to those verified reviewer credentials and provide exact navigation and subscription test instructions. Preserve the existing contact information and relevant Notes. Store metadata must not promise email login if the selected binary only supports Apple.
+## Submission gates
+Verify real sign-in/sign-out, account deletion, server entitlement, native Plus content, expiry and revocation against the actual candidate. Keep credentials and configured account UUIDs outside source and logs. Provide exact navigation and confirm full content access only after qualification. Native purchases remain disabled until actual provider sandbox purchase/restore/expiry proof exists. Complimentary access does not qualify purchases.
 
-The current email password minimum remains the existing server policy of6 characters; the form must accept every server-valid password. Dedicated reviewer credentials should still use a strong generated password. The current repair moves duplicate-user lookup into the guarded signup block so transient storage errors return a bounded500 instead of escaping Express4. Focused tests cover storage failure/server survival and six/seven-character signup/login compatibility.
-
-Reference: https://developer.apple.com/help/app-review/before-submitting-for-review/complete-review/
+On October 31, the Free reviewer account could not satisfy Google's mandatory full-content certification. Its credential form was left unsaved; do not claim the store access declaration is complete until the complimentary candidate is deployed and qualified.
