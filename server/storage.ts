@@ -34,11 +34,16 @@ function appleUsername(subject: string) {
   return `apple:${subject}`;
 }
 
+function emailUsername(email: string) {
+  return `email:${email.trim().toLowerCase()}`;
+}
+
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User>;
+  createEmailUser(email: string, passwordHash: string, firstName?: string | null): Promise<User>;
   migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void>;
   getProfile(id: string): Promise<Profile | undefined>;
   getProfileByUserId(userId: string): Promise<Profile | undefined>;
@@ -114,6 +119,31 @@ export class MemStorage implements IStorage {
       email: email ?? null,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
+      profileImageUrl: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionStatus: "free",
+      subscriptionPlan: null,
+      subscriptionEndsAt: null,
+      isPremium: false,
+      createdAt: now,
+      updatedAt: now,
+    } satisfies User;
+    this.users.set(user.id, user);
+    return user;
+  }
+  async createEmailUser(email: string, passwordHash: string, firstName?: string | null): Promise<User> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const username = emailUsername(normalizedEmail);
+    if (await this.getUserByUsername(username)) throw new Error("email_already_in_use");
+    const now = new Date();
+    const user = {
+      id: randomUUID(),
+      username,
+      password: passwordHash,
+      email: normalizedEmail,
+      firstName: firstName ?? null,
+      lastName: null,
       profileImageUrl: null,
       stripeCustomerId: null,
       stripeSubscriptionId: null,
@@ -404,6 +434,24 @@ class PostgresStorage implements IStorage {
     const existing = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
     if (!existing) throw new Error("Apple user could not be resolved after concurrent creation");
     return existing;
+  }
+  async createEmailUser(email: string, passwordHash: string, firstName?: string | null): Promise<User> {
+    const db = await this.db();
+    const normalizedEmail = email.trim().toLowerCase();
+    const username = emailUsername(normalizedEmail);
+    try {
+      return (await db.insert(users).values({
+        username,
+        password: passwordHash,
+        email: normalizedEmail,
+        firstName: firstName ?? null,
+        subscriptionStatus: "free",
+        isPremium: false,
+      }).returning())[0];
+    } catch (error: any) {
+      if (String(error?.code ?? "") === "23505") throw new Error("email_already_in_use");
+      throw error;
+    }
   }
   async migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void> {
     const db = await this.db();

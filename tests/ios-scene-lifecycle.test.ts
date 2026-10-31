@@ -43,9 +43,16 @@ test("launch qualification covers iPhone and iPad on the reviewed OS and rejects
   assert.match(workflow, /device: \[iPhone, iPad\]/);
   assert.match(workflow, /DeviceHub\.app/);
   assert.match(workflow, /xcode-select/);
+  assert.match(workflow, /XCODE=\/Applications\/Xcode_27\.app/);
+  assert.match(workflow, /simulator-install-diagnostics\.log/);
+  assert.ok(workflow.indexOf('"-CurrentDeviceUDID", udid') < workflow.indexOf('bootstatus = run'));
   assert.doesNotMatch(workflow, /"open", "-a", "Simulator"/);
   assert.match(workflow, /iOS-27-0/);
   assert.match(workflow, /iPad Air/);
+  assert.match(workflow, /"simctl", "create", device_name, device_type, runtime/);
+  assert.match(workflow, /SIMULATOR_CREATION_RETURNED_NO_UDID/);
+  assert.match(workflow, /simctl delete "\$SIMULATOR_UDID"/);
+  assert.doesNotMatch(workflow, /"simctl", "shutdown", "all"/);
   assert.match(workflow, /timeout=300, check=True/);
   assert.match(workflow, /"ps", "-p", launched_pid, "-o", "comm="/);
   assert.match(workflow, /APP_PROCESS_DID_NOT_SURVIVE_LAUNCH/);

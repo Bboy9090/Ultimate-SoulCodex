@@ -64,7 +64,7 @@ export default function Navigation() {
             </span>
           </Link>
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-1 xl:flex">
             <div className="mr-2 flex items-center rounded-xl border border-white/[0.055] bg-white/[0.022] p-1">
               {primaryLinks.map(({ href, label, icon: Icon }) => {
                 const active = isActive(pathname, href);
@@ -109,7 +109,7 @@ export default function Navigation() {
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] md:hidden" data-testid="button-menu" aria-label="Open navigation menu">
+              <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl border border-white/[0.065] bg-white/[0.025] text-[var(--sc-ivory)] hover:bg-white/[0.06] xl:hidden" data-testid="button-menu" aria-label="Open navigation menu">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>

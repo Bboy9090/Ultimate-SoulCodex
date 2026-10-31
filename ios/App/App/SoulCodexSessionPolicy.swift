@@ -1,8 +1,18 @@
 import Foundation
 
 enum SoulCodexSessionPolicy {
+    // QA builds can exercise the real native cookie transport against staging.
+    // This condition cannot enable staging in a device/App Store binary.
+    private static var permittedHost: String {
+        #if SOUL_CODEX_STAGING_QA && targetEnvironment(simulator)
+        return "soulcodex-candidate-staging.up.railway.app"
+        #else
+        return "soulcodex.up.railway.app"
+        #endif
+    }
+
     static func permits(_ url: URL) -> Bool {
-        guard url.scheme == "https", url.host == "soulcodex.up.railway.app",
+        guard url.scheme == "https", url.host == permittedHost,
               url.port == nil || url.port == 443,
               url.user == nil, url.password == nil else { return false }
         return url.path == "/api/user" || url.path == "/api/access" ||

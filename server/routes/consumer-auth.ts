@@ -1,4 +1,5 @@
 import type { Express } from "express";
+import { loginSchema, signupSchema } from "@shared/schema";
 import { storage, type IStorage } from "../storage";
 import {
   durableFeatureUnavailable,
@@ -10,6 +11,7 @@ import {
   verifyAppleIdentityToken,
   type AppleIdentity,
 } from "../auth/apple";
+import { hashPassword, verifyPassword } from "../auth/password";
 
 type AppleVerifier = (identityToken: string) => Promise<AppleIdentity>;
 
@@ -111,6 +113,80 @@ export function registerConsumerAuthRoutes(
     }
   });
 
+
+  app.post("/api/auth/signup", async (req: any, res) => {
+    if (durableFeatureUnavailable()) {
+      return res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
+    }
+
+    const parsed = signupSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Enter a valid email and a password with at least 6 characters." });
+    }
+
+    const email = parsed.data.email.trim().toLowerCase();
+    const username = `email:${email}`;
+    try {
+      if (await deps.storage.getUserByUsername(username)) {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      const previousSessionId = req.sessionID;
+      const passwordHash = await hashPassword(parsed.data.password);
+      const user = await deps.storage.createEmailUser(email, passwordHash, parsed.data.name?.trim() || null);
+
+      if (previousSessionId) {
+        await deps.storage.migrateSessionOwnershipToUser(previousSessionId, user.id);
+      }
+
+      await regenerateSession(req);
+      req.session.userId = user.id;
+      req.session.authProvider = "local";
+      await saveSession(req);
+
+      return res.json({ user: publicUser(user), message: "Account created successfully" });
+    } catch (error) {
+      if (error instanceof Error && error.message === "email_already_in_use") {
+        return res.status(409).json({ message: "Email already in use" });
+      }
+      console.error("[EmailSignup] Failed:", error);
+      return res.status(500).json({ message: "Could not create account" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req: any, res) => {
+    if (durableFeatureUnavailable()) {
+      return res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
+    }
+
+    const parsed = loginSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    try {
+      const email = parsed.data.email.trim().toLowerCase();
+      const user = await deps.storage.getUserByUsername(`email:${email}`);
+      if (!user || !(await verifyPassword(user.password, parsed.data.password))) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      const previousSessionId = req.sessionID;
+      if (previousSessionId) {
+        await deps.storage.migrateSessionOwnershipToUser(previousSessionId, user.id);
+      }
+
+      await regenerateSession(req);
+      req.session.userId = user.id;
+      req.session.authProvider = "local";
+      await saveSession(req);
+
+      return res.json({ user: publicUser(user), message: "Logged in successfully" });
+    } catch (error) {
+      console.error("[EmailLogin] Failed:", error);
+      return res.status(500).json({ message: "Could not sign in" });
+    }
+  });
+
   const currentUser = async (req: any, res: any) => {
     try {
       const userId = req.session?.userId;
@@ -121,7 +197,7 @@ export function registerConsumerAuthRoutes(
         res.clearCookie("connect.sid");
         return res.json(null);
       }
-      return res.json({ ...publicUser(user), authProvider: req.session?.authProvider ?? "apple" });
+      return res.json({ ...publicUser(user), authProvider: req.session?.authProvider ?? (user.username.startsWith("apple:") ? "apple" : "local") });
     } catch (error) {
       console.error("[CurrentUser] Failed:", error);
       return res.status(500).json({ message: "Failed to fetch user" });

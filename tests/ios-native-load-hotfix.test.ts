@@ -66,3 +66,13 @@ test("secondary routes are lazy so home first paint does not evaluate the whole 
   assert.match(source, /route_chunk_timeout/);
   assert.match(source, /<Suspense fallback=/);
 });
+
+
+test("legacy P12 input is normalized without exporting legacy encryption or logging its password", async () => {
+  const workflow = await readFile(".github/workflows/ios-4.0.2-native-load-hotfix.yml", "utf8");
+  assert.match(workflow, /umask 077/);
+  assert.equal((workflow.match(/openssl pkcs12 -legacy -in "\$P12" -passin env:IOS_CERTIFICATE_PASSWORD/g) || []).length, 2);
+  assert.match(workflow, /openssl pkcs12 -export -in "\$LEAF" -inkey "\$KEY" -out "\$MODERN_P12" -passout env:IOS_CERTIFICATE_PASSWORD/);
+  assert.match(workflow, /rm -f "\$KEY"/);
+  assert.doesNotMatch(workflow, /pkcs12 -export -legacy/);
+});

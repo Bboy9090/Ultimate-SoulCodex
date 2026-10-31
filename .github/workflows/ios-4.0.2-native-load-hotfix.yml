@@ -38,8 +38,8 @@ jobs:
       - name: Select Xcode 27 for the App Review crash environment
         run: |
           set -euo pipefail
-          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
-          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          XCODE=/Applications/Xcode_27.app
+          test -d "$XCODE" || { echo "Stable Xcode 27.0 is required for the reviewed iOS 27.0 runtime"; exit 1; }
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphonesimulator --show-sdk-version
@@ -139,28 +139,27 @@ jobs:
           if not candidate:
               raise SystemExit("NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY")
 
-          udid = candidate["udid"]
+          # Reused hosted iPad images repeatedly stalled in simctl install.
+          # Create an isolated device; never reset another job's simulator.
+          types = json.loads(run(["xcrun", "simctl", "list", "devicetypes", "-j"], timeout=15).stdout)
+          device_type = next((row["identifier"] for row in types.get("devicetypes", []) if row.get("name") == candidate.get("name")), None)
+          if not device_type:
+              raise SystemExit("SIMULATOR_DEVICE_TYPE_NOT_FOUND")
+          device_name = f"SoulCodex-{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}-{family}"
+          udid = run(["xcrun", "simctl", "create", device_name, device_type, runtime], timeout=30).stdout.strip()
+          if not udid:
+              raise SystemExit("SIMULATOR_CREATION_RETURNED_NO_UDID")
           print(f"Using simulator: {candidate.get('name')} {udid}; runtime={runtime}")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as handle:
               handle.write(f"SIMULATOR_UDID={udid}\n")
 
-          run(["xcrun", "simctl", "shutdown", "all"], timeout=20, check=False)
 
           boot = run(["xcrun", "simctl", "boot", udid], timeout=30, check=False)
           if boot.returncode not in (0, 149):
               print(boot.stdout)
               print(boot.stderr, file=sys.stderr)
 
-          try:
-              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
-              print(bootstatus.stdout)
-          except SystemExit as exc:
-              print(f"Boot failure detail: {exc}")
-              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
-              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
-
-          # A booted headless device may not have a ready display service yet.
-          # Open the simulator so screenshot capture has an initialized surface.
+          # Initialize this device display before waiting for full system boot.
           developer_dir = pathlib.Path(run(["xcode-select", "-p"], timeout=15).stdout.strip())
           ui_candidates = [
               developer_dir.parent / "Applications" / "DeviceHub.app",
@@ -171,13 +170,29 @@ jobs:
           if simulator_ui is None:
               raise SystemExit("SELECTED_XCODE_SIMULATOR_UI_NOT_FOUND")
           print(f"Opening selected Xcode device UI: {simulator_ui}")
-          run(["open", "-a", str(simulator_ui)], timeout=30)
+          run(["open", "-a", str(simulator_ui), "--args", "-CurrentDeviceUDID", udid], timeout=30)
+
+          try:
+              bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
+              print(bootstatus.stdout)
+          except SystemExit as exc:
+              print(f"Boot failure detail: {exc}")
+              print(run(["xcrun", "simctl", "list", "devices", "available", "-j"], timeout=20, check=False).stdout)
+              raise SystemExit("SIMULATOR_BOOTSTATUS_FAILED_OR_TIMED_OUT") from exc
 
           app_path = pathlib.Path("simulator-app-path.txt").read_text(encoding="utf-8").strip()
           if not pathlib.Path(app_path).is_dir():
               raise SystemExit("SIMULATOR_APP_PATH_MISSING")
 
-          run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+          try:
+              run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+          except SystemExit:
+              try:
+                  diagnostic = run(["xcrun", "simctl", "spawn", udid, "log", "show", "--last", "5m", "--style", "compact", "--predicate", 'process == "installd" OR eventMessage CONTAINS "app.soulcodex.ios"'], timeout=45, check=False)
+                  pathlib.Path("simulator-install-diagnostics.log").write_text(diagnostic.stdout + diagnostic.stderr, encoding="utf-8")
+              except SystemExit as diagnostic_error:
+                  pathlib.Path("simulator-install-diagnostics.log").write_text(str(diagnostic_error), encoding="utf-8")
+              raise
 
           launch = run(
               ["xcrun", "simctl", "launch", "--terminate-running-process", udid, "app.soulcodex.ios"],
@@ -308,11 +323,18 @@ jobs:
             simulator-process.txt
             simulator-build.log
             simulator-probe.log
+            simulator-install-diagnostics.log
             simulator-app-path.txt
             native-web-payload.txt
             IOS-4.1.0-HOTFIX-RECEIPT.txt
           if-no-files-found: warn
           retention-days: 90
+
+      - name: Remove only this run's simulator
+        if: always() && env.SIMULATOR_UDID != ''
+        run: |
+          xcrun simctl shutdown "$SIMULATOR_UDID" || true
+          xcrun simctl delete "$SIMULATOR_UDID"
 
   signed-app-store-ipa:
     needs: simulator-launch
@@ -330,8 +352,8 @@ jobs:
       - name: Select Xcode 27 for the App Review crash environment
         run: |
           set -euo pipefail
-          XCODE=$(find /Applications -maxdepth 1 -name 'Xcode_27*.app' -type d | sort -V | tail -n 1)
-          test -n "$XCODE" || { echo "Xcode 27 is required to reproduce the reviewed scene lifecycle environment"; exit 1; }
+          XCODE=/Applications/Xcode_27.app
+          test -d "$XCODE" || { echo "Stable Xcode 27.0 is required for the reviewed iOS 27.0 runtime"; exit 1; }
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
           xcrun --sdk iphonesimulator --show-sdk-version
@@ -366,6 +388,7 @@ jobs:
           set -euo pipefail
           test -n "$IOS_CERTIFICATE_P12" || { echo IOS_CERTIFICATE_P12_MISSING; exit 1; }
           test -n "$IOS_CERTIFICATE_PASSWORD" || { echo IOS_CERTIFICATE_PASSWORD_MISSING; exit 1; }
+          umask 077
           P12="$RUNNER_TEMP/soulcodex.p12"
           CERTS="$RUNNER_TEMP/certs.pem"
           KEY="$RUNNER_TEMP/key.pem"
@@ -374,8 +397,8 @@ jobs:
           LEAF="$RUNNER_TEMP/leaf.pem"
           MODERN_P12="$RUNNER_TEMP/soulcodex-modern.p12"
           printf '%s' "$IOS_CERTIFICATE_P12" | base64 -D > "$P12"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nokeys -out "$CERTS"
-          openssl pkcs12 -in "$P12" -passin "pass:$IOS_CERTIFICATE_PASSWORD" -nocerts -nodes -out "$KEY"
+          openssl pkcs12 -legacy -in "$P12" -passin env:IOS_CERTIFICATE_PASSWORD -nokeys -out "$CERTS"
+          openssl pkcs12 -legacy -in "$P12" -passin env:IOS_CERTIFICATE_PASSWORD -nocerts -nodes -out "$KEY"
           grep -Eq 'BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY' "$KEY"
           awk '/-----BEGIN CERTIFICATE-----/ { n++; f=sprintf("%s/candidate-%d.pem", ENVIRON["RUNNER_TEMP"], n) } f { print > f } /-----END CERTIFICATE-----/ { close(f); f="" }' "$CERTS"
           openssl pkey -in "$KEY" -pubout -outform DER > "$KEY_PUB"
@@ -387,7 +410,8 @@ jobs:
           test -n "$MATCHED"
           openssl x509 -in "$LEAF" -noout -checkend 0
           openssl x509 -in "$LEAF" -outform DER -out "$RUNNER_TEMP/leaf.der"
-          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout "pass:$IOS_CERTIFICATE_PASSWORD"
+          openssl pkcs12 -export -in "$LEAF" -inkey "$KEY" -out "$MODERN_P12" -passout env:IOS_CERTIFICATE_PASSWORD
+          rm -f "$KEY"
 
       - name: Import signing identity
         env:

@@ -42,3 +42,13 @@ test("authentication failure offers reconnection and preserves finish-after-veri
   const verify = panel.slice(panel.indexOf("const verifyNativeEvidence"), panel.indexOf("useEffect", panel.indexOf("const verifyNativeEvidence")));
   assert.ok(verify.indexOf("await verifyNativeBillingEvidence") < verify.indexOf("await finishNativeTransaction"));
 });
+
+
+test("staging session destination requires an explicit simulator-only compile condition", () => {
+  const policy = readFileSync("ios/App/App/SoulCodexSessionPolicy.swift", "utf8");
+  assert.match(policy, /#if SOUL_CODEX_STAGING_QA && targetEnvironment\(simulator\)/);
+  assert.match(policy, /#else\s*return "soulcodex\.up\.railway\.app"/);
+  assert.match(policy, /url\.host == permittedHost/);
+  const workflow = readFileSync(".github/workflows/ios-4.0.2-native-load-hotfix.yml", "utf8");
+  assert.doesNotMatch(workflow, /SOUL_CODEX_STAGING_QA/);
+});
