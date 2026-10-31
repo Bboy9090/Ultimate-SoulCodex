@@ -36,3 +36,9 @@ test("signed lane resolves before bootstrap, checks exported identity, and never
   assert.match(signed, /artifact_only_owner_QA_handoff/);
   assert.doesNotMatch(signed, /altool|iTMSTransporter|pilot upload|app-store-connect.*upload/);
 });
+
+test("simulator and signed marker evidence directories exist before redirection", () => {
+  const workflow = readFileSync(".github/workflows/ios-4.0.2-native-load-hotfix.yml", "utf8");
+  const markers = [...workflow.matchAll(/if \[ "\$VITE_BILLING_QUALIFICATION_MODE" = true \]; then\n            mkdir -p build\/export\n            grep -rl/g)];
+  assert.equal(markers.length, 2);
+});
