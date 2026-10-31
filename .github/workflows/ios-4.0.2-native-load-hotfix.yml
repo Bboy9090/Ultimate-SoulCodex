@@ -324,6 +324,7 @@ jobs:
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           if [ "$VITE_BILLING_QUALIFICATION_MODE" = true ]; then
+            mkdir -p build/export
             grep -rl 'X-SoulCodex-Billing-Qualification' "$APP_PATH/public/assets" > build/export/QUALIFICATION-MARKER-FILES.txt
             test -s build/export/QUALIFICATION-MARKER-FILES.txt
           fi
@@ -559,6 +560,7 @@ jobs:
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           if [ "$VITE_BILLING_QUALIFICATION_MODE" = true ]; then
+            mkdir -p build/export
             grep -rl 'X-SoulCodex-Billing-Qualification' "$APP_PATH/public/assets" > build/export/QUALIFICATION-MARKER-FILES.txt
             test -s build/export/QUALIFICATION-MARKER-FILES.txt
           fi
