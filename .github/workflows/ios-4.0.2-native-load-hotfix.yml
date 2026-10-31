@@ -186,7 +186,10 @@ jobs:
               raise SystemExit("SIMULATOR_APP_PATH_MISSING")
 
           try:
-              run(["xcrun", "simctl", "install", udid, app_path], timeout=180)
+              # iPad hosted installd needs a longer bounded first-install window.
+              install_timeout = 600 if family == "iPad" else 180
+              print(f"Simulator install budget: {install_timeout}s", flush=True)
+              run(["xcrun", "simctl", "install", udid, app_path], timeout=install_timeout)
           except SystemExit:
               try:
                   diagnostic = run(["xcrun", "simctl", "spawn", udid, "log", "show", "--last", "5m", "--style", "compact", "--predicate", 'process == "installd" OR eventMessage CONTAINS "app.soulcodex.ios"'], timeout=45, check=False)
