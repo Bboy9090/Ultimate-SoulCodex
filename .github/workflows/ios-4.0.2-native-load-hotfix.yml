@@ -170,7 +170,8 @@ jobs:
           if simulator_ui is None:
               raise SystemExit("SELECTED_XCODE_SIMULATOR_UI_NOT_FOUND")
           print(f"Opening selected Xcode device UI: {simulator_ui}")
-          run(["open", "-a", str(simulator_ui), "--args", "-CurrentDeviceUDID", udid], timeout=30)
+          # Hosted LaunchServices can exceed 30s before DeviceHub opens; app checks remain mandatory.
+          run(["open", "-a", str(simulator_ui), "--args", "-CurrentDeviceUDID", udid], timeout=120)
 
           try:
               bootstatus = run(["xcrun", "simctl", "bootstatus", udid, "-b"], timeout=300, check=True)
