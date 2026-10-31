@@ -158,8 +158,13 @@ export function resolveCapabilityGate(
   };
 }
 
-/** A tier label without verified provider evidence never opens Plus UI. */
-export function verifiedProductTier(access: { tier?: unknown; verified?: unknown; source?: unknown } | null | undefined): SoulCodexTier {
+/** A tier label without server-verified access never opens Plus UI. */
+export function verifiedProductTier(access: { tier?: unknown; verified?: unknown; source?: unknown; status?: unknown; expiresAt?: unknown } | null | undefined): SoulCodexTier {
+  if (access?.source === "complimentary") {
+    return access.tier === "plus" && access.verified === true &&
+      access.status === "complimentary_time_limited" && typeof access.expiresAt === "string" &&
+      Date.parse(access.expiresAt) > Date.now() ? "plus" : "free";
+  }
   return access?.tier === "plus" && access.verified === true &&
     ["owner", "stripe", "apple", "google_play"].includes(String(access.source)) ? "plus" : "free";
 }

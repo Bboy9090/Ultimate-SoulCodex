@@ -85,10 +85,10 @@ jobs:
           SHA=${CANDIDATE_SHA}
           Android versionName=4.1.0
           Android applicationId=soulcodex.app
-          Android versionCode=4000014
+          Android versionCode=4000015
           iOS marketingVersion=4.1.0
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000013
+          iOS build=4000014
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -192,7 +192,7 @@ jobs:
           {
             echo "SHA=${CANDIDATE_SHA}"
             echo "versionName=4.1.0"
-            echo "versionCode=4000014"
+            echo "versionCode=4000015"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
@@ -280,7 +280,7 @@ jobs:
           {
             echo "SHA=${CANDIDATE_SHA}"
             echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000013"
+            echo "buildNumber=4000014"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt

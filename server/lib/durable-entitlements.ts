@@ -82,6 +82,7 @@ export type VerifiedBillingEvent = z.infer<typeof verifiedBillingEventSchema>;
 export type ProductEntitlementSource =
   | "free"
   | "owner"
+  | "complimentary"
   | "stripe"
   | "apple"
   | "google_play";
@@ -261,6 +262,28 @@ export async function resolveProductEntitlementForUser(
     return { tier: "plus", source: "owner", verified: true, plan: null,
       status: "complimentary_lifetime", expiresAt: null, lastVerifiedAt: now.toISOString() };
   }
+  // Complimentary content access is an explicit, expiring server grant.
+  // It is not an owner/admin role or a purchase and never creates billing events.
+  try {
+    const config = z.array(z.object({
+      userId: z.string().uuid(),
+      startsAt: z.string().datetime(),
+      expiresAt: z.string().datetime(),
+    }).strict().refine((item) => {
+      const duration = Date.parse(item.expiresAt) - Date.parse(item.startsAt);
+      return duration > 0 && duration <= 90 * 24 * 60 * 60 * 1000;
+    })).max(20).refine((items) => new Set(items.map((item) => item.userId)).size === items.length)
+      .safeParse(JSON.parse(process.env.SOUL_CODEX_COMPLIMENTARY_GRANTS || "[]"));
+    const complimentary = config.success
+      ? config.data.find((item) => item.userId === user.id &&
+          Date.parse(item.startsAt) <= now.getTime() && now.getTime() < Date.parse(item.expiresAt))
+      : undefined;
+    if (complimentary) {
+      return { tier: "plus", source: "complimentary", verified: true, plan: null,
+        status: "complimentary_time_limited", expiresAt: complimentary.expiresAt,
+        lastVerifiedAt: now.toISOString() };
+    }
+  } catch { /* malformed configuration fails closed; paid access is resolved normally */ }
   const grant = await storage.getLatestEntitlementGrant(
     userId,
     SOUL_CODEX_PLUS_CAPABILITY,

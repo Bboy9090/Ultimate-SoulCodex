@@ -9,7 +9,7 @@ import {
 
 export type ProductAccessResponse = {
   tier: SoulCodexTier;
-  source: "free" | "owner" | "stripe" | "apple" | "google_play";
+  source: "free" | "owner" | "complimentary" | "stripe" | "apple" | "google_play";
   verified: boolean;
   plan: "monthly" | "annual" | null;
   status: string | null;
@@ -47,6 +47,7 @@ async function loadProductAccess(): Promise<ProductAccessResponse> {
 
   const source =
     payload.source === "owner" ||
+    payload.source === "complimentary" ||
     payload.source === "stripe" ||
     payload.source === "apple" ||
     payload.source === "google_play"
