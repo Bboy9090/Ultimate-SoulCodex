@@ -14,6 +14,7 @@ test("production schema preflight is idempotent, complete, and non-destructive",
     "access_code_redemptions",
     "soul_profiles",
     "assessment_responses",
+    "galactic_code_records",
     "public_profile_shares",
     "billing_subjects",
     "billing_transaction_events",
@@ -38,6 +39,9 @@ test("production schema preflight is idempotent, complete, and non-destructive",
   assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"/);
   assert.match(source, /CREATE INDEX IF NOT EXISTS "entitlement_grants_subject_capability_idx"/);
   assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "billing_verification_receipts_transaction_unique"/);
+  assert.match(source, /CREATE UNIQUE INDEX IF NOT EXISTS "galactic_code_records_profile_unique"/);
+  assert.match(source, /CREATE INDEX IF NOT EXISTS "galactic_code_records_owner_idx"/);
+  assert.match(source, /generated_at: "timestamp without time zone"/);
   assert.doesNotMatch(source, /DROP\s+TABLE/i);
   assert.doesNotMatch(source, /ALTER\s+TABLE.*DROP/i);
   assert.match(source, /information_schema\.columns/);

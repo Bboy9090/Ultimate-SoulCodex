@@ -136,6 +136,10 @@ A real user can:
 - Chromium and WebKit offline restart validation passes.
 - The Foundation web RC invariant audit passes.
 
+## Owner-authorized complimentary access
+
+Owner authorization recorded October 28, 2026: Bobby's verified Soul Codex account may receive permanent complimentary access to all live Plus capabilities. This is a separate server-resolved `owner` entitlement, not a subscription, payment event, administrative role, or client-side premium flag. The server-only `SOUL_CODEX_OWNER_USER_IDS` allowlist defaults empty and requires exact existing account UUIDs; names and email strings cannot self-grant access. Account deletion and removing the allowlist entry revoke access. Paid subscriptions retain their signed-provider verification and expiry rules. See `docs/ACCESS_TIERS_AND_OWNER_ACCESS.md` for activation and identity requirements. Do not claim Apple/Google linking or owner activation until verified.
+
 ## Definition of done
 
 Foundation Web v1 is release-candidate complete when all automated gates pass and a final manual consumer pass confirms:

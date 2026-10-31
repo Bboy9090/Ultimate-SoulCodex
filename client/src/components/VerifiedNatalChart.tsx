@@ -1,7 +1,8 @@
 import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
 import { useState } from "react";
 import { Link } from "wouter";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 import { atlasEntry, atlasSignMeaning, personalAngleMeaning, personalAspectMeaning, personalPlacementMeaning } from "@/lib/astrologyAtlas";
 import type { AtlasSign } from "@/lib/astrologyAtlas";

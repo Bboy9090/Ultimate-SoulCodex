@@ -1,0 +1,384 @@
+{
+  "astrologyData": {
+    "sun": {
+      "sign": "Virgo",
+      "verificationStatus": "verified",
+      "evidence": {
+        "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation; independently confirmed by NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+        "engine": "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
+        "calculatedAt": "2026-10-28T21:45:14.229Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z",
+        "candidateSource": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+        "candidateEngine": "astronomy-engine@2.1.19",
+        "candidateCalculatedAt": "2026-10-28T21:45:09.527Z",
+        "referenceSource": "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+        "referenceEngine": "nasa-jpl-horizons-api@1.3",
+        "referenceCalculatedAt": "2026-10-28T21:45:14.229Z",
+        "policyId": "ASTRO-LONGITUDE-v1",
+        "evidenceReceiptId": "30803626991",
+        "evidenceArtifactId": "8851843885",
+        "longitudeDeltaDegrees": 0.0002680861880435259,
+        "confidence": 1
+      },
+      "internalCandidate": {
+        "sign": "Virgo",
+        "longitude": 174.429628413812,
+        "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+        "engine": "astronomy-engine@2.1.19",
+        "calculatedAt": "2026-10-28T21:45:09.527Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z"
+      },
+      "reason": "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance"
+    },
+    "moon": {
+      "sign": "Virgo",
+      "verificationStatus": "verified",
+      "evidence": {
+        "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation; independently confirmed by NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+        "engine": "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
+        "calculatedAt": "2026-10-28T21:45:11.249Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z",
+        "candidateSource": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+        "candidateEngine": "astronomy-engine@2.1.19",
+        "candidateCalculatedAt": "2026-10-28T21:45:09.527Z",
+        "referenceSource": "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+        "referenceEngine": "nasa-jpl-horizons-api@1.3",
+        "referenceCalculatedAt": "2026-10-28T21:45:11.249Z",
+        "policyId": "ASTRO-LONGITUDE-v1",
+        "evidenceReceiptId": "30803626991",
+        "evidenceArtifactId": "8851843885",
+        "longitudeDeltaDegrees": 2.4774823373263644e-05,
+        "confidence": 1
+      },
+      "internalCandidate": {
+        "sign": "Virgo",
+        "longitude": 157.07915897482337,
+        "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+        "engine": "astronomy-engine@2.1.19",
+        "calculatedAt": "2026-10-28T21:45:09.527Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z"
+      },
+      "reason": "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance"
+    },
+    "rising": {
+      "sign": "Scorpio",
+      "verificationStatus": "verified",
+      "evidence": {
+        "source": "Astronomy Engine apparent sidereal time with an independently coded eastern-horizon intersection; independently confirmed by Independent Meeus apparent sidereal time and Swiss-Ephemeris-compatible Asc1 geometry",
+        "engine": "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity + soulcodex-meeus-swiss-compatible-ascendant-reference-v1",
+        "calculatedAt": "2026-10-28T21:45:14.233Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z",
+        "candidateSource": "Astronomy Engine apparent sidereal time with an independently coded eastern-horizon intersection",
+        "candidateEngine": "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity",
+        "candidateCalculatedAt": "2026-10-28T21:45:14.233Z",
+        "referenceSource": "Independent Meeus apparent sidereal time and Swiss-Ephemeris-compatible Asc1 geometry",
+        "referenceEngine": "soulcodex-meeus-swiss-compatible-ascendant-reference-v1",
+        "referenceCalculatedAt": "2026-10-28T21:45:14.233Z",
+        "policyId": "ASTRO-ASCENDANT-v1",
+        "evidenceReceiptId": "ASCENDANT-VERIFICATION-RECEIPT-v1",
+        "evidenceArtifactId": "swiss-ephemeris-2.10.03-24-fixture-matrix",
+        "longitudeDeltaDegrees": 0.0003787864026207899,
+        "confidence": 1
+      },
+      "internalCandidate": {
+        "sign": "Scorpio",
+        "longitude": 215.37514721730884,
+        "source": "Astronomy Engine apparent sidereal time with an independently coded eastern-horizon intersection",
+        "engine": "astronomy-engine@2.1.19-sidereal-time + IAU-2006-obliquity",
+        "calculatedAt": "2026-10-28T21:45:14.233Z",
+        "inputTimestamp": "1990-09-17T14:10:00.000Z"
+      },
+      "reason": "Ascendant longitude and sign agreed across independent engines within the approved tolerance"
+    },
+    "planets": {
+      "sun": {
+        "sign": "Virgo",
+        "verificationStatus": "verified",
+        "evidence": {
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation; independently confirmed by NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "engine": "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
+          "calculatedAt": "2026-10-28T21:45:14.229Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z",
+          "candidateSource": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "candidateEngine": "astronomy-engine@2.1.19",
+          "candidateCalculatedAt": "2026-10-28T21:45:09.527Z",
+          "referenceSource": "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "referenceEngine": "nasa-jpl-horizons-api@1.3",
+          "referenceCalculatedAt": "2026-10-28T21:45:14.229Z",
+          "policyId": "ASTRO-LONGITUDE-v1",
+          "evidenceReceiptId": "30803626991",
+          "evidenceArtifactId": "8851843885",
+          "longitudeDeltaDegrees": 0.0002680861880435259,
+          "confidence": 1
+        },
+        "internalCandidate": {
+          "sign": "Virgo",
+          "longitude": 174.429628413812,
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "engine": "astronomy-engine@2.1.19",
+          "calculatedAt": "2026-10-28T21:45:09.527Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z"
+        },
+        "reason": "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance"
+      },
+      "moon": {
+        "sign": "Virgo",
+        "verificationStatus": "verified",
+        "evidence": {
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation; independently confirmed by NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "engine": "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
+          "calculatedAt": "2026-10-28T21:45:11.249Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z",
+          "candidateSource": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "candidateEngine": "astronomy-engine@2.1.19",
+          "candidateCalculatedAt": "2026-10-28T21:45:09.527Z",
+          "referenceSource": "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "referenceEngine": "nasa-jpl-horizons-api@1.3",
+          "referenceCalculatedAt": "2026-10-28T21:45:11.249Z",
+          "policyId": "ASTRO-LONGITUDE-v1",
+          "evidenceReceiptId": "30803626991",
+          "evidenceArtifactId": "8851843885",
+          "longitudeDeltaDegrees": 2.4774823373263644e-05,
+          "confidence": 1
+        },
+        "internalCandidate": {
+          "sign": "Virgo",
+          "longitude": 157.07915897482337,
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "engine": "astronomy-engine@2.1.19",
+          "calculatedAt": "2026-10-28T21:45:09.527Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z"
+        },
+        "reason": "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance"
+      },
+      "mercury": {
+        "sign": "Virgo",
+        "verificationStatus": "verified",
+        "evidence": {
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation; independently confirmed by NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "engine": "astronomy-engine@2.1.19 + nasa-jpl-horizons-api@1.3",
+          "calculatedAt": "2026-10-28T21:45:14.158Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z",
+          "candidateSource": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "candidateEngine": "astronomy-engine@2.1.19",
+          "candidateCalculatedAt": "2026-10-28T21:45:09.527Z",
+          "referenceSource": "NASA/JPL Horizons observer quantity 31: geocentric apparent ecliptic-of-date longitude",
+          "referenceEngine": "nasa-jpl-horizons-api@1.3",
+          "referenceCalculatedAt": "2026-10-28T21:45:14.158Z",
+          "policyId": "ASTRO-PLANET-LONGITUDE-v1",
+          "evidenceReceiptId": "35449041012",
+          "evidenceArtifactId": "10586208293",
+          "longitudeDeltaDegrees": 5.450108164950507e-05,
+          "confidence": 1
+        },
+        "internalCandidate": {
+          "sign": "Virgo",
+          "longitude": 159.59083599891835,
+          "source": "Astronomy Engine geocentric true-ecliptic-of-date calculation",
+          "engine": "astronomy-engine@2.1.19",
+          "calculatedAt": "2026-10-28T21:45:09.527Z",
+          "inputTimestamp": "1990-09-17T14:10:00.000Z"
+        },
+        "reason": "Astronomical longitude and zodiac sign independently agreed within the approved production tolerance"
+      }
+    },
+    "houseSystem": "equal",
+    "houses": [
+      {
+        "house": 1,
+        "sign": "Scorpio",
+        "degree": 5.375147217308836,
+        "longitude": 215.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 2,
+        "sign": "Sagittarius",
+        "degree": 5.375147217308836,
+        "longitude": 245.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 3,
+        "sign": "Capricorn",
+        "degree": 5.375147217308836,
+        "longitude": 275.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 4,
+        "sign": "Aquarius",
+        "degree": 5.375147217308836,
+        "longitude": 305.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 5,
+        "sign": "Pisces",
+        "degree": 5.375147217308836,
+        "longitude": 335.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 6,
+        "sign": "Aries",
+        "degree": 5.375147217308836,
+        "longitude": 5.375147217308836,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 7,
+        "sign": "Taurus",
+        "degree": 5.375147217308836,
+        "longitude": 35.375147217308836,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 8,
+        "sign": "Gemini",
+        "degree": 5.375147217308836,
+        "longitude": 65.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 9,
+        "sign": "Cancer",
+        "degree": 5.375147217308836,
+        "longitude": 95.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 10,
+        "sign": "Leo",
+        "degree": 5.375147217308836,
+        "longitude": 125.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 11,
+        "sign": "Virgo",
+        "degree": 5.375147217308836,
+        "longitude": 155.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      },
+      {
+        "house": 12,
+        "sign": "Libra",
+        "degree": 5.375147217308836,
+        "longitude": 185.37514721730884,
+        "verificationStatus": "verified",
+        "policyId": "ASTRO-EQUAL-HOUSE-v1",
+        "evidenceArtifactId": "10586653891"
+      }
+    ],
+    "midheaven": {
+      "sign": "Leo",
+      "degree": 12.422914146983999,
+      "longitude": 132.422914146984,
+      "verificationStatus": "verified",
+      "policyId": "ASTRO-EQUAL-HOUSE-v1",
+      "longitudeDeltaDegrees": 0.00032960406758775207,
+      "evidenceArtifactId": "10586653891"
+    },
+    "planetaryHouses": {
+      "sun": 11,
+      "moon": 11,
+      "mercury": 11
+    },
+    "aspects": [
+      {
+        "planet1": "moon",
+        "planet2": "mercury",
+        "aspect": "conjunction",
+        "orb": 2.511677024094979,
+        "separationDegrees": 2.511677024094979,
+        "targetAngleDegrees": 0,
+        "policyId": "ASTRO-ASPECT-MAJOR-v1"
+      }
+    ],
+    "northNode": {
+      "mode": "mean",
+      "sign": "Aquarius",
+      "house": 3,
+      "degree": 4.71188144154155,
+      "longitude": 304.71188144154155,
+      "verificationStatus": "verified",
+      "policyId": "ASTRO-MEAN-NODE-v1",
+      "evidenceArtifactId": "10590393354"
+    },
+    "southNode": {
+      "mode": "mean",
+      "sign": "Leo",
+      "house": 9,
+      "degree": 4.71188144154155,
+      "longitude": 124.71188144154155,
+      "verificationStatus": "verified",
+      "policyId": "ASTRO-MEAN-NODE-v1",
+      "evidenceArtifactId": "10590393354"
+    },
+    "chiron": {
+      "sign": "Cancer",
+      "house": 9,
+      "degree": 25.34669930000001,
+      "longitude": 115.34669930000001,
+      "verificationStatus": "verified",
+      "policyId": "ASTRO-CHIRON-v1",
+      "evidenceArtifactId": "10593933139",
+      "qualificationMethod": "live-jpl-qualified-against-swiss"
+    },
+    "verification": {
+      "complete": false,
+      "verifiedBodies": [
+        "Sun",
+        "Moon",
+        "Mercury",
+        "Ascendant"
+      ],
+      "unresolvedBodies": [
+        "Venus",
+        "Mars",
+        "Jupiter",
+        "Saturn",
+        "Uranus",
+        "Neptune",
+        "Pluto"
+      ],
+      "missingData": [
+        "independent_venus_verification",
+        "independent_mars_verification",
+        "independent_uranus_verification",
+        "verified_longitudes_for_all_derived_chart_facts"
+      ],
+      "suggestions": "Verified placements may be interpreted. Venus, Mars, Uranus remain paused until their stated requirements pass.",
+      "policyId": "ASTRO-LONGITUDE-v1 + ASTRO-PLANET-LONGITUDE-v1 + ASTRO-ASCENDANT-v1 + ASTRO-EQUAL-HOUSE-v1 + ASTRO-ASPECT-MAJOR-v1 + ASTRO-MEAN-NODE-v1 + ASTRO-CHIRON-v1",
+      "evidenceReceiptId": "30803626991 + 35449041012 + ASCENDANT-VERIFICATION-RECEIPT-v1 + 35449945640 + 35463886745 + 35474358663",
+      "lastUpdated": "2026-10-28T21:45:15.209Z"
+    },
+    "sunSign": "Virgo",
+    "moonSign": "Virgo",
+    "risingSign": "Scorpio"
+  },
+  "updatedAt": "2026-10-28T21:45:15.209Z"
+}

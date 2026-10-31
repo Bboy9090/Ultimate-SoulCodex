@@ -1,5 +1,10 @@
-import { useMemo, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
+import PlanetaryDepthPanel from "./PlanetaryDepthPanel";
+import { chartPlacementReading } from "@/lib/chartPlacementReading";
+import { useId, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import type { UltimateCodexPlacement, UltimateCodexSynthesis } from "@/lib/ultimateCodexSynthesis";
 
 const GLYPH: Record<string, string> = {
@@ -38,7 +43,12 @@ export default function InteractivePlanetarySystem({
 }: {
   synthesis: UltimateCodexSynthesis;
 }) {
-  const reducedMotion = useReducedMotion();
+  const { tier } = useProductAccess();
+  const expanded = tierAllowsCapability(tier, "interpretation_depth");
+  const prefersReducedMotion = useReducedMotion();
+  const [motionPaused, setMotionPaused] = useState(false);
+  const reducedMotion = prefersReducedMotion || motionPaused;
+  const coreGradientId = useId();
   const [selectedKey, setSelectedKey] = useState<string | null>(
     synthesis.placements[0]?.key ?? null,
   );
@@ -55,6 +65,8 @@ export default function InteractivePlanetarySystem({
     synthesis.placements.find((placement) => placement.key === selectedKey) ??
     synthesis.placements[0] ??
     null;
+
+  const selectedReading = selected ? chartPlacementReading(selected.key, selected.sign, selected.house, placementSummary(selected), expanded) : null;
 
   return (
     <section className="sc-panel sc-panel-gold mb-6 overflow-hidden p-5 sm:p-7" data-testid="interactive-planetary-system">
@@ -73,21 +85,28 @@ export default function InteractivePlanetarySystem({
         </span>
       </div>
 
+      {!prefersReducedMotion && <button type="button" className="sc-button-ghost mt-4 text-sm" aria-pressed={motionPaused} onClick={() => setMotionPaused(!motionPaused)}>{motionPaused ? "Resume cosmic motion" : "Pause cosmic motion"}</button>}
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,520px)_1fr] lg:items-center">
         <div className="relative mx-auto aspect-square w-full max-w-[520px]">
+          <motion.div aria-hidden="true" className="pointer-events-none absolute inset-[8%] rounded-full bg-[radial-gradient(ellipse_at_30%_35%,rgba(139,92,246,.28),transparent_55%),radial-gradient(ellipse_at_70%_65%,rgba(45,212,191,.16),transparent_55%)] blur-xl"
+            animate={reducedMotion ? { opacity: 0.65, scale: 1 } : { opacity: [0.45, 0.85, 0.45], scale: [0.96, 1.06, 0.96] }}
+            transition={reducedMotion ? { duration: 0 } : { duration: 12, repeat: Infinity, ease: "easeInOut" }} />
           <svg viewBox="0 0 360 360" className="h-full w-full overflow-visible" role="img" aria-label="Interactive zodiac planetary map">
             <defs>
-              <radialGradient id="planetary-core" cx="50%" cy="50%" r="50%">
+              <radialGradient id={coreGradientId} cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="rgba(239,208,141,.30)" />
                 <stop offset="55%" stopColor="rgba(154,116,220,.10)" />
                 <stop offset="100%" stopColor="rgba(8,6,13,0)" />
               </radialGradient>
             </defs>
 
+            <motion.g aria-hidden="true" animate={reducedMotion ? { rotate: 0 } : { rotate: [0, -360] }} transition={reducedMotion ? { duration: 0 } : { duration: 180, repeat: Infinity, ease: "linear" }} style={{ transformOrigin: "180px 180px" }}>
+              {Array.from({length: 36}, (_, i) => { const star = pointFor(i * 137.508, 35 + (i * 31 % 125)); return <circle key={i} cx={star.x} cy={star.y} r={i % 3 === 0 ? 1.3 : 0.7} fill={i % 2 ? "#c4b5fd" : "#99f6e4"} opacity={0.25 + (i % 4) * 0.12} />; })}
+            </motion.g>
             <circle cx="180" cy="180" r="156" fill="none" stroke="rgba(255,255,255,.08)" />
             <circle cx="180" cy="180" r="132" fill="none" stroke="rgba(217,182,111,.18)" />
             <circle cx="180" cy="180" r="94" fill="none" stroke="rgba(154,116,220,.15)" strokeDasharray="3 7" />
-            <circle cx="180" cy="180" r="58" fill="url(#planetary-core)" />
+            <circle cx="180" cy="180" r="58" fill={`url(#${coreGradientId})`} />
 
             {SIGN_GLYPH.map((glyph, index) => {
               const p = pointFor(index * 30 + 15, 154);
@@ -101,8 +120,8 @@ export default function InteractivePlanetarySystem({
             })}
 
             <motion.g
-              animate={reducedMotion ? undefined : { rotate: [0, 360] }}
-              transition={reducedMotion ? undefined : { duration: 90, repeat: Infinity, ease: "linear" }}
+              animate={reducedMotion ? { rotate: 0 } : { rotate: [0, 360] }}
+              transition={reducedMotion ? { duration: 0 } : { duration: 90, repeat: Infinity, ease: "linear" }}
               style={{ transformOrigin: "180px 180px" }}
               aria-hidden="true"
             >
@@ -128,9 +147,9 @@ export default function InteractivePlanetarySystem({
                       setSelectedKey(placement.key);
                     }
                   }}
-                  animate={reducedMotion ? undefined : { y: [0, index % 2 === 0 ? -2.5 : 2.5, 0] }}
-                  transition={reducedMotion ? undefined : { duration: 2.6 + index * 0.13, repeat: Infinity, ease: "easeInOut" }}
-                  className="cursor-pointer outline-none"
+                  animate={reducedMotion ? { y: 0 } : { y: [0, index % 2 === 0 ? -2.5 : 2.5, 0] }}
+                  transition={reducedMotion ? { duration: 0 } : { duration: 2.6 + index * 0.13, repeat: Infinity, ease: "easeInOut" }}
+                  className="cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
                 >
                   <circle
                     cx={p.x}
@@ -161,8 +180,8 @@ export default function InteractivePlanetarySystem({
               r="28"
               fill="rgba(217,182,111,.08)"
               stroke="rgba(217,182,111,.32)"
-              animate={reducedMotion ? undefined : { r: [27, 30, 27], opacity: [0.7, 1, 0.7] }}
-              transition={reducedMotion ? undefined : { duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
+              animate={reducedMotion ? { r: 28, opacity: 1 } : { r: [27, 30, 27], opacity: [0.7, 1, 0.7] }}
+              transition={reducedMotion ? { duration: 0 } : { duration: 3.8, repeat: Infinity, ease: "easeInOut" }}
             />
             <text x="180" y="181" textAnchor="middle" dominantBaseline="middle" fill="#efd08d" fontSize="18" aria-hidden="true">✦</text>
           </svg>
@@ -184,6 +203,13 @@ export default function InteractivePlanetarySystem({
                 {selected.label} in {selected.sign}
               </h3>
               <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{placementSummary(selected)}</p>
+              {selectedReading && <div className="mt-4 space-y-4 text-sm leading-7 text-[var(--sc-ivory-soft)]" aria-live="polite">
+                <p>{selectedReading.meaning}</p>
+                <div><h4 className="font-semibold text-[var(--sc-gold-bright)]">Possible strength</h4><p>{selectedReading.gift}</p></div>
+                <div><h4 className="font-semibold text-[var(--sc-gold-bright)]">Watch the tradeoff</h4><p>{selectedReading.tension}</p></div>
+                <div><h4 className="font-semibold text-[var(--sc-gold-bright)]">Try this in your life</h4><p>{selectedReading.action}</p></div>
+              </div>}
+              <PlanetaryDepthPanel depth={selectedReading?.depth} />
               <p className="mt-3 text-xs leading-5 text-[var(--sc-stone)]">
                 Tap another planet to move through the supported chart. Evidence state stays visible; unresolved houses or degrees remain unresolved.
               </p>

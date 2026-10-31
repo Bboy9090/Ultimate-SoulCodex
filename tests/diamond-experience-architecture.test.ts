@@ -59,7 +59,7 @@ test("monetization contract requires durable subscription entitlement truth", ()
 });
 
 
-test("connections surface uses the five transparent relationship dimensions", () => {
+test("connections surface distinguishes supported comparisons from planned dimensions", () => {
   const compatibility = readFileSync(new URL("../client/src/pages/CompatibilityHubPage.tsx", import.meta.url), "utf8");
   for (const label of [
     "Communication",
@@ -73,14 +73,18 @@ test("connections surface uses the five transparent relationship dimensions", ()
   assert.match(compatibility, /advanced_connections/);
   assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
   assert.match(compatibility, /No universal verdict/);
+  assert.match(compatibility, /Sun and optional Life Path comparison/);
+  assert.match(compatibility, /premium \? "PLANNED"/);
 });
 
 
 test("today surface enforces tier-aware influence budgets", () => {
   const timeline = readFileSync(new URL("../client/src/pages/TimelinePage.tsx", import.meta.url), "utf8");
   assert.match(timeline, /DAILY_INFLUENCE_LIMIT/);
-  assert.match(timeline, /Your chart today/);
-  assert.match(timeline, /See all five influences/);
+  assert.match(timeline, /Your timing and natal context/);
+  assert.match(timeline, /not a current transit/);
+  assert.doesNotMatch(timeline, /Aureon confirms/);
+  assert.match(timeline, /See all \{currentInfluences\.length\} influences/);
   assert.match(timeline, /advanced_daily/);
   assert.match(timeline, /DiamondClosure/);
 });

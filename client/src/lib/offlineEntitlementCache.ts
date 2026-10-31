@@ -4,7 +4,7 @@ export const OFFLINE_ENTITLEMENT_CACHE_TTL_MS = 15 * 60 * 1000;
 
 export type CachedProductAccess = {
   tier: SoulCodexTier;
-  source: "free" | "stripe" | "apple" | "google_play";
+  source: "free" | "owner" | "stripe" | "apple" | "google_play";
   verified: boolean;
   plan: "monthly" | "annual" | null;
   status: string | null;

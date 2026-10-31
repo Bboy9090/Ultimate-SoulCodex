@@ -306,7 +306,7 @@ export default function LocalFirstInputForm() {
         description: verifyOnline && onlineEvidenceInputsReady
           ? verificationCompleted
             ? "Your local reading is ready. The online verification request completed and supported evidence was reconciled into this same local profile."
-            : "Your local reading is ready, but online verification did not complete. Nothing was guessed or promoted; you can retry verification from the profile when connectivity is available."
+            : "Your local reading is ready, but online verification did not complete for every component. Any supported results were saved; inspect the profile and retry unresolved components without entering your birth details again. No unresolved result was guessed or promoted."
           : exactChartInputsReady
             ? "Your exact chart inputs are saved locally. Moon and Rising candidates are calculable, but Soul Codex will not promote them as chart facts until you choose Verify online."
             : "Your local reading is ready. No profile data was uploaded for verification.",

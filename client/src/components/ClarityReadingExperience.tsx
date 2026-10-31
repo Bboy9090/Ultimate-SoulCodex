@@ -1,3 +1,4 @@
+import PlanetaryDepthPanel from "./PlanetaryDepthPanel";
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
 import {
@@ -253,6 +254,18 @@ export default function ClarityReadingExperience({ profileId, profileName, model
           </div>
         ) : null}
       </section>
+
+      {Boolean(model.planetaryReadings?.length) && <section className="mb-6 grid gap-4 sm:grid-cols-2" aria-label="Your planetary placement readings">
+        {model.planetaryReadings?.map((reading) => <article key={reading.key} className="sc-panel p-5">
+          <p className="sc-eyebrow">{reading.evidence}</p><h2 className="mt-3 font-serif text-2xl">{reading.title}</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--sc-ivory-soft)]">{reading.meaning}</p>
+          <p className="mt-3 text-sm leading-7">{reading.gift}</p><p className="mt-3 text-sm leading-7">{reading.tension}</p>
+          <h3 className="mt-4 font-semibold">One placement-specific practice</h3><p className="mt-2 text-sm leading-7">{reading.action}</p>
+          {reading.depth && <PlanetaryDepthPanel depth={reading.depth} />}
+        </article>)}
+      </section>}
+
+      {Boolean(model.planetaryReadings?.length) && !model.planetaryReadings?.some((reading) => reading.depth) && <PlanetaryDepthPanel />}
 
       <section aria-label="Human-depth reading chapters" className="mb-6 grid gap-5">
         {chapters.map((chapter, index) => (

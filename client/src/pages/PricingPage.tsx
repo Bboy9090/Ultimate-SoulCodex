@@ -7,6 +7,8 @@ const foundationFeatures = [
   "One active profile with your supported Big 3",
   "Life Path and date-based numerology",
   "Verified natal chart geometry: qualified planets, houses, aspects, Midheaven, Nodes, and Chiron",
+  "Personal planet readings: placement meaning, possible strength, core tradeoff, and one practical action",
+  "Interactive cosmic chart with the same verified facts on Free and Plus",
   "Verified Human Design Type, Strategy, Authority, and Profile",
   "A limited daily synthesis with up to three qualified influences",
   "Basic Connections and one bounded relationship comparison",
@@ -16,6 +18,7 @@ const foundationFeatures = [
 
 const livePremiumFeatures = [
   "Everything in Free",
+  "Expanded per-planet relationship context, decision worksheets, and guided reflection",
   "Deeper interpretation layers across supported Identity readings: relationship impact, shadow patterns, decision impact, repeated tensions, and cross-layer explanation",
   "Full governed numerology: Expression, Soul Urge, Personality, and Maturity when a complete birth name is available",
   "Daily synthesis with up to five qualified current influences",

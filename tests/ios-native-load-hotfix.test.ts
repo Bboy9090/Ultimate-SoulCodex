@@ -25,9 +25,9 @@ test("iOS hotfix metadata is a fresh App Store version/build", async () => {
   ]);
 
   assert.match(plist, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.0<\/string>/);
-  assert.match(plist, /<key>CFBundleVersion<\/key>\s*<string>4000011<\/string>/);
+  assert.match(plist, /<key>CFBundleVersion<\/key>\s*<string>4000013<\/string>/);
   assert.match(project, /MARKETING_VERSION = 4\.1\.0;/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000011;/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000013;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
 });
 
@@ -65,4 +65,14 @@ test("secondary routes are lazy so home first paint does not evaluate the whole 
   assert.match(source, /lazyRoute\(\(\) => import\("\.\/pages\/CompatibilityRoute"\), "compatibility"\)/);
   assert.match(source, /route_chunk_timeout/);
   assert.match(source, /<Suspense fallback=/);
+});
+
+
+test("legacy P12 input is normalized without exporting legacy encryption or logging its password", async () => {
+  const workflow = await readFile(".github/workflows/ios-4.0.2-native-load-hotfix.yml", "utf8");
+  assert.match(workflow, /umask 077/);
+  assert.equal((workflow.match(/openssl pkcs12 -legacy -in "\$P12" -passin env:IOS_CERTIFICATE_PASSWORD/g) || []).length, 2);
+  assert.match(workflow, /openssl pkcs12 -export -in "\$LEAF" -inkey "\$KEY" -out "\$MODERN_P12" -passout env:IOS_CERTIFICATE_PASSWORD/);
+  assert.match(workflow, /rm -f "\$KEY"/);
+  assert.doesNotMatch(workflow, /pkcs12 -export -legacy/);
 });

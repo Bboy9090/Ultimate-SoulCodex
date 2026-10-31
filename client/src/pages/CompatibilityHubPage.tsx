@@ -143,7 +143,7 @@ export default function CompatibilityHubPage() {
               {profileName(profile)} Compatibility
             </h1>
             <p className="sc-lede mt-5 max-w-3xl">
-              Start with a useful free comparison, then go deeper across communication, emotional rhythm, attraction, life direction, and verified Human Design context. No universal verdict.
+              Start with the supported Sun and optional Life Path comparison. Your saved people can add qualified Moon, Mercury, Venus, and Jupiter perspectives where both charts support them. Human Design, house-based compatibility, and the broader five-dimension model remain outside the current paid promise. No universal verdict.
             </p>
           </div>
 
@@ -164,11 +164,11 @@ export default function CompatibilityHubPage() {
             <article key={title} className="sc-panel flex min-h-[220px] flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <span className="sc-icon-well"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>
-                <span className="font-mono text-xs text-[var(--sc-stone)]">{premium && !advancedConnections ? "PLUS" : `0${index + 1}`}</span>
+                <span className="font-mono text-xs text-[var(--sc-stone)]">{premium ? "PLANNED" : `0${index + 1}`}</span>
               </div>
               <h2 className="mb-0 mt-7 font-serif text-xl font-semibold text-[var(--sc-ivory)]">{title}</h2>
               <p className="mb-0 mt-3 text-sm leading-6 text-[var(--sc-stone)]">{text}</p>
-              {premium && !advancedConnections ? (
+              {premium ? (
                 <span className="mt-auto pt-5 text-sm font-semibold text-[var(--sc-stone)]">
                   Planned · not included in current Soul Codex+
                 </span>

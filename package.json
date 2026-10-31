@@ -47,11 +47,11 @@
     "billing:qualification:evidence": "node scripts/validate-billing-qualification-evidence.mjs"
   },
   "dependencies": {
-    "@capacitor/android": "8.4.3",
-    "@capacitor/cli": "8.4.3",
+    "@capacitor/android": "8.6.0",
+    "@capacitor/cli": "8.6.0",
     "@capacitor/contacts": "^1.0.1",
-    "@capacitor/core": "8.4.3",
-    "@capacitor/ios": "8.4.3",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
     "@capacitor/keyboard": "^8.0.3",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
@@ -131,7 +131,7 @@
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
     "pdfkit": "^0.18.0",
-    "qs": "^6.16.0",
+    "qs": "6.17.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -184,6 +184,8 @@
     "brace-expansion": "5.0.12",
     "dompurify": "3.4.17",
     "ip-address": "10.7.4",
-    "body-parser": "1.20.9"
+    "body-parser": "1.20.9",
+    "postcss-selector-parser": "6.1.5",
+    "esbuild": "$esbuild"
   }
 }

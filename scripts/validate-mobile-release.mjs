@@ -62,22 +62,25 @@ requireFile("client/src/pages/SupportPage.tsx");
 requireFile("client/src/pages/DiagnosticsPage.tsx");
 
 if (platform === "ios") {
+  requireFile("ios/App/App/SceneDelegate.swift");
+  requireMatch("ios/App/App/Info.plist", /<key>UIApplicationSceneManifest<\/key>/, "iOS 27 requires the scene lifecycle manifest.");
+  requireMatch("ios/App/App/SceneDelegate.swift", /rootViewController = SoulCodexBridgeViewController\(\)/, "Scene startup must preserve the custom billing/session bridge.");
   const exportOptionsPath = "ios/App/ExportOptions.plist";
   requireFile("ios/App/App/PrivacyInfo.xcprivacy");
   requireFile("ios/App/App.xcodeproj/xcshareddata/xcschemes/Soul Codex.xcscheme");
   requireMatch(exportOptionsPath, /<key>teamID<\/key>\s*<string>86NUJ8M3B8<\/string>/, "The iOS export Team ID is missing or incorrect in ios/App/ExportOptions.plist.");
   requireMatch(exportOptionsPath, /<key>method<\/key>\s*<string>(app-store|app-store-connect)<\/string>/, "The iOS export method must target App Store distribution.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/, "The iOS bundle identifier must remain app.soulcodex.ios.");
-  requireMatch("ios/App/App.xcodeproj/project.pbxproj", /CURRENT_PROJECT_VERSION = 4000011;/, "The iOS Xcode build number must be 4000011.");
+  requireMatch("ios/App/App.xcodeproj/project.pbxproj", /CURRENT_PROJECT_VERSION = 4000013;/, "The iOS Xcode build number must be 4000013.");
   requireMatch("ios/App/App.xcodeproj/project.pbxproj", /MARKETING_VERSION = 4\.1\.0;/, "The iOS Xcode marketing version must be 4.1.0.");
   requireMatch("ios/App/App/Info.plist", /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.0<\/string>/, "The iOS short version must be 4.1.0.");
-  requireMatch("ios/App/App/Info.plist", /<key>CFBundleVersion<\/key>\s*<string>4000011<\/string>/, "The iOS build number must be 4000011 for the 4.1.0 store release.");
+  requireMatch("ios/App/App/Info.plist", /<key>CFBundleVersion<\/key>\s*<string>4000013<\/string>/, "The iOS build number must be 4000013 for the 4.1.0 store release.");
 }
 
 if (platform === "android") {
   requireMatch("android/app/build.gradle", /applicationId\s+["']soulcodex\.app["']/, "The Android application ID must match Play Console: soulcodex.app.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000013/, "The Android versionCode must be 4000013 for the 4.1.0 Play release.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000014/, "The Android versionCode must be 4000014 for the 4.1.0 Play release.");
   requireMatch("android/app/build.gradle", /versionName\s+["']4\.1\.0["']/, "The Android versionName must be 4.1.0 for the store release.");
 }
 

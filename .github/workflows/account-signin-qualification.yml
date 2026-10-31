@@ -1,0 +1,32 @@
+name: Account Sign-In Qualification
+on:
+  push:
+    branches: [fix/android-account-signin]
+  pull_request:
+    branches: [main, fix/personal-chart-release-integrity]
+permissions:
+  contents: read
+concurrency:
+  group: account-signin-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+env:
+  CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+jobs:
+  account-signin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+      - run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build:workspaces
+      - run: npm run check
+      - name: Account auth, Apple parity, session and failure contracts
+        run: node --import tsx --test tests/android-email-auth-contract.test.ts tests/active-consumer-auth.test.ts tests/account-deletion.test.ts
+      - run: npm run build

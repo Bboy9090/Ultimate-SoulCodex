@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import type { IndependentEphemerisReference } from "./astrology-verification";
 
 export type SupportedHorizonsBody =
@@ -136,7 +137,7 @@ export function parseHorizonsLongitude(result: string): number {
   return longitude;
 }
 
-export async function fetchHorizonsReference(
+async function fetchUncachedHorizonsReference(
   body: SupportedHorizonsBody,
   inputTimestamp: string,
   options: {
@@ -190,10 +191,42 @@ export async function fetchHorizonsReference(
         calculatedAt: new Date().toISOString(),
         inputTimestamp: new Date(inputTimestamp).toISOString(),
       };
+    } catch (error) {
+      if (error instanceof Error && ["AbortError", "TypeError"].includes(error.name) && attempt < maxAttempts) {
+        clearTimeout(timeout);
+        await sleepImpl(retryBaseDelayMs * 2 ** (attempt - 1));
+        continue;
+      }
+      throw error;
     } finally {
       clearTimeout(timeout);
     }
   }
 
   throw new Error("horizons_retry_exhausted");
+}
+
+// Natal geocentric references depend on body and exact UTC, never on a name.
+// Bound upstream concurrency and retain successful references; failures are never cached.
+const referenceLimit = pLimit(3);
+const referenceCache = new Map<string, { at: number; value: IndependentEphemerisReference }>();
+const referenceFlights = new Map<string, Promise<IndependentEphemerisReference>>();
+export function fetchHorizonsReference(
+  body: SupportedHorizonsBody, inputTimestamp: string,
+  options: Parameters<typeof fetchUncachedHorizonsReference>[2] = {},
+): Promise<IndependentEphemerisReference> {
+  if (options.fetchImpl) return fetchUncachedHorizonsReference(body, inputTimestamp, options);
+  const key = `${HORIZONS_ENGINE}:${body}:${new Date(inputTimestamp).toISOString()}`;
+  const cached = referenceCache.get(key);
+  if (cached && Date.now() - cached.at < 24 * 60 * 60 * 1000) return Promise.resolve({ ...cached.value });
+  const existing = referenceFlights.get(key);
+  if (existing) return existing.then((value) => ({ ...value }));
+  const flight = referenceLimit(() => fetchUncachedHorizonsReference(body, inputTimestamp, options))
+    .then((value) => {
+      if (referenceCache.size >= 2000) referenceCache.delete(referenceCache.keys().next().value!);
+      referenceCache.set(key, { at: Date.now(), value });
+      return value;
+    }).finally(() => referenceFlights.delete(key));
+  referenceFlights.set(key, flight);
+  return flight.then((value) => ({ ...value }));
 }

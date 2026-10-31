@@ -15,5 +15,6 @@ test("local-first creation distinguishes completed verification from deferred fa
   assert.match(source, /verificationCompleted = await requestVerificationWhenOnline/);
   assert.match(source, /online verification request completed/);
   assert.match(source, /online verification did not complete/);
-  assert.match(source, /Nothing was guessed or promoted/);
+  assert.match(source, /Any supported results were saved/);
+  assert.match(source, /No unresolved result was guessed or promoted/);
 });

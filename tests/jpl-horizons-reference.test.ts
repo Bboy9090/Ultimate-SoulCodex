@@ -21,6 +21,39 @@ const validPayload = JSON.stringify({
   result: sampleResult,
 });
 
+test("production reference retrieval bounds concurrency, coalesces identical requests and caches only success", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  let active = 0;
+  let maximum = 0;
+  let fail = false;
+  globalThis.fetch = async () => {
+    calls++;
+    active++;
+    maximum = Math.max(maximum, active);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    active--;
+    return fail ? new Response("unavailable", { status: 503 }) : new Response(validPayload, { status: 200 });
+  };
+  try {
+    const instant = "1991-01-01T00:00:00.000Z";
+    await Promise.all(Array.from({ length: 8 }, () => fetchHorizonsReference("Sun", instant)));
+    assert.equal(calls, 1);
+    await fetchHorizonsReference("Sun", instant);
+    assert.equal(calls, 1);
+    await Promise.all(["Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"].map((body) => fetchHorizonsReference(body as "Moon", instant)));
+    assert.ok(maximum <= 3);
+    fail = true;
+    await assert.rejects(fetchHorizonsReference("Sun", "1991-01-02T00:00:00.000Z", { maxAttempts: 1 }), /horizons_http_503/);
+    fail = false;
+    const before = calls;
+    await fetchHorizonsReference("Sun", "1991-01-02T00:00:00.000Z");
+    assert.equal(calls, before + 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("builds an official geocentric quantity-31 request for the same UTC instant", () => {
   const url = new URL(buildHorizonsReferenceUrl("Sun", "1990-09-17T15:11:00.000Z"));
 

@@ -1,0 +1,60 @@
+name: Personal Chart Browser Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "client/src/**"
+      - "tests/pwa/**"
+      - ".github/workflows/personal-chart-browser-acceptance.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: personal-chart-browser-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  personal-chart-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Record exact source
+        env:
+          CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+          echo "$CANDIDATE_SHA" > personal-chart-candidate-sha.txt
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install isolated browser tools without re-resolving application dependencies
+        run: |
+          npm install --prefix "$RUNNER_TEMP/soul-browser-tools" --ignore-scripts --no-audit --no-fund @playwright/test@1.54.1
+          mkdir -p node_modules/@playwright
+          ln -s "$RUNNER_TEMP/soul-browser-tools/node_modules/@playwright/test" node_modules/@playwright/test
+          git diff --exit-code -- package.json package-lock.json
+      - run: '"$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" install --with-deps chromium webkit'
+      - run: npm run build:workspaces
+      - run: npm run build
+      - name: Test saved profiles and partial chart readings in Chromium and WebKit
+        env:
+          SOUL_CODEX_TEST_PARTIAL_CHART: "1"
+        run: '"$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" test project-clarity.spec.mjs --config=tests/pwa/playwright.config.mjs'
+      - name: Retain browser evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: personal-chart-browser-${{ github.run_id }}
+          path: |
+            personal-chart-candidate-sha.txt
+            playwright-report
+            test-results/pwa
+          retention-days: 30

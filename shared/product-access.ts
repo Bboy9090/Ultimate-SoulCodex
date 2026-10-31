@@ -40,7 +40,7 @@ export const SOUL_CODEX_CAPABILITIES: Record<SoulCodexCapability, CapabilityDefi
     minimumTier: "plus",
     availability: "live",
     label: "Deeper interpretation layers",
-    upgradeReason: "Keep the clear core reading free, then unlock the deeper contradictions, relationship impact, shadow patterns, decision impact, and cross-layer explanation already supported by the evidence model.",
+    upgradeReason: "Keep the clear core reading free, then unlock the deeper contradictions, relationship impact, shadow patterns, decision impact, and cross-layer explanation already supported by the evidence model, plus expanded per-planet relationship, decision, and reflection layers.",
   },
   basic_connections: { minimumTier: "free", availability: "live", label: "Basic Connections" },
   basic_compatibility: { minimumTier: "free", availability: "live", label: "Basic compatibility" },
@@ -156,4 +156,10 @@ export function resolveCapabilityGate(
     upgradeReason: definition.upgradeReason ?? null,
     availability: definition.availability,
   };
+}
+
+/** A tier label without verified provider evidence never opens Plus UI. */
+export function verifiedProductTier(access: { tier?: unknown; verified?: unknown; source?: unknown } | null | undefined): SoulCodexTier {
+  return access?.tier === "plus" && access.verified === true &&
+    ["owner", "stripe", "apple", "google_play"].includes(String(access.source)) ? "plus" : "free";
 }

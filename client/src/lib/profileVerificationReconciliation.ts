@@ -1,4 +1,5 @@
-import { hasCompleteMinuteRangeEvidence, type OfflineCodexProfile } from "@soulcodex/core";
+import { getVerifiedPlacement } from "./placementVerification";
+import { resolveCivilTimeStrict, hasCompleteMinuteRangeEvidence, type OfflineCodexProfile } from "@soulcodex/core";
 import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeRangeStableFoundationProfile,
@@ -397,12 +398,43 @@ function hasExactAscendantInputs(profile: ReconciledOfflineProfile): boolean {
   );
 }
 
+/** Preserve only successful geocentric planetary references for the unchanged exact instant.
+ * Angles/houses are always from the new response because coordinates may have changed.
+ */
+export function preserveVerifiedPlanetaryEvidence(local: any, incoming: any, inputs: any): any {
+  if (!incoming || !inputs.birthDate || !inputs.birthTime || !inputs.timezone || inputs.birthTimeStatus === "unknown") return incoming;
+  const civil = resolveCivilTimeStrict(String(inputs.birthDate).slice(0, 10), inputs.birthTime, inputs.timezone);
+  if (civil.status !== "valid" || !civil.utc) return incoming;
+  const timestamp = civil.utc.toISOString();
+  const planets = { ...incoming.planets };
+  const planetaryHouses = { ...incoming.planetaryHouses };
+  let changed = false;
+  for (const key of FULL_NATAL_PLANET_KEYS) {
+    const next = incoming.planets?.[key] ?? incoming[key];
+    const prior = local?.planets?.[key] ?? local?.[key];
+    const issue = String(next?.verificationFailure?.reason ?? "");
+    const priorTimestamp = prior?.evidence?.inputTimestamp ?? prior?.provenance?.inputTimestamp;
+    const nextTimestamp = next?.evidence?.inputTimestamp ?? next?.internalCandidate?.inputTimestamp;
+    if (!/horizons_http_(429|500|502|503|504)|abort|timeout|fetch failed/i.test(issue) || !getVerifiedPlacement(prior) || priorTimestamp !== timestamp || nextTimestamp !== timestamp) continue;
+    planets[key] = prior;
+    changed = true;
+    const longitude = prior.internalCandidate?.longitude;
+    const cusp = incoming.houses?.[0]?.longitude;
+    if (incoming.houseSystem === "equal" && incoming.houses?.length === 12 && incoming.houses.every((row: any, index: number) => row.house === index + 1 && row.verificationStatus === "verified" && row.policyId === "ASTRO-EQUAL-HOUSE-v1" && row.evidenceArtifactId && Number.isFinite(row.longitude)) && Number.isFinite(longitude) && Number.isFinite(cusp)) {
+      planetaryHouses[key] = Math.floor(((longitude - cusp + 360) % 360) / 30) + 1;
+    }
+  }
+  if (!changed) return incoming;
+  // Summary remains partial until dependent derived fields are recalculated by the server.
+  return { ...incoming, planets, planetaryHouses, sun: planets.sun ?? incoming.sun, moon: planets.moon ?? incoming.moon };
+}
+
 export function reconcileActiveProfile(
   local: StoredProfile,
   remote: RemoteProfileSnapshot,
   syncedAt = new Date().toISOString(),
 ): StoredProfile {
-  const astrology = remote.astrologyData;
+  const astrology = preserveVerifiedPlanetaryEvidence(local.astrologyData, remote.astrologyData, local);
   const sunSign = getSynthesisAstrologySign(astrology, "sun");
   const moonSign = getSynthesisAstrologySign(astrology, "moon");
   const risingSign = getSynthesisAstrologySign(astrology, "rising");
@@ -478,6 +510,7 @@ export function reconcileOfflineProfile(
   remote: RemoteProfileSnapshot,
   syncedAt = new Date().toISOString(),
 ): ReconciledOfflineProfile {
+  remote = { ...remote, astrologyData: preserveVerifiedPlanetaryEvidence((local as ReconciledOfflineProfile).verifiedAstrologyData, remote.astrologyData, local) };
   const remoteId = remote.id ?? local.id;
   const numerologyData =
     (remote.numerologyData as OfflineCodexProfile["numerologyData"] | undefined) ??

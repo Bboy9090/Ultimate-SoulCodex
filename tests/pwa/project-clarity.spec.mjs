@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-async function createProfile(page) {
+async function createProfile(page, birthTime = "11:11") {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("input-name")).toBeVisible();
   await expect(page.getByTestId("button-onboarding-next")).toBeVisible();
 
   await page.getByTestId("input-name").fill("Clarity Browser Test");
   await page.getByTestId("input-birth-date").fill("1990-09-17");
-  await page.getByTestId("input-birth-time").fill("11:11");
+  await page.getByTestId("input-birth-time").fill(birthTime);
   await page.getByTestId("button-onboarding-next").click();
   await page.getByTestId("input-birth-location").fill("Bronx, New York");
   await page.getByTestId("button-location-lookup").click();
@@ -70,4 +70,81 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   // contract here is graceful degradation, not a fabricated offline match.
   await expect(page.getByRole("heading", { name: "Compatibility is unavailable" })).toBeVisible();
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
+});
+
+test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page, browserName }, testInfo) => {
+  test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
+  const runtimeErrors = [];
+  page.on("pageerror", error => runtimeErrors.push(error.message));
+  // The fixture is served by the harness over HTTP, including through the PWA service worker.
+  await createProfile(page, "10:10");
+  await page.getByRole("button", { name: "Verify complete profile systems", exact: true }).click();
+  await expect(page.getByTestId("verified-natal-chart")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Unavailable locally without verified placements.", exact: true })).toHaveCount(0);
+  const system = page.getByTestId("interactive-planetary-system");
+  await system.getByRole("button", { name: "☿ Mercury Virgo · verified", exact: true }).click();
+  const selected = system.getByTestId("planetary-system-selection");
+  await expect(selected).toContainText("Mercury in Virgo");
+  await expect(selected).toContainText("House 11");
+  await expect(selected).toContainText("perception, language, learning");
+  await expect(selected).toContainText("Try this in your life");
+  for (const width of [320, 390, 768, 1365]) {
+    await page.setViewportSize({ width, height: 900 });
+    const geometry = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }));
+    expect(geometry.scroll, `personal chart overflow at ${width}px`).toBeLessThanOrEqual(geometry.width + 1);
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  const pause = system.getByRole("button", { name: "Pause cosmic motion", exact: true });
+  await pause.click();
+  await expect(system.getByRole("button", { name: "Resume cosmic motion", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(system.getByRole("button", { name: /cosmic motion/ })).toHaveCount(0);
+  const motionSamples = await system.locator("svg").evaluate(async svg => {
+    const sample = () => [...svg.querySelectorAll("g, circle")].map(node => `${node.getAttribute("style")}:${node.getAttribute("r")}`);
+    // Compare several rendered frames to prove the loops stopped, not just the label.
+    for (let i = 0; i < 3; i++) await new Promise(requestAnimationFrame);
+    const before = sample();
+    for (let i = 0; i < 8; i++) await new Promise(requestAnimationFrame);
+    return { before, after: sample() };
+  });
+  expect(motionSamples.after).toEqual(motionSamples.before);
+  await system.locator('g[aria-label="Moon in Virgo"]').evaluate(node => node.focus());
+  await page.keyboard.press("Enter");
+  await expect(selected).toContainText("emotional needs");
+  await system.getByRole("button", { name: "☉ Sun Virgo · verified", exact: true }).click();
+  await expect(selected).toContainText("identity, vitality");
+  await testInfo.attach("personal-chart-phone.png", { body: await page.screenshot({ fullPage: true }), contentType: "image/png" });
+  await page.getByRole("link", { name: "Open the full Free reading", exact: true }).click();
+  const readings = page.getByRole("region", { name: "Your planetary placement readings", exact: true });
+  await expect(readings).toContainText("Sun in Virgo · House 11");
+  await expect(readings).toContainText("Moon in Virgo · House 11");
+  await expect(readings).toContainText("Mercury in Virgo · House 11");
+  await expect(readings).toContainText("friendships, groups, collective projects");
+  await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
+  await expect(page.getByRole("complementary", { name: "Free and Plus placement access", exact: true })).toBeVisible();
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await expect.poll(() => page.evaluate(() => Boolean(navigator.serviceWorker.controller))).toBe(true);
+  if (browserName === "webkit") {
+    await page.request.post("/__test/navigation-unavailable");
+    const directNetwork = await page.request.get(page.url(), { headers: { Accept: "text/html" } });
+    expect(directNetwork.status()).toBe(503);
+  } else {
+    await page.context().setOffline(true);
+  }
+  await page.reload();
+  await expect(page.getByRole("region", { name: "Your planetary placement readings", exact: true })).toContainText("Mercury in Virgo · House 11");
+  await expect(page.getByTestId("planetary-plus-depth")).toHaveCount(0);
+  if (browserName === "webkit") await page.request.delete("/__test/navigation-unavailable");
+  else await page.context().setOffline(false);
+  await testInfo.attach("network-recovery-mode", { body: Buffer.from(browserName === "webkit" ? "WebKit: direct navigation returns 503; service worker restores saved reading. Physical Safari offline remains required." : "Chromium: strict context offline; service worker restores saved reading."), contentType: "text/plain" });
+  await page.request.post("/__test/owner-access");
+  await page.reload();
+  const depth = page.getByTestId("planetary-plus-depth").first();
+  await expect(depth).toBeVisible();
+  await depth.locator("summary").click();
+  await expect(depth.getByRole("heading", { name: "Relationship context", exact: true })).toBeVisible();
+  await expect(depth.getByRole("heading", { name: "Decision worksheet", exact: true })).toBeVisible();
+  await page.goto("/pricing");
+  await expect(page.getByText("Soul Codex+ active · Complimentary lifetime owner access", { exact: true })).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
 });
