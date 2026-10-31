@@ -7,6 +7,7 @@ on:
       - hotfix/ios-4.1.0-native-load
       - fix/profile-narrative-refresh-federation
       - fix/personal-chart-release-integrity
+      - fix/complimentary-review-access
   workflow_dispatch:
 
 permissions:
