@@ -1,0 +1,41 @@
+name: Sideload APK
+on:
+  push:
+    branches: [artifact/sideload-apk-20261101]
+permissions:
+  contents: read
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci
+      - run: npm run build:capacitor
+        env:
+          VITE_API_URL: https://soulcodex.up.railway.app
+          VITE_RELEASE_VERSION: 4.1.0
+          VITE_API_CONTRACT: foundation-v4
+      - run: npx cap sync android
+      - name: Build installable debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleDebug
+          test -s app/build/outputs/apk/debug/app-debug.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../Soul-Codex-sideload.apk
+          sha256sum ../Soul-Codex-sideload.apk > ../Soul-Codex-sideload.sha256
+      - uses: actions/upload-artifact@v7
+        with:
+          name: soul-codex-sideload-apk
+          path: |
+            Soul-Codex-sideload.apk
+            Soul-Codex-sideload.sha256
+          if-no-files-found: error
