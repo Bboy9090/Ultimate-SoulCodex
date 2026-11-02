@@ -72,7 +72,7 @@ jobs:
           set -euo pipefail
           corepack enable
           corepack prepare pnpm@9.15.9 --activate
-          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; fi
+          if [ -f pnpm-lock.yaml ]; then pnpm install --filter ./apps/web... --frozen-lockfile; fi
           if [ -d apps/web ] && [ -f apps/web/package.json ]; then
             pnpm -C apps/web build
             (cd apps/web && npx cap sync android)
