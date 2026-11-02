@@ -1,0 +1,122 @@
+name: Portfolio Android Signer
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_repo:
+        description: "Allowed Bboy9090 repository"
+        required: true
+        type: choice
+        options:
+          - Bboy9090/Legends-of-Kai-Jax-The-memory-Hero
+          - Bboy9090/Sonic_codex
+          - Bboy9090/Super_Bobbys_World_of_Secret_Rooms
+      source_sha:
+        description: "Exact 40-character source commit SHA"
+        required: true
+        type: string
+      app_dir:
+        description: "Android app directory containing gradlew"
+        required: true
+        default: "apps/web/android"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sign-android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Validate request and signing credentials
+        env:
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          APP_DIR: ${{ inputs.app_dir }}
+        run: |
+          set -euo pipefail
+          case "$SOURCE_REPO" in
+            Bboy9090/Legends-of-Kai-Jax-The-memory-Hero|Bboy9090/Sonic_codex|Bboy9090/Super_Bobbys_World_of_Secret_Rooms) ;;
+            *) echo "Repository not allowlisted"; exit 1 ;;
+          esac
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$APP_DIR" != /* ]]
+          [[ "$APP_DIR" != *".."* ]]
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+      - name: Checkout exact source commit
+        env:
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          git clone --no-checkout "https://github.com/$SOURCE_REPO.git" source
+          cd source
+          git checkout --detach "$SOURCE_SHA"
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+
+      - name: Prepare Android source
+        working-directory: source
+        env:
+          APP_DIR: ${{ inputs.app_dir }}
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@9.15.9 --activate
+          if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; fi
+          if [ -d apps/web ] && [ -f apps/web/package.json ]; then
+            pnpm -C apps/web build
+            (cd apps/web && npx cap sync android)
+          fi
+          test -x "$APP_DIR/gradlew" || chmod +x "$APP_DIR/gradlew"
+
+      - name: Materialize temporary signing key
+        working-directory: source
+        env:
+          APP_DIR: ${{ inputs.app_dir }}
+        run: |
+          set -euo pipefail
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$APP_DIR/portfolio-release.jks"
+          test -s "$APP_DIR/portfolio-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$PWD/$APP_DIR/portfolio-release.jks" >> "$GITHUB_ENV"
+
+      - name: Build and verify signed AAB
+        working-directory: source
+        env:
+          APP_DIR: ${{ inputs.app_dir }}
+          SOURCE_REPO: ${{ inputs.source_repo }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          set -euo pipefail
+          cd "$APP_DIR"
+          ./gradlew clean bundleRelease --stacktrace
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          jarsigner -verify -verbose -certs "$AAB"
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp "$AAB" "$GITHUB_WORKSPACE/out/app-release.aab"
+          sha256sum "$AAB" | tee "$GITHUB_WORKSPACE/out/AAB-SHA256.txt"
+          keytool -printcert -jarfile "$AAB" | grep -E 'SHA1:|SHA256:' | tee "$GITHUB_WORKSPACE/out/SIGNING-CERT-FINGERPRINTS.txt"
+          printf '%s\n' "$SOURCE_REPO@$SOURCE_SHA" > "$GITHUB_WORKSPACE/out/SOURCE.txt"
+
+      - name: Upload signed AAB evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: portfolio-signed-android
+          path: out/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove temporary key
+        if: always()
+        run: rm -f "source/${{ inputs.app_dir }}/portfolio-release.jks"
