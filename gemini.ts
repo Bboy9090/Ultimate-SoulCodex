@@ -14,8 +14,9 @@ if (!hasReplitIntegration && !hasManualKey) {
   console.log("Gemini AI configured via", hasReplitIntegration ? "Replit AI integration" : "manual API key");
 }
 
-// Create Gemini client with Replit AI integration
-const ai = hasReplitIntegration 
+// Support both a provider-proxy integration and a direct Gemini API key.
+// Never instantiate a client for the placeholder/dummy key.
+const ai = hasReplitIntegration
   ? new GoogleGenAI({
       apiKey: apiKey!,
       httpOptions: {
@@ -23,19 +24,19 @@ const ai = hasReplitIntegration
         baseUrl: baseUrl,
       },
     })
-  : null;
+  : hasManualKey ? new GoogleGenAI({ apiKey: apiKey! }) : null;
 
 export function isGeminiAvailable() {
   return hasReplitIntegration || hasManualKey;
 }
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-3.1-flash-lite";
 
 export async function generateText({ model, prompt, temperature = 0.7 }: { model?: string; prompt: string; temperature?: number; }): Promise<string> {
   if (!isGeminiAvailable() || !ai) return "";
   try {
     const response = await ai.models.generateContent({
-      model: model || "gemini-2.5-flash",
+      model: model || DEFAULT_MODEL,
       contents: prompt,
       config: {
         temperature,
@@ -62,7 +63,7 @@ export async function* streamChat({ model, systemInstruction, history, message, 
 
   try {
     const stream = await ai.models.generateContentStream({
-      model: model || "gemini-2.5-flash",
+      model: model || DEFAULT_MODEL,
       contents,
       config: {
         systemInstruction,
