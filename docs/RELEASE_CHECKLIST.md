@@ -55,7 +55,7 @@ This checklist ensures every release meets the "No Illusion" standard: features 
 
 ### 6. Data Privacy
 
-- [ ] Privacy policy up-to-date (`/privacy` route)
+- [ ] Privacy policy up-to-date (`/privacy` route)\n- [ ] App Store Connect privacy receipt completed for the exact iOS candidate (`governance/release-audits/V4_1_APP_STORE_CONNECT_PRIVACY_RECEIPT.md`)
 - [ ] Terms of service up-to-date (`/terms` route)
 - [ ] User data encrypted at rest (if DATABASE_URL set)
 - [ ] No third-party tracking scripts (Google Analytics, Facebook Pixel, etc.)
