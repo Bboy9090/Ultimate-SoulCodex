@@ -14,17 +14,17 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one �
 This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
 
 Last verified pre-status-update checkpoint:
-- repository `main`: `ca879bc260e50750b9543b7ccc3bdefc89244289`
-- Latest exact-head Store Candidate source: `1211d9a5142445fe0fabd8609367501c31118a4b`
-- Store Candidate run: `42386563885` — PASS\n- Exact-head Account Sign-In run: `42386563910` — PASS\n- Exact-head iOS Billing Parity run: `42386563941` — PASS
+- repository `main`: `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
+- Latest exact-head Store Candidate source: `b1a2af702411a54ddc94da4ac8f89cfe4f927f8a`
+- Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
-  - Android: `4.1.0` / versionCode `4000015` / package `soulcodex.app`
+  - Android: `4.1.0` / versionCode `4000016` / package `soulcodex.app`
   - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
 - Latest qualified source artifacts:
-  - release-gate artifact ID: `13579505543`
-  - iOS qualification artifact ID: `13579820889`
-  - Android qualification artifact ID: `13578818837`
-  - Google Play production-handoff artifact ID: `13578888737`
+  - release-gate artifact ID: `13585158689`
+  - iOS qualification artifact ID: `13585159197`
+  - Android qualification artifact ID: `13585049471`
+  - Google Play production-handoff artifact ID: `13585631821`
 
 These artifacts qualify the exact source head above. They do not automatically replace the frozen store-upload authority described below.
 
@@ -139,8 +139,9 @@ Canonical store/legal packet:
 Current source qualification:
 - signed Android AAB build: PASS
 - signature verification: PASS
-- versionCode: `4000015`
-- exact-head Android artifact ID: `13578818837`
+- versionCode: `4000016`
+- exact-head Android artifact ID: `13585049471`
+- generated final release manifest check: PASS — no `READ_CONTACTS` or `WRITE_CONTACTS`
 
 Authenticated Play Console receipt as of 2026-11-07:
 - app: SOUL CODEX / `soulcodex.app`
@@ -152,10 +153,10 @@ Authenticated Play Console receipt as of 2026-11-07:
 - release date shown by Play Console: Oct 31, 2026 at 11:28 AM
 - distribution: 178 countries/regions
 - supported Android devices: 19,561
-- opted-in closed-test users: **1**
+- configured Alpha tester email-list users: **29** (`test lkist`)\n- opted-in closed-test users: **1**
 - Google production-access requirement shown in Console: at least **12 opted-in testers for at least 14 days**
 
-Therefore Google Play production access is currently **not eligible**. The concrete blocker is to reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access.
+Therefore Google Play production access is currently **not eligible**. The existing tester list is already large enough; the concrete blocker is opt-in conversion: reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access. The Play Console still serves uploaded versionCode `4000015`; qualified source versionCode `4000016` has not yet been uploaded.
 
 Publishing automation:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
