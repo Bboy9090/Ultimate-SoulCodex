@@ -48,7 +48,6 @@
   },
   "dependencies": {
     "@capacitor/android": "8.6.0",
-    "@capacitor/cli": "8.6.0",
     "@capacitor/contacts": "^1.0.1",
     "@capacitor/core": "8.6.0",
     "@capacitor/ios": "8.6.0",
@@ -150,6 +149,7 @@
     "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.6.0",
     "@replit/vite-plugin-cartographer": "^0.3.0",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
