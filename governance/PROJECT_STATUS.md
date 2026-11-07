@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-07  
 **Current Branch:** `main`  
-**Last verified pre-status-update main/runtime checkpoint:** `689ed8a22027086ba58566c0d4fd215640e85969`  
+**Last verified pre-status-update main/runtime checkpoint:** `ca879bc260e50750b9543b7ccc3bdefc89244289`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
 ## Current Authority Model
@@ -14,9 +14,9 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one �
 This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
 
 Last verified pre-status-update checkpoint:
-- repository `main`: `689ed8a22027086ba58566c0d4fd215640e85969`
-- Latest exact-head Store Candidate source: `4932a8699bd47a436222647f993aa87f8d80992a`
-- Store Candidate run: `42385459376` — PASS
+- repository `main`: `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- Latest exact-head Store Candidate source: `1211d9a5142445fe0fabd8609367501c31118a4b`
+- Store Candidate run: `42386563885` — PASS\n- Exact-head Account Sign-In run: `42386563910` — PASS\n- Exact-head iOS Billing Parity run: `42386563941` — PASS
 - Current source mobile identity:
   - Android: `4.1.0` / versionCode `4000015` / package `soulcodex.app`
   - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
@@ -38,12 +38,12 @@ Public production domain:
 Live service:
 - Railway project: `Soulcodex`
 - service: `soulcodex-recovery`
-- deployment: `b9b475bf-626c-44b2-af28-3da32d782da2`
-- deployed commit: `689ed8a22027086ba58566c0d4fd215640e85969`
+- deployment: `5e507077-b6e4-4d05-9dab-fe7b1841a21f`
+- deployed commit: `ca879bc260e50750b9543b7ccc3bdefc89244289`
 - deployment status: **SUCCESS**
 
 Runtime evidence:
-- `Release: 4.1.0 689ed8a22027086ba58566c0d4fd215640e85969 foundation-v4`
+- Railway deployment metadata confirms commit `ca879bc260e50750b9543b7ccc3bdefc89244289` on branch `main`
 - production environment
 - Postgres-backed application storage
 - Postgres session store
@@ -168,7 +168,7 @@ Historical Play Console evidence remains useful context only; it is not promoted
 
 ### Production runtime
 
-- Railway exact-main deployment parity: **PASS**
+- Railway exact-main deployment parity: **PASS** at `ca879bc260e50750b9543b7ccc3bdefc89244289`
 - production schema preflight: PASS
 - Postgres storage/session startup: PASS
 - live Compatibility API stale-backend defect: RESOLVED
@@ -196,7 +196,7 @@ Retired/superseded release issues:
 
 ## Release Decision
 
-At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `689ed8a22027086ba58566c0d4fd215640e85969`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `ca879bc260e50750b9543b7ccc3bdefc89244289`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
 The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
