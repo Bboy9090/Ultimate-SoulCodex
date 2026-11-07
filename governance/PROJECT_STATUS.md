@@ -109,7 +109,7 @@ Therefore:
 - Android production billing flag: **MUST REMAIN FALSE**
 - legacy umbrella native-billing flag: **MUST REMAIN FALSE**
 
-Historical Apple sandbox purchase evidence is not a PASS because server verification failed with `authentication_required` / HTTP 401. The repaired current build still requires real provider purchase/restore/lifecycle qualification.
+Historical Apple sandbox purchase evidence is not a PASS because server verification failed with `authentication_required` / HTTP 401. The repaired current build still requires real provider purchase/restore/lifecycle qualification.\n\nCurrent provider-catalog evidence:\n- Apple `Soul Codex+` subscription group exists, but both expected products (`app.soulcodex.plus.monthly.renewing` and `app.soulcodex.plus.annual.renewing`) are currently **Developer Rejected** in App Store Connect.\n- Google Play monthly (`soul_codex_plus_monthly` / base plan `monthly`) and annual (`soul_codex_plus_annual` / base plan `annual`) are **Active**; annual U.S. price is $59.99/year.\n- Catalog presence/status does not qualify purchase, restore, lifecycle, or server verification.
 
 ## App Store Status
 
@@ -161,9 +161,9 @@ Therefore Google Play production access is currently **not eligible**. The exist
 Publishing automation:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
 - automated Play production upload remains unavailable;
-- latest production-handoff artifact ID: `13578888737`.
+- latest production-handoff artifact ID: `13585631821`.
 
-This blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
+Play subscription catalog configuration is present and matches the repository contract: monthly base plan `monthly` and annual base plan `annual` are active; the annual U.S. price is $59.99/year.\n\nThis blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
 
 ## Release Gates
 
@@ -190,7 +190,7 @@ This blocks only automated publishing. Manual Play Console handling remains poss
 
 ### External / owner/provider gates still open
 
-- real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
+- Apple subscription catalog remediation from **Developer Rejected** to review-ready/active: OPEN\n- real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
 - real Google Play Billing purchase/restore/lifecycle qualification: OPEN
 - App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
 - fresh Google Play Console tester/track/production-access receipt: **CAPTURED 2026-11-07** — production remains blocked at 1/12 opted-in testers and the 14-day requirement
