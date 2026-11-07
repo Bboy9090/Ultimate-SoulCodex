@@ -2,7 +2,7 @@
 
 ## Product boundary
 
-Soul Codex 4.0.1 does not sell native premium access. Identity, Reading, Timeline, the educational Astrology Atlas, and the current Compatibility experience remain available without a purchase. A client screen, callback URL, profile flag, or locally edited value must never grant premium access.
+Soul Codex 4.1 keeps the Free experience available by default and exposes Soul Codex+ purchase surfaces only through provider-specific billing paths that are explicitly enabled and verifier/catalog ready. A client screen, callback URL, profile flag, or locally edited value must never grant premium access.
 
 The paid product is Soul Codex+, offered as monthly and annual access only when recurring value is live and qualified. Recurring value includes continuously refreshed Daily synthesis, advanced transit/timing intelligence, deeper Connections, Timeline history, multi-system synthesis, and ongoing premium interpretation surfaces. A static natal report alone does not justify a subscription.
 
@@ -61,8 +61,8 @@ Current phase:
 - Durable billing subjects, immutable provider transaction events, entitlement grants, and redacted verification receipts are the intended authorization source.
 - Signed Stripe subscription lifecycle verification may populate the ledger only for configured monthly/annual price IDs.
 - Legacy one-time Stripe checkout remains retired.
-- Native StoreKit 2 and Google Play Billing purchase initiation and restore are implemented behind disabled platform flags. They are not production-enabled until provider sandbox/TestFlight/internal-test purchase, restore, lifecycle, reinstall/second-device, and server-verification qualification passes.
-- Web monthly/annual checkout plumbing exists behind `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED=false` by default.
+- Native StoreKit 2 and Google Play Billing purchase initiation and restore are implemented behind platform-specific activation flags. Production activation must remain off for a provider until that provider's current-build sandbox/TestFlight/internal-test purchase, restore, lifecycle, reinstall/second-device, and server-verification qualification passes.
+- Web monthly/annual checkout is feature-gated by `SOUL_CODEX_PLUS_WEB_CHECKOUT_ENABLED`; runtime availability still requires authenticated browser access, configured recurring Stripe prices, webhook verification, and durable entitlement readiness.
 - Web checkout requires an authenticated session and never accepts profile IDs as purchase credentials.
 - Browser sign-in is not yet activated in the canonical web experience, so the web checkout flag must remain off in production until browser authentication is qualified.
 - Native app origins are rejected from the web digital-goods checkout path.
