@@ -187,7 +187,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Static store-review legal/support host: `bboy9090.github.io/Ultimate-SoulCodex` (GitHub Pages, HTTPS verified)
 - Android signed AAB: built and `jarsigner -verify` passed
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
-- Android manifest native permission surface: `android.permission.INTERNET` only
+- Android app-owned manifest requests `android.permission.INTERNET`; merged store builds also include framework/billing permissions such as network state, Play Billing/license, and an app-scoped dynamic-receiver permission. `READ_CONTACTS` and `WRITE_CONTACTS` are explicitly removed from the merged manifest; Android contact import falls back to manual entry.
 - iOS simulator Release and generic-device archive qualification: passed
 - App Store listing: Soul Codex, numeric ID `6764221944`
 - Google Play developer account: active at `harebugz23@gmail.com`
