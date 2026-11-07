@@ -1,9 +1,7 @@
 import { Link } from "wouter";
 import Navigation from "../components/navigation";
-import { tierAllowsCapability } from "@shared/product-access";
 import FeatureState from "../components/FeatureState";
 import { useActiveProfile } from "../hooks/useActiveProfile";
-import { useProductAccess } from "../hooks/useProductAccess";
 import {
   ArrowRight,
   Heart,
@@ -71,8 +69,6 @@ function lifePath(profile: any) {
 
 export default function CompatibilityHubPage() {
   const { profile, isLoading, isCorrupted, reason } = useActiveProfile();
-  const { tier } = useProductAccess();
-  const advancedConnections = tierAllowsCapability(tier, "advanced_connections");
 
   if (isLoading) {
     return (
