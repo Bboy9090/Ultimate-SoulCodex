@@ -118,8 +118,8 @@ jobs:
             exit 1
           fi
 
-      - name: Audit production dependencies for high-severity vulnerabilities
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit production dependencies for moderate-or-higher vulnerabilities
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Foundation truth and privacy invariants
         run: node scripts/verify-foundation-web-rc.mjs
