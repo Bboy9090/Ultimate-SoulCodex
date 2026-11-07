@@ -10,7 +10,8 @@ const privacyUrl = new URL("../client/src/pages/PrivacyPage.tsx", import.meta.ur
 
 test("Connections uses explicit multi-contact selection and local-only storage", async () => {
   const [source, picker] = await Promise.all([readFile(connectionsUrl, "utf8"), readFile(pickerUrl, "utf8")]);
-  assert.match(picker, /Contacts\.pickContact\(\)/);
+  assert.match(picker, /platform === "android"[\s\S]*status: "unsupported"/);
+  assert.match(picker, /platform === "ios"[\s\S]*Contacts\.pickContact\(\)/);
   assert.match(picker, /\["name", "tel", "email"\]/);
   assert.match(picker, /multiple: true/);
   assert.doesNotMatch(picker, /Contacts\.find\(/);
