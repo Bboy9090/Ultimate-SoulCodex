@@ -154,9 +154,17 @@ Authenticated Soul Codex subscription configuration currently shows:
   - duration: 1 year
   - status: **Developer Rejected**
 
-The product identifiers match the repository billing contract, but the current Apple catalog is not review-ready/active. Apple catalog readiness is therefore a blocking condition before a new StoreKit qualification run can be treated as release-complete.
+The product identifiers match the repository billing contract. Both product pages include localization, availability, and review screenshots, but their current App Store Connect status is **Developer Rejected** with `Add for Review` available.
 
-The iOS checkpoint `Catalog monthly + annual` remains **INCONCLUSIVE** rather than PASS because current product status is Developer Rejected and in-app StoreKit resolution has not been exercised on a current physical/TestFlight build.
+App Review history explains the status lineage:
+- the Oct 28 four-item submission contained iOS 4.1, both subscriptions, and the Soul Codex+ subscription group;
+- that submission was **Removed** after Apple reported Guideline 2.1(a) / App Completeness because the app crashed on launch on an iPad Air (5th generation);
+- the subscription items in that submission are shown as `Removed`; the review message is about the app crash, not a subscription-metadata rejection;
+- the Oct 31 submission contained only iOS 4.1 build `4000014` and is **Review Completed / Approved**.
+
+Therefore `Developer Rejected` must not be described as Apple rejecting the subscription metadata. The current release condition is that the two subscription products are not part of the approved app-only submission and still need to be added/submitted for review when native billing qualification is ready.
+
+The iOS checkpoint `Catalog monthly + annual` remains **INCONCLUSIVE** rather than PASS because the products are not currently approved/review-active and in-app StoreKit resolution has not been exercised on a current physical/TestFlight build.
 
 ### Google Play
 
