@@ -1,8 +1,8 @@
 # Soul Codex 4.1 Native Billing Qualification Receipt
 
 Qualification transaction SHA: **NOT FROZEN — no dedicated current-build qualification run has been completed**  
-App version/build: **4.1.0 / Apple Xcode Cloud build 324**  
-Source project build setting: **4000011**  
+App version/build: **4.1.0 / approved App Store build 4000014**  
+Source project iOS build setting: **4000014**  
 Test window: **2026-10-13 through 2026-10-23 — release/configuration readiness plus partial historical provider evidence; current-build provider qualification remains pending**
 
 ## Configuration safety evidence
@@ -35,7 +35,7 @@ Annual product: `app.soulcodex.plus.annual.renewing`
 
 | Checkpoint | Result | Evidence / redacted transaction reference |
 |---|---|---|
-| Catalog monthly + annual | INCONCLUSIVE | |
+| Catalog monthly + annual | INCONCLUSIVE | App Store Connect 2026-11-07: expected group/products exist; monthly + annual IDs match source, but both currently show `Developer Rejected` after the earlier four-item submission was removed. No current-device StoreKit catalog resolution yet. |
 | Monthly purchase + server verification | INCONCLUSIVE | |
 | Annual purchase + server verification | INCONCLUSIVE | Historical TestFlight sandbox attempt completed at Apple but failed Soul Codex server verification with `authentication_required` / HTTP 401; current repaired build still requires retest. |
 | Failed/cancelled purchase grants nothing | INCONCLUSIVE | |
@@ -57,7 +57,7 @@ Annual product: `app.soulcodex.plus.annual.renewing`
 
 Device/model:  
 OS/API:  
-Play test-track/build identity:  
+Play test-track/build identity: Active closed test `4.1.0 (4000015)`; qualified source candidate `4000016` not yet uploaded  
 Soul Codex test-account alias:  
 Google Play test alias:  
 Monthly product: `soul_codex_plus_monthly`  
@@ -65,7 +65,7 @@ Annual product: `soul_codex_plus_annual`
 
 | Checkpoint | Result | Evidence / redacted purchase-token reference |
 |---|---|---|
-| Catalog monthly + annual | INCONCLUSIVE | |
+| Catalog monthly + annual | INCONCLUSIVE | Play Console 2026-11-07: `soul_codex_plus_monthly` base plan `monthly` and `soul_codex_plus_annual` base plan `annual` are Active; annual U.S. price $59.99/year. In-app Play Billing catalog resolution remains unexercised. |
 | Monthly purchase + server verification | INCONCLUSIVE | |
 | Annual purchase + server verification | INCONCLUSIVE | |
 | Failed/cancelled purchase grants nothing | INCONCLUSIVE | |
