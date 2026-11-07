@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-07  
 **Current Branch:** `main`  
-**Last verified pre-status-update main/runtime checkpoint:** `689ed8a22027086ba58566c0d4fd215640e85969`  
+**Last verified pre-status-update main/runtime checkpoint:** `ca879bc260e50750b9543b7ccc3bdefc89244289`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
 ## Current Authority Model
@@ -14,9 +14,9 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one �
 This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
 
 Last verified pre-status-update checkpoint:
-- repository `main`: `689ed8a22027086ba58566c0d4fd215640e85969`
-- Latest exact-head Store Candidate source: `4932a8699bd47a436222647f993aa87f8d80992a`
-- Store Candidate run: `42385459376` — PASS
+- repository `main`: `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- Latest exact-head Store Candidate source: `1211d9a5142445fe0fabd8609367501c31118a4b`
+- Store Candidate run: `42386563885` — PASS\n- Exact-head Account Sign-In run: `42386563910` — PASS\n- Exact-head iOS Billing Parity run: `42386563941` — PASS
 - Current source mobile identity:
   - Android: `4.1.0` / versionCode `4000015` / package `soulcodex.app`
   - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
@@ -38,12 +38,12 @@ Public production domain:
 Live service:
 - Railway project: `Soulcodex`
 - service: `soulcodex-recovery`
-- deployment: `b9b475bf-626c-44b2-af28-3da32d782da2`
-- deployed commit: `689ed8a22027086ba58566c0d4fd215640e85969`
+- deployment: `5e507077-b6e4-4d05-9dab-fe7b1841a21f`
+- deployed commit: `ca879bc260e50750b9543b7ccc3bdefc89244289`
 - deployment status: **SUCCESS**
 
 Runtime evidence:
-- `Release: 4.1.0 689ed8a22027086ba58566c0d4fd215640e85969 foundation-v4`
+- Railway deployment metadata confirms commit `ca879bc260e50750b9543b7ccc3bdefc89244289` on branch `main`
 - production environment
 - Postgres-backed application storage
 - Postgres session store
@@ -113,18 +113,20 @@ Historical Apple sandbox purchase evidence is not a PASS because server verifica
 
 ## App Store Status
 
-Public evidence as of 2026-11-07:
-- Soul Codex 4.1 is publicly available on Apple’s store at App Store ID `6764221944`.
-- Public storefront evidence does **not** expose an internal build number or source SHA, so public 4.1 availability is not proof of current-main binary parity.
-- The exact U.S. listing still shows:
-  - App Privacy: `Data Not Collected`
-  - age rating: `9+`
-  - older marketing copy
-  - Railway privacy-policy URL rather than the current canonical GitHub Pages URL
-- another regional Apple storefront result surfaced linked-data categories, so public privacy rendering is inconsistent across storefront evidence.
+Authenticated App Store Connect evidence as of 2026-11-07:
+- Soul Codex Apple ID: `6764221944`
+- bundle ID: `app.soulcodex.ios`
+- iOS 4.1 status: **Ready for Distribution**
+- selected App Store Connect build: `4000014` / version `4.1.0`
+- the private-console description is the newer evidence/reflection-focused copy and includes the Standard Apple EULA link
+- primary category: Lifestyle; secondary category: Entertainment
+- the current Support URL still points to `https://soulcodex.up.railway.app/support` rather than the canonical GitHub Pages support URL
+- the App Store Server Notifications sandbox URL is configured to the Soul Codex Railway billing-notifications endpoint
+
+Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still shows `Data Not Collected` and `9+`, while other regional storefront evidence exposes linked-data categories. The private App Privacy page did not expose detailed category answers through the current read-only console capture, so privacy/age reconciliation is **not** claimed complete.
 
 Current external Apple metadata gate:
-- issue #346 — App Store privacy, age, description, and privacy-URL reconciliation
+- issue #346 — App Store privacy, age, support/privacy URL, and public-store reconciliation
 
 Canonical store/legal packet:
 - `docs/STORE_SUBMISSION_PACKET.md`
@@ -140,16 +142,27 @@ Current source qualification:
 - versionCode: `4000015`
 - exact-head Android artifact ID: `13578818837`
 
+Authenticated Play Console receipt as of 2026-11-07:
+- app: SOUL CODEX / `soulcodex.app`
+- Production: **Inactive**
+- Closed testing: **Active**
+- Internal testing: **Active**
+- Alpha closed release: `Soul Codex 4.1.0 (4000015) Closed Beta`
+- release state: Available to selected testers
+- release date shown by Play Console: Oct 31, 2026 at 11:28 AM
+- distribution: 178 countries/regions
+- supported Android devices: 19,561
+- opted-in closed-test users: **1**
+- Google production-access requirement shown in Console: at least **12 opted-in testers for at least 14 days**
+
+Therefore Google Play production access is currently **not eligible**. The concrete blocker is to reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access.
+
 Publishing automation:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
 - automated Play production upload remains unavailable;
 - latest production-handoff artifact ID: `13578888737`.
 
-This blocks only automated publishing. Manual Play Console handling remains possible.
-
-Do **not** claim Google Play production publication or current tester-count eligibility without a fresh Play Console receipt.
-
-Historical Play Console evidence remains useful context only; it is not promoted to a current Nov 7 claim.
+This blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
 
 ## Release Gates
 
@@ -168,7 +181,7 @@ Historical Play Console evidence remains useful context only; it is not promoted
 
 ### Production runtime
 
-- Railway exact-main deployment parity: **PASS**
+- Railway exact-main deployment parity: **PASS** at `ca879bc260e50750b9543b7ccc3bdefc89244289`
 - production schema preflight: PASS
 - Postgres storage/session startup: PASS
 - live Compatibility API stale-backend defect: RESOLVED
@@ -179,7 +192,7 @@ Historical Play Console evidence remains useful context only; it is not promoted
 - real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
 - real Google Play Billing purchase/restore/lifecycle qualification: OPEN
 - App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
-- fresh Google Play Console tester/track/production-access receipt: OPEN
+- fresh Google Play Console tester/track/production-access receipt: **CAPTURED 2026-11-07** — production remains blocked at 1/12 opted-in testers and the 14-day requirement
 - final current-build store screenshots / physical-device evidence where required: OPEN
 
 ## Active Release Tracking
@@ -196,7 +209,7 @@ Retired/superseded release issues:
 
 ## Release Decision
 
-At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `689ed8a22027086ba58566c0d4fd215640e85969`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `ca879bc260e50750b9543b7ccc3bdefc89244289`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
 The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
