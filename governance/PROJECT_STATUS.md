@@ -123,7 +123,9 @@ Authenticated App Store Connect evidence as of 2026-11-07:
 - the current Support URL still points to `https://soulcodex.up.railway.app/support` rather than the canonical GitHub Pages support URL
 - the App Store Server Notifications sandbox URL is configured to the Soul Codex Railway billing-notifications endpoint
 
-Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still shows `Data Not Collected` and `9+`, while other regional storefront evidence exposes linked-data categories. The private App Privacy page did not expose detailed category answers through the current read-only console capture, so privacy/age reconciliation is **not** claimed complete.
+Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still renders `Data Not Collected`, while authenticated App Store Connect currently declares **Data Linked to You** with 10 data types: Name, Email Address, Precise Location, Coarse Location, Purchase History, User ID, Sensitive Info, Other User Content, Other Diagnostic Data, and Other Data Types. The private Privacy Policy URL remains `https://soulcodex.up.railway.app/privacy`; App Store Connect states that changing this URL requires a new app version.
+
+The private age-rating configuration is current and matches the U.S. public 9+ rating: 9+ in 172 countries/regions, 12+ in Vietnam and Brazil, and All in Korea, Republic of. Therefore age is not a stale-store mismatch; any move toward the product's earlier 13+ guidance is a deliberate questionnaire/product decision. Privacy public-rendering and privacy-URL reconciliation remain open.
 
 Current external Apple metadata gate:
 - issue #346 — App Store privacy, age, support/privacy URL, and public-store reconciliation
