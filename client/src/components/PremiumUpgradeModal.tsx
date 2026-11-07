@@ -41,7 +41,7 @@ export function PremiumUpgradeModal({
           <div className="text-center">
             <div className="font-serif text-2xl font-semibold">Soul Codex+</div>
             <p className="text-sm text-[var(--sc-stone)]">
-              Monthly and annual purchasing remains disabled until the durable entitlement, restore, revocation, and store-billing gates pass.
+              Soul Codex+ uses verified monthly or annual subscription paths only. Purchase availability is determined by the qualified billing surface for this platform and account.
             </p>
           </div>
 
@@ -61,9 +61,9 @@ export function PremiumUpgradeModal({
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-[var(--sc-gold)]" />
               <div>
-                <h3 className="text-sm font-semibold">Purchase path not active yet</h3>
+                <h3 className="text-sm font-semibold">Verified subscription path only</h3>
                 <p className="mt-1 text-xs leading-relaxed text-[var(--sc-stone)]">
-                  Soul Codex will not charge for the retired one-time premium product or grant Plus from a local flag. Monthly and annual access will appear here only after verified billing truth is live.
+                  The retired one-time premium product and local premium flags cannot grant Soul Codex+. Monthly or annual access is valid only when the active platform billing flow returns signed provider evidence and the server writes a durable entitlement.
                 </p>
               </div>
             </div>

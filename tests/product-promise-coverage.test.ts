@@ -85,5 +85,7 @@ test("legacy one-time premium product cannot be sold", () => {
   assert.doesNotMatch(billing, /mode:\s*"payment"/);
   assert.doesNotMatch(modal, /One-time premium access/i);
   assert.doesNotMatch(modal, /Lifetime access/i);
-  assert.match(modal, /Purchase path not active yet/);
+  assert.match(modal, /Verified subscription path only/);
+  assert.match(modal, /signed provider evidence/);
+  assert.doesNotMatch(modal, /purchasing remains disabled/i);
 });
