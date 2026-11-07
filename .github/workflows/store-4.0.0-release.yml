@@ -85,7 +85,7 @@ jobs:
           SHA=${CANDIDATE_SHA}
           Android versionName=4.1.0
           Android applicationId=soulcodex.app
-          Android versionCode=4000015
+          Android versionCode=4000016
           iOS marketingVersion=4.1.0
           iOS bundleId=app.soulcodex.ios
           iOS build=4000014
@@ -183,6 +183,22 @@ jobs:
         if: steps.signing.outputs.available != 'true'
         working-directory: android
         run: ./gradlew --no-daemon bundleRelease
+      - name: Reject broad Android contacts permissions in merged release manifest
+        shell: bash
+        run: |
+          mapfile -t MANIFESTS < <(find android/app/build/intermediates -type f -name AndroidManifest.xml -path '*release*' -print)
+          if [[ "${#MANIFESTS[@]}" -eq 0 ]]; then
+            echo "::error title=Android manifest evidence missing::No release merged/packaged AndroidManifest.xml was found after bundleRelease."
+            exit 2
+          fi
+          for manifest in "${MANIFESTS[@]}"; do
+            if grep -Eq 'android\.permission\.(READ_CONTACTS|WRITE_CONTACTS)' "$manifest"; then
+              echo "::error title=Broad contacts permission detected::Final Android release manifest still contains a contacts permission: $manifest"
+              exit 2
+            fi
+          done
+          echo "Final Android release manifest contains no READ_CONTACTS or WRITE_CONTACTS permission."
+
       - name: Build debug APK smoke artifact
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
@@ -192,7 +208,7 @@ jobs:
           {
             echo "SHA=${CANDIDATE_SHA}"
             echo "versionName=4.1.0"
-            echo "versionCode=4000015"
+            echo "versionCode=4000016"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
           } > android-store-state.txt
