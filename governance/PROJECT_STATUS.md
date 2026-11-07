@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-07  
 **Current Branch:** `main`  
-**Last verified pre-status-update main/runtime checkpoint:** `ca879bc260e50750b9543b7ccc3bdefc89244289`  
+**Last verified pre-status-update main/runtime checkpoint:** `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
 ## Current Authority Model
@@ -38,12 +38,12 @@ Public production domain:
 Live service:
 - Railway project: `Soulcodex`
 - service: `soulcodex-recovery`
-- deployment: `5e507077-b6e4-4d05-9dab-fe7b1841a21f`
-- deployed commit: `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- deployment: `be75f1db-f673-4181-8726-2a511ed72109`
+- deployed commit: `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
 - deployment status: **SUCCESS**
 
 Runtime evidence:
-- Railway deployment metadata confirms commit `ca879bc260e50750b9543b7ccc3bdefc89244289` on branch `main`
+- Railway deployment metadata confirms commit `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b` on branch `main`
 - production environment
 - Postgres-backed application storage
 - Postgres session store
@@ -182,7 +182,7 @@ This blocks only automated publishing. Manual Play Console handling remains poss
 
 ### Production runtime
 
-- Railway exact-main deployment parity: **PASS** at `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- Railway exact-main deployment parity: **PASS** at `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
 - production schema preflight: PASS
 - Postgres storage/session startup: PASS
 - live Compatibility API stale-backend defect: RESOLVED
@@ -210,7 +210,7 @@ Retired/superseded release issues:
 
 ## Release Decision
 
-At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `ca879bc260e50750b9543b7ccc3bdefc89244289`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
 The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
