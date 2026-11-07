@@ -1,182 +1,209 @@
 # Soul Codex — Release Certification Status
 
-**Last Updated:** 2026-10-24
-**Current Branch:** `main`
-**Release-authority main snapshot:** `8ee3757df895abe806c3fa1a2ee048d4fc84e392`
-**Current Milestone:** Soul Codex 4.1.0 split-store launch / provider qualification
+**Last Updated:** 2026-11-07  
+**Current Branch:** `main`  
+**Last verified pre-status-update main/runtime checkpoint:** `689ed8a22027086ba58566c0d4fd215640e85969`  
+**Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
----
+## Current Authority Model
 
-## Gate Status
+Soul Codex now uses separate evidence classes. Do not collapse these into one “release SHA.”
 
-| Gate | Status | Evidence / remaining boundary |
-|---|---|---|
-| Gate 1 | 🟢 **PASS** | Canonical evidence semantics, fail-closed synthesis, differentiation, Galactic Code trust boundaries, current entitlement projection, and profile UI integration are merged and regression-covered. |
-| Gate 2 | 🟡 **NATIVE PACKAGING QUALIFIED / DEVICE-PROVIDER EVIDENCE OPEN** | Android 4.1.0 signed AAB is built and signature-verified; iOS 4.1.0 Simulator Release and generic-device archive qualification pass. Current-build physical-device purchase/restore/lifecycle evidence remains incomplete. |
-| Gate 3 | 🟢 **PASS** | No-silent-upgrade and entitlement downgrade boundaries remain regression-covered. |
-| Gate 4 | 🟢 **PASS** | Persistent profile, offline restart, real PostgreSQL account deletion, non-resurrection, and Galactic persistence deletion lifecycle are covered. |
-| Gate 5 | 🟡 **STORE CANDIDATE QUALIFIED / EXTERNAL LAUNCH GATES OPEN** | Exact-head Store Candidate, security, accessibility, Xcode parity, iOS billing parity, signed Android AAB, and iOS archive qualification are green. Store-owner metadata, current Xcode Cloud final-build receipt, real provider transactions, Play production eligibility, and final store submission remain external gates. |
+### 1. Current source authority
 
----
+This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
 
-## Current Release Authority
+Last verified pre-status-update checkpoint:
+- repository `main`: `689ed8a22027086ba58566c0d4fd215640e85969`
+- Latest exact-head Store Candidate source: `4932a8699bd47a436222647f993aa87f8d80992a`
+- Store Candidate run: `42385459376` — PASS
+- Current source mobile identity:
+  - Android: `4.1.0` / versionCode `4000015` / package `soulcodex.app`
+  - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
+- Latest qualified source artifacts:
+  - release-gate artifact ID: `13579505543`
+  - iOS qualification artifact ID: `13579820889`
+  - Android qualification artifact ID: `13578818837`
+  - Google Play production-handoff artifact ID: `13578888737`
 
-Release-authority merged-main snapshot:
+These artifacts qualify the exact source head above. They do not automatically replace the frozen store-upload authority described below.
 
-`8ee3757df895abe806c3fa1a2ee048d4fc84e392`
+### 2. Live Railway production authority
 
-Latest frozen exact-head binary qualification source:
+The following is the last verified pre-status-update runtime checkpoint. A later docs-only merge may advance the runtime release SHA without changing application behavior; verify Railway again before using this SHA as a current deployment claim.
 
-`00c38dcc540ab730830462fad8c681eb84fdbc87`
+Public production domain:
+- `https://soulcodex.up.railway.app`
 
-At the authority freeze, the merged main tree was file-identical to that qualified source head. Later documentation/test-only merges do not automatically replace binary release authority; a new signed/native artifact receipt must do that explicitly.
+Live service:
+- Railway project: `Soulcodex`
+- service: `soulcodex-recovery`
+- deployment: `b9b475bf-626c-44b2-af28-3da32d782da2`
+- deployed commit: `689ed8a22027086ba58566c0d4fd215640e85969`
+- deployment status: **SUCCESS**
 
-Canonical current receipt:
+Runtime evidence:
+- `Release: 4.1.0 689ed8a22027086ba58566c0d4fd215640e85969 foundation-v4`
+- production environment
+- Postgres-backed application storage
+- Postgres session store
+- schema preflight ready
+- `/health` registered
+- `/ready` registered
+- Gemini provider configured
 
-`governance/release-audits/V4_1_CURRENT_RELEASE_AUTHORITY_2026-10-24.md`
+The older Railway `soulcodex` service is rollback-only and does not own the public production domain.
 
-### Exact-head qualification
+### 3. Frozen binary/store-upload authority
 
-The qualified source head passed:
+The historical frozen binary authority remains:
 
-- Accessibility Device Acceptance Gate
-- Diamond Way Synthesis Gate
-- Device Security Data Integrity Gate
-- Xcode Cloud Bootstrap Parity
-- iOS Billing Qualification Parity
-- Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.0
-- Vercel
+- `governance/release-audits/V4_1_CURRENT_RELEASE_AUTHORITY_2026-10-24.md`
 
-Store Candidate workflow run: `40156358212`.
+Do **not** rewrite that receipt to a newer SHA merely because `main`, Railway, or source qualification advanced. A new frozen store-upload authority requires a new explicit artifact/submission receipt.
 
----
+## Current 4.1 Product Boundary
 
-## Current Native Candidates
+The Free → Plus boundary is enforced across the current app architecture, including:
 
-### Android
+- Identity/profile surfaces
+- Systems Details
+- Timeline
+- Compatibility/Friends
+- Aureon/Soul Guide response depth
+- Quick / Standard / Deep Dive reading modes
+- online and offline Clarity reading construction
+- local/offline profile generation and repair
+- stored verification
+- server-generated biography/archetype/guidance
+- owned-profile API responses
+- Ultimate Codex synthesis
+- public-share projection
+- PDF premium authority
 
-- Application ID: `soulcodex.app`
-- Namespace: `app.soulcodex.main`
-- Version: `4.1.0`
-- Version code: `4000012`
-- Signed AAB: **PASS**
-- `jarsigner -verify`: **PASS**
-- AAB SHA-256: `64d609cf7311c614af4f777cb258b7b8bc6753fd4635d8013286f9de8a795076`
-- GitHub Actions artifact ID: `12584354857`
-- Debug APK smoke build: **PASS**
-- Automated production publishing: **not attempted**
-- Google Play service-account publishing credential in qualifying run: **not configured**
+Current core rule:
+- accuracy, evidence, uncertainty, missing-data honesty, verified natal geometry, and verified Human Design core remain Free;
+- qualified deeper interpretation and paid systems use the shared capability registry;
+- planned capabilities are not sold or treated as live gates.
 
-Latest separately recorded Play Console state from 2026-10-23:
+Current capability highlights:
+- Free/live: core profile, Big Three, date numerology, evidence provenance, Diamond closure, basic Connections/Compatibility, verified full natal geometry, verified HD Type/Strategy/Authority/Profile
+- Plus/live: interpretation depth, full-name numerology, advanced Daily, cross-system synthesis, premium exports
+- Plus/planned: deeper HD definition/centers/channels/gates, advanced transits, timeline history, advanced Connections, premium tarot
 
-- Closed testing track Alpha has 4.1.0 / 4000012
-- tester list contains 25 addresses
-- dashboard recorded 0 opted-in testers
-- production access remains blocked until Google’s tester-duration eligibility requirement is satisfied
+## Billing and Entitlement Status
 
-That Console state is external and must be refreshed before any production-access claim.
+Architecture:
+- provider-signed evidence is required;
+- server verification precedes durable entitlement;
+- local flags and retired one-time premium state cannot grant Plus;
+- web/native purchase surfaces remain feature-gated and fail closed when configuration/provider evidence is unavailable.
 
-### iOS
+Provider qualification remains **INCONCLUSIVE**.
 
-- Bundle ID: `app.soulcodex.ios`
-- Version: `4.1.0`
-- Source project build: `4000011`
-- Simulator Release: **PASS**
-- Generic-device unsigned archive qualification: **PASS**
-- GitHub Actions qualification artifact ID: `12585215434`
-- Signed App Store upload: **delegated to Xcode Cloud after main merge**
+Authoritative receipt:
+- `governance/release-audits/V4_1_NATIVE_BILLING_QUALIFICATION_RECEIPT.md`
 
-Historical Apple-managed Xcode Cloud build 324 was produced from earlier main `805c4b30247283b34f3d22da54038e2fc612e98c`. It proves pipeline capability but is not the final current-build release authority.
+Therefore:
+- iOS production billing flag: **MUST REMAIN FALSE**
+- Android production billing flag: **MUST REMAIN FALSE**
+- legacy umbrella native-billing flag: **MUST REMAIN FALSE**
 
-A new Apple-managed final-build receipt tied to the current release tree is still required.
+Historical Apple sandbox purchase evidence is not a PASS because server verification failed with `authentication_required` / HTTP 401. The repaired current build still requires real provider purchase/restore/lifecycle qualification.
 
----
+## App Store Status
 
-## Billing / Entitlement State
+Public evidence as of 2026-11-07:
+- Soul Codex 4.1 is publicly available on Apple’s store at App Store ID `6764221944`.
+- Public storefront evidence does **not** expose an internal build number or source SHA, so public 4.1 availability is not proof of current-main binary parity.
+- The exact U.S. listing still shows:
+  - App Privacy: `Data Not Collected`
+  - age rating: `9+`
+  - older marketing copy
+  - Railway privacy-policy URL rather than the current canonical GitHub Pages URL
+- another regional Apple storefront result surfaced linked-data categories, so public privacy rendering is inconsistent across storefront evidence.
 
-Code, server, archive, and entitlement boundaries are hardened. Real provider qualification remains separate.
+Current external Apple metadata gate:
+- issue #346 — App Store privacy, age, description, and privacy-URL reconciliation
 
-- Free/Plus projection: **server-enforced**
-- entitlement downgrade/expiry/revocation replay: **regression-covered**
-- iOS StoreKit current-build purchase/restore/lifecycle: **INCONCLUSIVE**
-- Google Play Billing current-build purchase/restore/lifecycle: **INCONCLUSIVE**
-- native production billing flags: **must remain disabled until provider qualification passes**
-- anonymous/free fallback: **safe default**
+Canonical store/legal packet:
+- `docs/STORE_SUBMISSION_PACKET.md`
+- Privacy: `https://bboy9090.github.io/Ultimate-SoulCodex/privacy/`
+- Support: `https://bboy9090.github.io/Ultimate-SoulCodex/support/`
+- Account deletion: `https://bboy9090.github.io/Ultimate-SoulCodex/account-deletion/`
 
-Do not treat `iOS Billing Qualification Parity` as proof of a real StoreKit transaction. It is code/config/archive qualification.
+## Google Play Status
 
----
+Current source qualification:
+- signed Android AAB build: PASS
+- signature verification: PASS
+- versionCode: `4000015`
+- exact-head Android artifact ID: `13578818837`
 
-## Consumer Experience Now Integrated
+Publishing automation:
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
+- automated Play production upload remains unavailable;
+- latest production-handoff artifact ID: `13578888737`.
 
-The current 4.1.0 product includes:
+This blocks only automated publishing. Manual Play Console handling remains possible.
 
-- evidence-aware profile synthesis
-- verified/fail-closed Big Three handling
-- governed numerology
-- governed Human Design core
-- Galactic Code server-owned synthesis
-- secure Galactic persistence/replay
-- Free concise Galactic brief
-- capability-gated Soul Codex+ Galactic depth
-- profile-owned compatibility and connections
-- Timeline/Daily qualification boundaries
-- premium PDF export gate
-- native subscription infrastructure with server-verified entitlement design
+Do **not** claim Google Play production publication or current tester-count eligibility without a fresh Play Console receipt.
 
-The current consumer surface has passed real-browser, accessibility, security, and production-build gates on recent exact heads.
+Historical Play Console evidence remains useful context only; it is not promoted to a current Nov 7 claim.
 
----
+## Release Gates
 
-## Required Before Public Native Release Claims
+### Current source / application
 
-1. Verify the final Railway production deployment identity and `/health` SHA/API contract.
-2. Produce and record the final Apple-managed Xcode Cloud build for the current release tree.
-3. Run physical-device current-build StoreKit purchase, restore, relaunch, reinstall, second-device, expiry/cancellation, and refund/revocation tests.
-4. Run equivalent Google Play Billing qualification through the active test track.
-5. Refresh Play Console tester opt-in state and satisfy production-access eligibility.
-6. Reconcile App Store Connect privacy metadata and age-rating answers with the exact 4.1.0 behavior; tracked in #346.
-7. Capture final store screenshots from actual native builds.
-8. Preserve final App Store Connect and Play Console submission/processing receipts.
-9. Only then claim store submission, approval, or public deployment at the corresponding evidence level.
+- exact-head build/typecheck: PASS
+- qualified astrology and differentiation corpus: PASS
+- privacy/security/data-integrity gates: PASS
+- Accessibility Device Acceptance: PASS
+- Diamond Way synthesis: PASS
+- Account Sign-In qualification: PASS on the current release line
+- Xcode bootstrap/archive qualification: PASS on qualified heads
+- Personal Chart Browser Acceptance: PASS after pinning the Playwright lane to Ubuntu 24.04
+- signed Android AAB qualification: PASS
+- iOS simulator/archive qualification: PASS
 
----
+### Production runtime
 
-## Validation Classification
+- Railway exact-main deployment parity: **PASS**
+- production schema preflight: PASS
+- Postgres storage/session startup: PASS
+- live Compatibility API stale-backend defect: RESOLVED
+  - issue #213 closed after Railway proxy evidence showed `GET /api/compatibility/ping` = HTTP 200
 
-A lower validation class never implies a higher one:
+### External / owner/provider gates still open
 
-- **Implemented** = code path exists.
-- **Integrated** = callers and dependencies are connected.
-- **CI / simulator qualified** = reproduced under an exact named build/workflow.
-- **Signed artifact qualified** = signed binary exists and its identity/signature is verified.
-- **Physical-device qualified** = reproduced on identified hardware.
-- **Provider qualified** = real store/payment provider transaction and lifecycle evidence passes.
-- **Store accepted** = App Store Connect or Play Console accepted the intended artifact.
-- **Publicly released** = the store reports the release publicly available.
+- real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
+- real Google Play Billing purchase/restore/lifecycle qualification: OPEN
+- App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
+- fresh Google Play Console tester/track/production-access receipt: OPEN
+- final current-build store screenshots / physical-device evidence where required: OPEN
 
-These classes must not be silently promoted into one another.
+## Active Release Tracking
 
----
+Primary release tracker:
+- issue #202 — Soul Codex 4.1 split-store launch: current release authority and external receipts
 
-## Current External Issues
+Current App Store metadata tracker:
+- issue #346
 
-- #202 — split-store launch / exact current release and external receipts
-- #346 — App Store privacy metadata reconciliation
-- #299 — historical 4.0.1 Google Play closed-test authority; superseded for current artifact identity by the 4.1.0 receipt and should be retired after issue reconciliation
+Retired/superseded release issues:
+- issue #213 — closed; stale Railway Compatibility backend resolved
+- issue #299 — closed; 4.0.1 Android authority superseded by 4.1
 
----
+## Release Decision
 
-## Canonical Receipts
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `689ed8a22027086ba58566c0d4fd215640e85969`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
-- Diamond Doctrine: `governance/THE-DIAMOND-DOCTRINE.md`
-- Gate 1: `governance/release-audits/GATE-1-FINAL-RECEIPT.md`
-- Gate 2: `governance/release-audits/GATE-2-NATIVE-MOBILE-VALIDATION.md`
-- Gate 3: `governance/release-audits/GATE-3-FINAL-RECEIPT.md`
-- Gate 4: `governance/release-audits/GATE-4-LIFECYCLE-DATA-CONSISTENCY.md`
-- Gate 5: `governance/release-audits/GATE-5-RELEASE-READINESS.md`
-- Current 4.1.0 release authority: `governance/release-audits/V4_1_CURRENT_RELEASE_AUTHORITY_2026-10-24.md`
-- Native billing qualification: `governance/release-audits/V4_1_NATIVE_BILLING_QUALIFICATION_RECEIPT.md`
-- Store packet: `docs/STORE_SUBMISSION_PACKET.md`
+The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
-Truth before certainty remains the release rule. A passing code gate, signed artifact, physical-device run, provider transaction, store acceptance, and public release are separate evidence classes.
+1. Complete real current-build StoreKit provider qualification before enabling iOS billing.
+2. Complete real current-build Play Billing provider qualification before enabling Android billing.
+3. Reconcile App Store U.S. metadata against the current 4.1 privacy/store packet.
+4. Obtain fresh Play Console tester/track/production evidence before claiming Android production publication.
+5. Preserve a new explicit frozen store-upload receipt whenever a new binary is actually selected for submission; do not mutate the Oct 24 historical receipt.
+
+No production billing flag should be enabled merely because source CI, Railway deployment, subscription catalog configuration, or public App Store availability is green.
