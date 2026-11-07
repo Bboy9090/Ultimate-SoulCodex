@@ -54,7 +54,7 @@ test("local create uses live product tier and local repair uses only bounded cac
   const repoSource = readFileSync(new URL("../client/src/lib/ActiveProfileRepository.ts", import.meta.url), "utf8");
 
   assert.match(createPage, /useProductAccess\(\)/);
-  assert.match(createPage, /includeNameNumerology: tier === "plus"/);
+  assert.match(createPage, /includeNameNumerology: tierAllowsCapability\(tier, "full_name_numerology"\)/);
 
   assert.match(repoSource, /readBoundedOfflinePlus/);
   assert.match(repoSource, /includeNameNumerology: Boolean\(readBoundedOfflinePlus\(\)\)/);
