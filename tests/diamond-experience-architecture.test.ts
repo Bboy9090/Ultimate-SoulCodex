@@ -70,7 +70,8 @@ test("connections surface distinguishes supported comparisons from planned dimen
   ]) {
     assert.ok(compatibility.includes(label), `missing relationship dimension: ${label}`);
   }
-  assert.match(compatibility, /advanced_connections/);
+  assert.doesNotMatch(compatibility, /tierAllowsCapability\(tier, "advanced_connections"\)/);
+  assert.doesNotMatch(compatibility, /const advancedConnections/);
   assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
   assert.match(compatibility, /No universal verdict/);
   assert.match(compatibility, /Sun and optional Life Path comparison/);
