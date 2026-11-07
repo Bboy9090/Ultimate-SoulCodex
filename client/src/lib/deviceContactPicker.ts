@@ -20,7 +20,15 @@ export async function pickConnectionContacts(): Promise<{
   status: "selected" | "cancelled" | "unsupported";
   contacts: PickedConnectionContact[];
 }> {
-  if (Capacitor.isNativePlatform()) {
+  const platform = Capacitor.getPlatform();
+  if (platform === "android") {
+    // The current Capacitor Contacts plugin requests READ_CONTACTS on Android
+    // even for a single picked contact. Soul Codex keeps Android contact import
+    // permissionless and falls back to the existing manual name/phone flow.
+    return { status: "unsupported", contacts: [] };
+  }
+
+  if (platform === "ios") {
     try {
       const contact = await Contacts.pickContact();
       const name = contact.displayName ?? contact.name?.formatted ?? contact.nickname;
