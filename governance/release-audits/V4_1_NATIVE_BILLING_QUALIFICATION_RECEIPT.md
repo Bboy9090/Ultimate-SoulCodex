@@ -135,3 +135,51 @@ Overall native billing qualification: **INCONCLUSIVE**
 - Independent Vercel legal-host fallback `https://soulcodex-legal.vercel.app/privacy/` was also verified HTTP 200 after correcting the Vercel project root to `legal`.
 - These public legal endpoints are independent of the application backend/runtime and do not constitute backend billing qualification.
 
+
+
+## 2026-11-07 provider-catalog refresh
+
+This section supersedes older store-console catalog-status observations above where they conflict. It does **not** change the provider lifecycle qualification verdict.
+
+### Apple / App Store Connect
+
+Authenticated Soul Codex subscription configuration currently shows:
+
+- subscription group: `Soul Codex+`
+- group ID: `22442182`
+- monthly product: `app.soulcodex.plus.monthly.renewing`
+  - duration: 1 month
+  - status: **Developer Rejected**
+- annual product: `app.soulcodex.plus.annual.renewing`
+  - duration: 1 year
+  - status: **Developer Rejected**
+
+The product identifiers match the repository billing contract, but the current Apple catalog is not review-ready/active. Apple catalog readiness is therefore a blocking condition before a new StoreKit qualification run can be treated as release-complete.
+
+The iOS checkpoint `Catalog monthly + annual` remains **INCONCLUSIVE** rather than PASS because current product status is Developer Rejected and in-app StoreKit resolution has not been exercised on a current physical/TestFlight build.
+
+### Google Play
+
+Authenticated Play Console currently shows:
+
+- monthly product: `soul_codex_plus_monthly`
+  - base plan: `monthly`
+  - Monthly, auto-renewing
+  - **Active**
+  - 175 countries / regions
+- annual product: `soul_codex_plus_annual`
+  - base plan: `annual`
+  - Yearly, auto-renewing
+  - **Active**
+  - U.S. annual price: **$59.99/year**
+
+Both Google product IDs exactly match the repository billing contract. Store-console activation is configuration evidence only; the Android checkpoint `Catalog monthly + annual` remains **INCONCLUSIVE** until the shipped app resolves the catalog through Google Play Billing on an eligible test device/account.
+
+Play production access is independently blocked by tester eligibility: 29 users are configured in the Alpha tester email list, but only 1 tester is currently opted in. Google requires at least 12 opted-in testers for at least 14 days before production access can be requested.
+
+### Qualification verdict remains unchanged
+
+- iOS qualified: **NO**
+- Android qualified: **NO**
+- production native billing flags: **MUST REMAIN FALSE**
+- overall native billing qualification: **INCONCLUSIVE**
