@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import Navigation from "@/components/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { useProductAccess } from "@/hooks/useProductAccess";
+import { tierAllowsCapability } from "@shared/product-access";
 import {
   ArrowRight,
   Calendar,
@@ -257,7 +258,7 @@ export default function LocalFirstInputForm() {
   const onSubmit = async (data: BirthData) => {
     setIsCreating(true);
     try {
-      const profile = generateFoundationOfflineCodexProfile(data, { includeNameNumerology: tier === "plus" });
+      const profile = generateFoundationOfflineCodexProfile(data, { includeNameNumerology: tierAllowsCapability(tier, "full_name_numerology") });
       await saveOfflineProfile(profile);
 
       const activeSave = saveActiveProfile({
