@@ -39,6 +39,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Soul Codex only opens the system picker. It never creates, edits, or deletes device contacts. -->
+    <!-- The bundled Contacts plugin declares broad address-book permissions.
+         Android uses the manual connection flow instead, so strip both at merge time. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" tools:node="remove" />
     <uses-permission android:name="android.permission.WRITE_CONTACTS" tools:node="remove" />
 </manifest>
