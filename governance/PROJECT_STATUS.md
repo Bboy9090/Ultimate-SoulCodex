@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-07  
 **Current Branch:** `main`  
-**Current repository main:** `689ed8a22027086ba58566c0d4fd215640e85969`  
+**Last verified pre-status-update main/runtime checkpoint:** `689ed8a22027086ba58566c0d4fd215640e85969`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
 ## Current Authority Model
@@ -11,7 +11,10 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one â€
 
 ### 1. Current source authority
 
-- Repository `main`: `689ed8a22027086ba58566c0d4fd215640e85969`
+This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
+
+Last verified pre-status-update checkpoint:
+- repository `main`: `689ed8a22027086ba58566c0d4fd215640e85969`
 - Latest exact-head Store Candidate source: `4932a8699bd47a436222647f993aa87f8d80992a`
 - Store Candidate run: `42385459376` â€” PASS
 - Current source mobile identity:
@@ -26,6 +29,8 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one â€
 These artifacts qualify the exact source head above. They do not automatically replace the frozen store-upload authority described below.
 
 ### 2. Live Railway production authority
+
+The following is the last verified pre-status-update runtime checkpoint. A later docs-only merge may advance the runtime release SHA without changing application behavior; verify Railway again before using this SHA as a current deployment claim.
 
 Public production domain:
 - `https://soulcodex.up.railway.app`
@@ -191,7 +196,7 @@ Retired/superseded release issues:
 
 ## Release Decision
 
-Current source and web production are healthy and SHA-aligned.
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `689ed8a22027086ba58566c0d4fd215640e85969`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
 The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
