@@ -65,7 +65,7 @@ node --import tsx --test \
   tests/plus-promise-human-design-contract.test.ts
 
 node scripts/verify-foundation-codebuild.mjs
-npm audit --omit=dev --audit-level=high
+npm audit --omit=dev --audit-level=moderate
 npm audit --audit-level=high
 npm run build
 
