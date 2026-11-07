@@ -190,7 +190,7 @@ Play subscription catalog configuration is present and matches the repository co
 
 ### External / owner/provider gates still open
 
-- Apple subscription review resubmission from current **Developer Rejected** state when billing qualification is ready: OPEN\n- real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
+- Apple subscription review resubmission from current **Developer Rejected** state when billing qualification is ready: OPEN — because these are the first auto-renewable subscriptions, Apple requires a **new iOS app version** in the same review submission as the unapproved subscription group/products\n- real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
 - real Google Play Billing purchase/restore/lifecycle qualification: OPEN
 - App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
 - fresh Google Play Console tester/track/production-access receipt: **CAPTURED 2026-11-07** — production remains blocked at 1/12 opted-in testers and the 14-day requirement
