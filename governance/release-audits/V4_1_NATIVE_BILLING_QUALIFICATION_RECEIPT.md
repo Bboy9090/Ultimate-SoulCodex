@@ -166,6 +166,10 @@ Therefore `Developer Rejected` must not be described as Apple rejecting the subs
 
 The iOS checkpoint `Catalog monthly + annual` remains **INCONCLUSIVE** rather than PASS because the products are not currently approved/review-active and in-app StoreKit resolution has not been exercised on a current physical/TestFlight build.
 
+Apple's current App Store Connect submission rule for a first auto-renewable subscription requires the first subscription of that type to be submitted with a **new app version**. Because iOS 4.1 build `4000014` is already approved and neither Soul Codex+ subscription has been approved, the next subscription review package must use a new iOS app version and include that app version, the Soul Codex+ subscription group, and the subscriptions being submitted together. Source: https://developer.apple.com/help/app-store-connect/manage-submissions-to-app-review/submit-an-in-app-purchase
+
+Do not create or submit that next iOS version until the current-build StoreKit purchase/restore/lifecycle qualification is ready; production iOS billing remains disabled.
+
 ### Google Play
 
 Authenticated Play Console currently shows:
