@@ -113,18 +113,20 @@ Historical Apple sandbox purchase evidence is not a PASS because server verifica
 
 ## App Store Status
 
-Public evidence as of 2026-11-07:
-- Soul Codex 4.1 is publicly available on Apple’s store at App Store ID `6764221944`.
-- Public storefront evidence does **not** expose an internal build number or source SHA, so public 4.1 availability is not proof of current-main binary parity.
-- The exact U.S. listing still shows:
-  - App Privacy: `Data Not Collected`
-  - age rating: `9+`
-  - older marketing copy
-  - Railway privacy-policy URL rather than the current canonical GitHub Pages URL
-- another regional Apple storefront result surfaced linked-data categories, so public privacy rendering is inconsistent across storefront evidence.
+Authenticated App Store Connect evidence as of 2026-11-07:
+- Soul Codex Apple ID: `6764221944`
+- bundle ID: `app.soulcodex.ios`
+- iOS 4.1 status: **Ready for Distribution**
+- selected App Store Connect build: `4000014` / version `4.1.0`
+- the private-console description is the newer evidence/reflection-focused copy and includes the Standard Apple EULA link
+- primary category: Lifestyle; secondary category: Entertainment
+- the current Support URL still points to `https://soulcodex.up.railway.app/support` rather than the canonical GitHub Pages support URL
+- the App Store Server Notifications sandbox URL is configured to the Soul Codex Railway billing-notifications endpoint
+
+Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still shows `Data Not Collected` and `9+`, while other regional storefront evidence exposes linked-data categories. The private App Privacy page did not expose detailed category answers through the current read-only console capture, so privacy/age reconciliation is **not** claimed complete.
 
 Current external Apple metadata gate:
-- issue #346 — App Store privacy, age, description, and privacy-URL reconciliation
+- issue #346 — App Store privacy, age, support/privacy URL, and public-store reconciliation
 
 Canonical store/legal packet:
 - `docs/STORE_SUBMISSION_PACKET.md`
@@ -140,16 +142,27 @@ Current source qualification:
 - versionCode: `4000015`
 - exact-head Android artifact ID: `13578818837`
 
+Authenticated Play Console receipt as of 2026-11-07:
+- app: SOUL CODEX / `soulcodex.app`
+- Production: **Inactive**
+- Closed testing: **Active**
+- Internal testing: **Active**
+- Alpha closed release: `Soul Codex 4.1.0 (4000015) Closed Beta`
+- release state: Available to selected testers
+- release date shown by Play Console: Oct 31, 2026 at 11:28 AM
+- distribution: 178 countries/regions
+- supported Android devices: 19,561
+- opted-in closed-test users: **1**
+- Google production-access requirement shown in Console: at least **12 opted-in testers for at least 14 days**
+
+Therefore Google Play production access is currently **not eligible**. The concrete blocker is to reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access.
+
 Publishing automation:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
 - automated Play production upload remains unavailable;
 - latest production-handoff artifact ID: `13578888737`.
 
-This blocks only automated publishing. Manual Play Console handling remains possible.
-
-Do **not** claim Google Play production publication or current tester-count eligibility without a fresh Play Console receipt.
-
-Historical Play Console evidence remains useful context only; it is not promoted to a current Nov 7 claim.
+This blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
 
 ## Release Gates
 
@@ -179,7 +192,7 @@ Historical Play Console evidence remains useful context only; it is not promoted
 - real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
 - real Google Play Billing purchase/restore/lifecycle qualification: OPEN
 - App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
-- fresh Google Play Console tester/track/production-access receipt: OPEN
+- fresh Google Play Console tester/track/production-access receipt: **CAPTURED 2026-11-07** — production remains blocked at 1/12 opted-in testers and the 14-day requirement
 - final current-build store screenshots / physical-device evidence where required: OPEN
 
 ## Active Release Tracking
