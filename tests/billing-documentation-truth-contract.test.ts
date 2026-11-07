@@ -6,9 +6,11 @@ const monetization = readFileSync(new URL("../docs/MONETIZATION_V4_1_CONTRACT.md
 const catalog = readFileSync(new URL("../docs/SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md", import.meta.url), "utf8");
 const pricing = readFileSync(new URL("../client/src/pages/PricingPage.tsx", import.meta.url), "utf8");
 
-test("native billing docs distinguish implementation from production activation", () => {
-  assert.match(monetization, /purchase initiation and restore are implemented behind disabled platform flags/);
-  assert.match(monetization, /not production-enabled until provider sandbox\/TestFlight\/internal-test purchase/);
+test("native billing docs distinguish implementation from provider-specific production activation", () => {
+  assert.match(monetization, /purchase initiation and restore are implemented behind platform-specific activation flags/);
+  assert.match(monetization, /Production activation must remain off for a provider until that provider\'s current-build sandbox\/TestFlight\/internal-test purchase/);
+  assert.match(monetization, /provider-specific billing paths that are explicitly enabled and verifier\/catalog ready/);
+  assert.doesNotMatch(monetization, /Soul Codex 4\.0\.1 does not sell native premium access/);
   assert.doesNotMatch(monetization, /purchase initiation and restore are not yet active/);
 });
 
