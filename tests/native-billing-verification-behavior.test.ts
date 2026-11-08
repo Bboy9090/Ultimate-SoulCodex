@@ -161,3 +161,58 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
     else process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = previous.productId;
   }
 });
+
+
+test("Google Play verifier rejects a credential whose client email does not match the dedicated verifier identity", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+  const previous = {
+    serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
+    packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
+    productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
+  };
+
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL =
+    "soulcodex-play-verifier@soul-codex-platform.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+    client_email: "soulcodex-play-publisher@soul-codex-platform.iam.gserviceaccount.com",
+    private_key: pem,
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+  process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+  process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+  let fetchCalled = false;
+  const fakeFetch = (async () => {
+    fetchCalled = true;
+    throw new Error("fetch should not run");
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      verifyGoogleBillingEvidence(
+        "11111111-1111-4111-8111-111111111111",
+        {
+          platform: "android",
+          productId: "soul_codex_plus_monthly",
+          transactionId: "GPA.IDENTITY-MISMATCH",
+          purchaseToken: "purchase-token-with-enough-length-identity",
+        },
+        new Date("2026-11-08T16:00:00.000Z"),
+        fakeFetch,
+      ),
+      /google_play_verifier_identity_mismatch/,
+    );
+    assert.equal(fetchCalled, false);
+  } finally {
+    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
+    if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
+    else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
+    if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
+    else process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = previous.productId;
+  }
+});
