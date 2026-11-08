@@ -66,7 +66,8 @@ public class SoulCodexGoogleAuthPlugin extends Plugin {
 
                             JSObject result = new JSObject();
                             result.put("idToken", googleCredential.getIdToken());
-                            result.put("email", googleCredential.getId());
+                            result.put("email", googleCredential.getEmail());
+                            result.put("googleAccountId", googleCredential.getUniqueId());
                             result.put("displayName", googleCredential.getDisplayName());
                             call.resolve(result);
                             return;
