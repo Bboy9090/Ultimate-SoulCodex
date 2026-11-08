@@ -30,6 +30,10 @@ app.use(
     // that makes the app look secure while quietly breaking the interface.
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
+    // Google Identity Services can fall back to a popup when FedCM is unavailable.
+    // Keep opener isolation while allowing that authenticated popup to communicate
+    // back to the Soul Codex window.
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
     referrerPolicy: { policy: "no-referrer" },
   }),
 );
