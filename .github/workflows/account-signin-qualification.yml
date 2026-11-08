@@ -28,5 +28,5 @@ jobs:
       - run: npm run build:workspaces
       - run: npm run check
       - name: Account auth, Apple parity, session and failure contracts
-        run: node --import tsx --test tests/android-email-auth-contract.test.ts tests/active-consumer-auth.test.ts tests/account-deletion.test.ts
+        run: node --import tsx --test tests/android-email-auth-contract.test.ts tests/google-account-auth-contract.test.ts tests/active-consumer-auth.test.ts tests/account-deletion.test.ts
       - run: npm run build

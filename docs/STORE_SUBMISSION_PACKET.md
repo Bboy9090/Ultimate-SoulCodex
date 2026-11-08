@@ -129,7 +129,7 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 | Play category | Collected | Shared | Purpose / notes |
 |---|---:|---:|---|
 | Name | Yes | No* | Optional profile identity and app functionality |
-| Email address | Yes | No* | Optional account, authentication, support, and deletion verification |
+| Email address | Yes | No* | Optional account, Apple/Google/email authentication, support, and deletion verification |
 | User IDs | Yes | No* | Account or anonymous session operation |
 | Approximate location | Yes | No* | User-entered birth location for chart calculation; not live device location |
 | Other personal information | Yes | No* | Birth date/time and behavioral responses used for personalized readings |
@@ -138,7 +138,7 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 | Diagnostics | Yes | No* | Request logs and error details used for security and troubleshooting |
 | Purchase history | Yes | No* | Store or hosted-payment transaction and subscription state used for entitlement verification, restore, refunds/revocations, fraud prevention, and support |
 
-`*` Some requested profile context or prompts may be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for Google Play's service-provider exception before selecting “not shared.”
+`*` Google or Apple may process sign-in data when the user explicitly selects those identity-provider buttons. Some requested profile context or prompts may also be processed by contracted AI or infrastructure service providers solely to deliver app functionality. Confirm that each transfer qualifies for Google Play's service-provider exception before selecting “not shared.”
 
 ### Not currently collected for the native store app
 

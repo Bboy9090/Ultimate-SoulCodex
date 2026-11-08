@@ -16,6 +16,7 @@ import {
 import Navigation from "@/components/navigation";
 import AppleSignInButton from "@/components/AppleSignInButton";
 import EmailAccountAuth from "@/components/EmailAccountAuth";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { clearActiveProfile } from "../lib/ActiveProfileRepository";
 import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 import { clearOfflineProfiles } from "../lib/offlineProfileStore";
@@ -44,6 +45,7 @@ export default function SettingsPage() {
   const platform = Capacitor.getPlatform();
   const nativeApple = platform === "ios";
   const showAppleSignIn = platform !== "android";
+  const showGoogleSignIn = platform !== "ios";
   const [reflectionLens, setReflectionLens] = useState<ReflectionLens>(() => readReflectionLens());
   const [telemetryConsent, setTelemetryConsent] = useState<TelemetryConsentState>(() =>
     typeof window === "undefined" ? "unset" : readPersistedTelemetryConsent(window.localStorage),
@@ -101,7 +103,9 @@ export default function SettingsPage() {
     : currentUser
       ? currentUser.authProvider === "apple"
         ? "Apple account connected"
-        : "Account connected"
+        : currentUser.authProvider === "google"
+          ? "Google account connected"
+          : "Account connected"
       : "Local-only profile";
 
   return (
@@ -132,8 +136,8 @@ export default function SettingsPage() {
               {nativeApple
                 ? "Native Apple authentication is available on this iPhone or iPad."
                 : platform === "android"
-                  ? "Email account sign-in is available on Android. Google sign-in can be added once the Google OAuth client is configured."
-                  : "Email account sign-in is available. Web Apple authentication also becomes available when the production Apple Services ID is configured."}
+                  ? "Google and email account sign-in are available on Android when Google OAuth is configured."
+                  : "Google and email account sign-in are available on the web. Apple authentication also becomes available when the production Apple Services ID is configured."}
             </div>
           </section>
         </header>
@@ -149,7 +153,7 @@ export default function SettingsPage() {
                 <div className="rounded-2xl border border-[rgba(114,216,197,.18)] bg-[rgba(114,216,197,.055)] p-4">
                   <div className="flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-[var(--sc-teal)] shadow-[0_0_14px_rgba(114,216,197,.5)]" />
-                    <strong>{currentUser.authProvider === "apple" ? "Signed in with Apple" : currentUser.authProvider === "local" ? "Signed in with email" : "Signed in"}</strong>
+                    <strong>{currentUser.authProvider === "apple" ? "Signed in with Apple" : currentUser.authProvider === "google" ? "Signed in with Google" : currentUser.authProvider === "local" ? "Signed in with email" : "Signed in"}</strong>
                   </div>
                   <p className="mb-0 mt-2 text-sm text-[var(--sc-stone)]">{currentUser.email || "Private Apple account"}</p>
                 </div>
@@ -165,6 +169,11 @@ export default function SettingsPage() {
                 {showAppleSignIn && (
                   <AppleSignInButton
                     onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "apple" })}
+                  />
+                )}
+                {showGoogleSignIn && (
+                  <GoogleSignInButton
+                    onSuccess={(user) => queryClient.setQueryData(["/api/auth/user"], { ...user, authProvider: "google" })}
                   />
                 )}
                 <EmailAccountAuth />

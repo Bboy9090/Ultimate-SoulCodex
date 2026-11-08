@@ -7,6 +7,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SoulCodexNativeBillingPlugin.class);
+        registerPlugin(SoulCodexGoogleAuthPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }

@@ -11,13 +11,21 @@ import {
   verifyAppleIdentityToken,
   type AppleIdentity,
 } from "../auth/apple";
+import {
+  GoogleAuthConfigurationError,
+  GoogleAuthVerificationError,
+  verifyGoogleIdentityToken,
+  type GoogleIdentity,
+} from "../auth/google";
 import { hashPassword, verifyPassword } from "../auth/password";
 
 type AppleVerifier = (identityToken: string) => Promise<AppleIdentity>;
+type GoogleVerifier = (idToken: string) => Promise<GoogleIdentity>;
 
 type ConsumerAuthDependencies = {
   storage: IStorage;
   verifyApple: AppleVerifier;
+  verifyGoogle?: GoogleVerifier;
 };
 
 function publicUser(user: Awaited<ReturnType<IStorage["getUser"]>>) {
@@ -56,7 +64,11 @@ function destroySession(req: any): Promise<void> {
 
 export function registerConsumerAuthRoutes(
   app: Express,
-  deps: ConsumerAuthDependencies = { storage, verifyApple: verifyAppleIdentityToken },
+  deps: ConsumerAuthDependencies = {
+    storage,
+    verifyApple: verifyAppleIdentityToken,
+    verifyGoogle: verifyGoogleIdentityToken,
+  },
 ) {
   app.get("/api/auth/apple/config", (_req, res) => {
     const clientId = process.env.APPLE_WEB_CLIENT_ID?.trim() || null;
@@ -78,6 +90,16 @@ export function registerConsumerAuthRoutes(
       clientId,
       redirectURI,
       reason: clientId && redirectURI ? "ready" : "web_apple_signin_not_configured",
+    });
+  });
+
+  app.get("/api/auth/google/config", (_req, res) => {
+    const clientId = process.env.GOOGLE_OAUTH_WEB_CLIENT_ID?.trim() || null;
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    return res.json({
+      enabled: Boolean(clientId),
+      clientId,
+      reason: clientId ? "ready" : "google_signin_not_configured",
     });
   });
 
@@ -113,6 +135,42 @@ export function registerConsumerAuthRoutes(
     }
   });
 
+
+  app.post("/api/auth/google", async (req: any, res) => {
+    if (durableFeatureUnavailable()) {
+      return res.status(503).json(DURABLE_STORAGE_UNAVAILABLE_RESPONSE);
+    }
+    try {
+      const idToken = typeof req.body?.idToken === "string" ? req.body.idToken : "";
+      const identity = await (deps.verifyGoogle ?? verifyGoogleIdentityToken)(idToken);
+      const previousSessionId = req.sessionID;
+      const user = await deps.storage.getOrCreateGoogleUser(
+        identity.subject,
+        identity.email,
+        identity.name,
+      );
+
+      if (previousSessionId) {
+        await deps.storage.migrateSessionOwnershipToUser(previousSessionId, user.id);
+      }
+
+      await regenerateSession(req);
+      req.session.userId = user.id;
+      req.session.authProvider = "google";
+      await saveSession(req);
+
+      return res.json({ user: publicUser(user), message: "Successfully authenticated with Google" });
+    } catch (error) {
+      if (error instanceof GoogleAuthConfigurationError) {
+        return res.status(503).json({ message: "Google Sign-In is not configured on the server" });
+      }
+      if (error instanceof GoogleAuthVerificationError) {
+        return res.status(401).json({ message: "Google identity token could not be verified" });
+      }
+      console.error("[GoogleAuth] Failed:", error);
+      return res.status(500).json({ message: "Google Sign-In failed" });
+    }
+  });
 
   app.post("/api/auth/signup", async (req: any, res) => {
     if (durableFeatureUnavailable()) {
@@ -197,7 +255,16 @@ export function registerConsumerAuthRoutes(
         res.clearCookie("connect.sid");
         return res.json(null);
       }
-      return res.json({ ...publicUser(user), authProvider: req.session?.authProvider ?? (user.username.startsWith("apple:") ? "apple" : "local") });
+      return res.json({
+        ...publicUser(user),
+        authProvider:
+          req.session?.authProvider ??
+          (user.username.startsWith("apple:")
+            ? "apple"
+            : user.username.startsWith("google:")
+              ? "google"
+              : "local"),
+      });
     } catch (error) {
       console.error("[CurrentUser] Failed:", error);
       return res.status(500).json({ message: "Failed to fetch user" });

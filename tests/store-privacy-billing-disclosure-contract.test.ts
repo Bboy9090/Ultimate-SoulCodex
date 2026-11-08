@@ -28,7 +28,7 @@ test("store packet declares purchase history and keeps raw payment information e
 test("public privacy policy describes billing records without claiming raw card collection", () => {
   assert.match(privacy, /Purchase, subscription, and entitlement records/);
   assert.match(privacy, /does not receive raw card numbers/);
-  assert.match(privacy, /Last updated October 4, 2026/);
+  assert.match(privacy, /Last updated November 7, 2026/);
 });
 
 test("verified App Store identity is recorded in canonical release metadata", () => {

@@ -18,7 +18,7 @@ test("privacy policy truthfully documents opt-in sanitized public sharing", asyn
   assert.match(source, /assessment answers/);
   assert.match(source, /raw verification evidence/);
   assert.match(source, /revoke a public-card link/);
-  assert.match(source, /October 4, 2026/);
+  assert.match(source, /November 7, 2026/);
 });
 
 test("terms explain the practical limit of revocation", async () => {
