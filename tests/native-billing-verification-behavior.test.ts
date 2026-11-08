@@ -8,12 +8,13 @@ test("active Google subscription becomes effective at purchase time, not future 
   const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 
   const previous = {
-    serviceAccount: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON,
+    serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
 
-  process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = JSON.stringify({
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
     client_email: "billing-test@example.iam.gserviceaccount.com",
     private_key: pem,
     token_uri: "https://oauth2.googleapis.com/token",
@@ -75,8 +76,9 @@ test("active Google subscription becomes effective at purchase time, not future 
     assert.equal(verified.expiresAt?.toISOString(), expiryTime);
     assert.equal(call, 2);
   } finally {
-    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-    else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
@@ -89,12 +91,13 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
   const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
   const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
   const previous = {
-    serviceAccount: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON,
+    serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
 
-  process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = JSON.stringify({
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
     client_email: "billing-test@example.iam.gserviceaccount.com",
     private_key: pem,
     token_uri: "https://oauth2.googleapis.com/token",
@@ -149,8 +152,9 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
     assert.equal(verified.diagnosticMetadata.testPurchase, true);
     assert.equal(verified.accessStatus, "active");
   } finally {
-    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-    else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
+    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
