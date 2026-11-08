@@ -24,7 +24,7 @@
 - [ ] `npm run test`
 - [ ] `npm run build:workspaces`
 - [ ] `npm run build`
-- [ ] `npm audit --omit=dev --audit-level=high`
+- [ ] `npm audit --omit=dev --audit-level=moderate`
 - [ ] `npm audit --audit-level=high`
 
 ## Product journey
