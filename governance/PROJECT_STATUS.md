@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-11-07  
 **Current Branch:** `main`  
-**Last verified pre-status-update main/runtime checkpoint:** `ca879bc260e50750b9543b7ccc3bdefc89244289`  
+**Last verified pre-status-update main/runtime checkpoint:** `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
 ## Current Authority Model
@@ -14,17 +14,17 @@ Soul Codex now uses separate evidence classes. Do not collapse these into one �
 This status file is itself a repository change. After it merges, GitHub `main` will advance again and Railway may auto-deploy that docs-only commit. Therefore the moving repository HEAD must be read from GitHub rather than frozen into this file.
 
 Last verified pre-status-update checkpoint:
-- repository `main`: `ca879bc260e50750b9543b7ccc3bdefc89244289`
-- Latest exact-head Store Candidate source: `1211d9a5142445fe0fabd8609367501c31118a4b`
-- Store Candidate run: `42386563885` — PASS\n- Exact-head Account Sign-In run: `42386563910` — PASS\n- Exact-head iOS Billing Parity run: `42386563941` — PASS
+- repository `main`: `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
+- Latest exact-head Store Candidate source: `b1a2af702411a54ddc94da4ac8f89cfe4f927f8a`
+- Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
-  - Android: `4.1.0` / versionCode `4000015` / package `soulcodex.app`
+  - Android: `4.1.0` / versionCode `4000016` / package `soulcodex.app`
   - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
 - Latest qualified source artifacts:
-  - release-gate artifact ID: `13579505543`
-  - iOS qualification artifact ID: `13579820889`
-  - Android qualification artifact ID: `13578818837`
-  - Google Play production-handoff artifact ID: `13578888737`
+  - release-gate artifact ID: `13585158689`
+  - iOS qualification artifact ID: `13585159197`
+  - Android qualification artifact ID: `13585049471`
+  - Google Play production-handoff artifact ID: `13585631821`
 
 These artifacts qualify the exact source head above. They do not automatically replace the frozen store-upload authority described below.
 
@@ -38,12 +38,12 @@ Public production domain:
 Live service:
 - Railway project: `Soulcodex`
 - service: `soulcodex-recovery`
-- deployment: `5e507077-b6e4-4d05-9dab-fe7b1841a21f`
-- deployed commit: `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- deployment: `be75f1db-f673-4181-8726-2a511ed72109`
+- deployed commit: `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
 - deployment status: **SUCCESS**
 
 Runtime evidence:
-- Railway deployment metadata confirms commit `ca879bc260e50750b9543b7ccc3bdefc89244289` on branch `main`
+- Railway deployment metadata confirms commit `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b` on branch `main`
 - production environment
 - Postgres-backed application storage
 - Postgres session store
@@ -109,7 +109,7 @@ Therefore:
 - Android production billing flag: **MUST REMAIN FALSE**
 - legacy umbrella native-billing flag: **MUST REMAIN FALSE**
 
-Historical Apple sandbox purchase evidence is not a PASS because server verification failed with `authentication_required` / HTTP 401. The repaired current build still requires real provider purchase/restore/lifecycle qualification.
+Historical Apple sandbox purchase evidence is not a PASS because server verification failed with `authentication_required` / HTTP 401. The repaired current build still requires real provider purchase/restore/lifecycle qualification.\n\nCurrent provider-catalog evidence:\n- Apple `Soul Codex+` subscription group exists; both expected products (`app.soulcodex.plus.monthly.renewing` and `app.soulcodex.plus.annual.renewing`) currently show **Developer Rejected** with `Add for Review` available. Review history shows they were removed with the Oct 28 four-item submission after an app launch-crash review failure; the later Oct 31 app-only build `4000014` was approved. This is not evidence Apple rejected the subscription metadata itself.\n- Google Play monthly (`soul_codex_plus_monthly` / base plan `monthly`) and annual (`soul_codex_plus_annual` / base plan `annual`) are **Active**; annual U.S. price is $59.99/year.\n- Catalog presence/status does not qualify purchase, restore, lifecycle, or server verification.
 
 ## App Store Status
 
@@ -123,7 +123,9 @@ Authenticated App Store Connect evidence as of 2026-11-07:
 - the current Support URL still points to `https://soulcodex.up.railway.app/support` rather than the canonical GitHub Pages support URL
 - the App Store Server Notifications sandbox URL is configured to the Soul Codex Railway billing-notifications endpoint
 
-Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still shows `Data Not Collected` and `9+`, while other regional storefront evidence exposes linked-data categories. The private App Privacy page did not expose detailed category answers through the current read-only console capture, so privacy/age reconciliation is **not** claimed complete.
+Public storefront evidence still does not establish source-SHA parity. The exact U.S. listing still renders `Data Not Collected`, while authenticated App Store Connect currently declares **Data Linked to You** with 10 data types: Name, Email Address, Precise Location, Coarse Location, Purchase History, User ID, Sensitive Info, Other User Content, Other Diagnostic Data, and Other Data Types. The private Privacy Policy URL remains `https://soulcodex.up.railway.app/privacy`; App Store Connect states that changing this URL requires a new app version.
+
+The private age-rating configuration is current and matches the U.S. public 9+ rating: 9+ in 172 countries/regions, 12+ in Vietnam and Brazil, and All in Korea, Republic of. Therefore age is not a stale-store mismatch; any move toward the product's earlier 13+ guidance is a deliberate questionnaire/product decision. Privacy public-rendering and privacy-URL reconciliation remain open.
 
 Current external Apple metadata gate:
 - issue #346 — App Store privacy, age, support/privacy URL, and public-store reconciliation
@@ -139,8 +141,9 @@ Canonical store/legal packet:
 Current source qualification:
 - signed Android AAB build: PASS
 - signature verification: PASS
-- versionCode: `4000015`
-- exact-head Android artifact ID: `13578818837`
+- versionCode: `4000016`
+- exact-head Android artifact ID: `13585049471`
+- generated final release manifest check: PASS — no `READ_CONTACTS` or `WRITE_CONTACTS`
 
 Authenticated Play Console receipt as of 2026-11-07:
 - app: SOUL CODEX / `soulcodex.app`
@@ -152,17 +155,17 @@ Authenticated Play Console receipt as of 2026-11-07:
 - release date shown by Play Console: Oct 31, 2026 at 11:28 AM
 - distribution: 178 countries/regions
 - supported Android devices: 19,561
-- opted-in closed-test users: **1**
+- configured Alpha tester email-list users: **29** (`test lkist`)\n- opted-in closed-test users: **1**
 - Google production-access requirement shown in Console: at least **12 opted-in testers for at least 14 days**
 
-Therefore Google Play production access is currently **not eligible**. The concrete blocker is to reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access.
+Therefore Google Play production access is currently **not eligible**. The existing tester list is already large enough; the concrete blocker is opt-in conversion: reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access. The Play Console still serves uploaded versionCode `4000015`; qualified source versionCode `4000016` has not yet been uploaded.
 
 Publishing automation:
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
 - automated Play production upload remains unavailable;
-- latest production-handoff artifact ID: `13578888737`.
+- latest production-handoff artifact ID: `13585631821`.
 
-This blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
+Play subscription catalog configuration is present and matches the repository contract: monthly base plan `monthly` and annual base plan `annual` are active; the annual U.S. price is $59.99/year.\n\nThis blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
 
 ## Release Gates
 
@@ -181,7 +184,7 @@ This blocks only automated publishing. Manual Play Console handling remains poss
 
 ### Production runtime
 
-- Railway exact-main deployment parity: **PASS** at `ca879bc260e50750b9543b7ccc3bdefc89244289`
+- Railway exact-main deployment parity: **PASS** at `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`
 - production schema preflight: PASS
 - Postgres storage/session startup: PASS
 - live Compatibility API stale-backend defect: RESOLVED
@@ -189,6 +192,7 @@ This blocks only automated publishing. Manual Play Console handling remains poss
 
 ### External / owner/provider gates still open
 
+- Apple subscription review resubmission from current **Developer Rejected** state when billing qualification is ready: OPEN — because these are the first auto-renewable subscriptions, Apple requires a **new iOS app version** in the same review submission as the unapproved subscription group/products
 - real iOS StoreKit purchase/restore/lifecycle qualification: OPEN
 - real Google Play Billing purchase/restore/lifecycle qualification: OPEN
 - App Store U.S. privacy/age/copy/legal-URL reconciliation: OPEN (#346)
@@ -209,7 +213,7 @@ Retired/superseded release issues:
 
 ## Release Decision
 
-At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `ca879bc260e50750b9543b7ccc3bdefc89244289`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
+At the last verified pre-status-update checkpoint, source and web production were healthy and SHA-aligned at `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`. This status-only change must not be used as evidence that a later GitHub/Railway HEAD is already deployed.
 
 The remaining blockers are primarily provider/store-owner evidence classes, not unresolved application architecture:
 
