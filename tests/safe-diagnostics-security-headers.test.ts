@@ -73,3 +73,11 @@ test("server disables unused ambient sensors without blocking clipboard or hoste
   assert.doesNotMatch(source, /payment=\(\)/);
   assert.match(source, /contentSecurityPolicy: false/);
 });
+
+
+test("server COOP permits Google Identity popup fallback without disabling opener isolation", async () => {
+  const source = await readFile(serverUrl, "utf8");
+
+  assert.match(source, /crossOriginOpenerPolicy:\s*\{\s*policy:\s*"same-origin-allow-popups"\s*\}/);
+  assert.doesNotMatch(source, /crossOriginOpenerPolicy:\s*false/);
+});
