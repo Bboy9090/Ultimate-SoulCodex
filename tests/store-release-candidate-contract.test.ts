@@ -52,12 +52,11 @@ test("store workflow qualifies exact candidate without auto-publishing productio
     "ANDROID_KEYSTORE_PASSWORD",
     "ANDROID_KEY_ALIAS",
     "ANDROID_KEY_PASSWORD",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
   ]) {
     assert.match(workflow, new RegExp(secret));
   }
   assert.match(workflow, /release\/store-4\.0\.0-federation-final/);
-  assert.match(workflow, /actions\/checkout@v5/);
+  assert.match(workflow, /actions\/checkout@v7/);
   assert.match(workflow, /CANDIDATE_SHA:\s*\$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/);
   assert.equal((workflow.match(/ref:\s*\$\{\{ env\.CANDIDATE_SHA \}\}/g) ?? []).length, 3);
   assert.equal((workflow.match(/test "\$\(git rev-parse HEAD\)" = "\$CANDIDATE_SHA"/g) ?? []).length, 3);
@@ -70,6 +69,11 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.match(workflow, /actions\/setup-node@v7/);
   assert.match(workflow, /actions\/setup-java@v5/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
+  assert.match(workflow, /google-github-actions\/auth@v3/);
+  assert.match(workflow, /id-token:\s*write/);
+  assert.match(workflow, /github-actions\/providers\/github-ultimate-soulcodex/);
+  assert.match(workflow, /soulcodex-play-publisher@soul-codex-platform\.iam\.gserviceaccount\.com/);
+  assert.match(workflow, /workload_identity_federation/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
   assert.match(workflow, /Require signed Android candidate on main/);
   assert.match(workflow, /production_publish_attempted=false/);

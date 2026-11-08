@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.CANDIDATE_SHA }}
       - name: Prove exact candidate
@@ -103,20 +103,36 @@ jobs:
     needs: release-gates
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    permissions:
+      contents: read
+      id-token: write
     env:
       ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER: projects/137127337841/locations/global/workloadIdentityPools/github-actions/providers/github-ultimate-soulcodex
+      GOOGLE_PLAY_PUBLISHER_SERVICE_ACCOUNT: soulcodex-play-publisher@soul-codex-platform.iam.gserviceaccount.com
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.CANDIDATE_SHA }}
       - name: Prove exact candidate
         shell: bash
         run: test "$(git rev-parse HEAD)" = "$CANDIDATE_SHA"
+      - name: Authenticate keylessly to Google Cloud for Play publishing
+        id: google_auth
+        if: github.repository == 'Bboy9090/Ultimate-SoulCodex' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GOOGLE_PLAY_PUBLISHER_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: true
+          export_environment_variables: true
       - name: Setup Node 22
         uses: actions/setup-node@v7
         with:
@@ -150,10 +166,15 @@ jobs:
         id: play
         shell: bash
         run: |
-          if [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+          if [[ -n "${{ steps.google_auth.outputs.access_token }}" ]]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "mode=workload_identity_federation" >> "$GITHUB_OUTPUT"
+          elif [[ -n "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "mode=legacy_service_account_json" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "mode=none" >> "$GITHUB_OUTPUT"
           fi
       - name: Decode Android release keystore
         if: steps.signing.outputs.available == 'true'
@@ -211,6 +232,7 @@ jobs:
             echo "versionCode=4000016"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
+            echo "play_credentials_mode=${{ steps.play.outputs.mode }}"
           } > android-store-state.txt
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v6
@@ -237,6 +259,7 @@ jobs:
           {
             echo "production_publish_attempted=false"
             echo "production_publish_ready=${{ steps.play.outputs.available }}"
+            echo "production_publish_auth_mode=${{ steps.play.outputs.mode }}"
             echo "production_publish_deferred=true"
             echo "reason=Store Candidate qualification never publishes production; submission is deferred until the owner authorizes and completes a separate store-launch process."
           } > google-play-production-handoff.txt
@@ -244,7 +267,7 @@ jobs:
           if [[ "${{ steps.play.outputs.available }}" == "true" ]]; then
             echo "::notice title=Google Play production handoff ready::Publishing credentials are available, but production upload is intentionally deferred to the final store-launch pass."
           else
-            echo "::warning title=Google Play production handoff blocked::Signed AAB qualification passed. Production upload remains blocked until GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is configured for the final launch pass."
+            echo "::warning title=Google Play production handoff blocked::Signed AAB qualification passed. Production upload remains blocked until either keyless Workload Identity Federation or the legacy GOOGLE_PLAY_SERVICE_ACCOUNT_JSON path is available."
           fi
 
       - name: Upload Google Play production handoff receipt
@@ -262,7 +285,7 @@ jobs:
       VITE_RELEASE_VERSION: 4.1.0
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: ${{ env.CANDIDATE_SHA }}
       - name: Prove exact candidate
