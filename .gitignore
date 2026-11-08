@@ -12,6 +12,18 @@ dist/
 build/
 .turbo/
 .vite/
+.next/
+out/
+server/public/
+index.js
+index-*.js
+index-*.css
+index.es-*.js
+html2canvas.esm-*.js
+jspdf.es.min-*.js
+purify.es-*.js
+*.tar.gz
+*.zip
 
 # TypeScript build artifacts (tsc without outDir)
 *.js
@@ -28,37 +40,19 @@ shared/**/*.js
 !*.config.cjs
 !*.config.mjs
 !scripts/**/*.js
-node_modules
-dist
+
+# Local/system state
 .DS_Store
-server/public
 vite.config.ts.*
-<<<<<<< HEAD
-*.tar.gz
-
-# Next.js build artifacts
-.next
-out
-
-# Agent state files
 .agent_state_*.bin
 repl_state.bin
-
-# Build artifacts
-index.js
-index-*.js
-index-*.css
-index.es-*.js
-html2canvas.esm-*.js
-jspdf.es.min-*.js
-purify.es-*.js
+legion_runs/
+__pycache__/
+*.egg-info/
 
 # Build markers
 rapid_build_started
 rapid_build_success
-
-# Zip files
-*.zip
 
 # Temporary scripts
 apply_vite_server_fix_and_push.sh
@@ -68,11 +62,6 @@ create_pr_and_files.sh
 .env
 .env.local
 .env.*.local
-=======
-*.tar.gz
->>>>>>> 19a4477 (Update project structure and component styling across the application)
 
-# Legion federation runs and Python caches
-legion_runs/
-__pycache__/
-*.egg-info/
+# Ignore generated credentials from google-github-actions/auth
+gha-creds-*.json
