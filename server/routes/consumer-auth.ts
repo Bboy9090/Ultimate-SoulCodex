@@ -25,7 +25,7 @@ type GoogleVerifier = (idToken: string) => Promise<GoogleIdentity>;
 type ConsumerAuthDependencies = {
   storage: IStorage;
   verifyApple: AppleVerifier;
-  verifyGoogle: GoogleVerifier;
+  verifyGoogle?: GoogleVerifier;
 };
 
 function publicUser(user: Awaited<ReturnType<IStorage["getUser"]>>) {
@@ -142,7 +142,7 @@ export function registerConsumerAuthRoutes(
     }
     try {
       const idToken = typeof req.body?.idToken === "string" ? req.body.idToken : "";
-      const identity = await deps.verifyGoogle(idToken);
+      const identity = await (deps.verifyGoogle ?? verifyGoogleIdentityToken)(idToken);
       const previousSessionId = req.sessionID;
       const user = await deps.storage.getOrCreateGoogleUser(
         identity.subject,
