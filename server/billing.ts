@@ -151,7 +151,8 @@ function appleNativeVerifierConfigured(): boolean {
 
 function googleNativeVerifierConfigured(): boolean {
   return Boolean(
-    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim() &&
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON?.trim() &&
+      process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL?.trim() &&
       process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
   );
 }
