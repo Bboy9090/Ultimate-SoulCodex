@@ -30,14 +30,18 @@ test("billing variable-name audit reports missing provider prerequisites without
   assert.equal(report.completeByName, false);
   assert.deepEqual(report.missing, [
     "APPLE_WEB_CLIENT_ID",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
     "STRIPE_PLUS_ANNUAL_PRICE_ID",
     "STRIPE_PLUS_MONTHLY_PRICE_ID",
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
   ]);
   assert.deepEqual(report.missingByGroup.webAuth, ["APPLE_WEB_CLIENT_ID"]);
-  assert.deepEqual(report.missingByGroup.google, ["GOOGLE_PLAY_SERVICE_ACCOUNT_JSON"]);
+  assert.deepEqual(report.missingByGroup.google, [
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+  ]);
   assert.deepEqual(report.missingByGroup.stripe, [
     "STRIPE_SECRET_KEY",
     "STRIPE_WEBHOOK_SECRET",
