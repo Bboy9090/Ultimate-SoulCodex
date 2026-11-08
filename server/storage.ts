@@ -34,6 +34,10 @@ function appleUsername(subject: string) {
   return `apple:${subject}`;
 }
 
+function googleUsername(subject: string) {
+  return `google:${subject}`;
+}
+
 function emailUsername(email: string) {
   return `email:${email.trim().toLowerCase()}`;
 }
@@ -43,6 +47,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getOrCreateAppleUser(subject: string, email?: string | null, firstName?: string | null, lastName?: string | null): Promise<User>;
+  getOrCreateGoogleUser(subject: string, email?: string | null, displayName?: string | null): Promise<User>;
   createEmailUser(email: string, passwordHash: string, firstName?: string | null): Promise<User>;
   migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void>;
   getProfile(id: string): Promise<Profile | undefined>;
@@ -143,6 +148,31 @@ export class MemStorage implements IStorage {
       password: passwordHash,
       email: normalizedEmail,
       firstName: firstName ?? null,
+      lastName: null,
+      profileImageUrl: null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionStatus: "free",
+      subscriptionPlan: null,
+      subscriptionEndsAt: null,
+      isPremium: false,
+      createdAt: now,
+      updatedAt: now,
+    } satisfies User;
+    this.users.set(user.id, user);
+    return user;
+  }
+  async getOrCreateGoogleUser(subject: string, email?: string | null, displayName?: string | null): Promise<User> {
+    const username = googleUsername(subject);
+    const existing = await this.getUserByUsername(username);
+    if (existing) return existing;
+    const now = new Date();
+    const user = {
+      id: randomUUID(),
+      username,
+      password: `google-disabled:${randomUUID()}:${randomUUID()}`,
+      email: email ?? null,
+      firstName: displayName ?? null,
       lastName: null,
       profileImageUrl: null,
       stripeCustomerId: null,
@@ -452,6 +482,22 @@ class PostgresStorage implements IStorage {
       if (String(error?.code ?? "") === "23505") throw new Error("email_already_in_use");
       throw error;
     }
+  }
+  async getOrCreateGoogleUser(subject: string, email?: string | null, displayName?: string | null): Promise<User> {
+    const db = await this.db();
+    const username = googleUsername(subject);
+    const inserted = await db.insert(users).values({
+      username,
+      password: `google-disabled:${randomUUID()}:${randomUUID()}`,
+      email: email ?? null,
+      firstName: displayName ?? null,
+      subscriptionStatus: "free",
+      isPremium: false,
+    }).onConflictDoNothing({ target: users.username }).returning();
+    if (inserted[0]) return inserted[0];
+    const existing = (await db.select().from(users).where(eq(users.username, username)).limit(1))[0];
+    if (!existing) throw new Error("Google user could not be resolved after concurrent creation");
+    return existing;
   }
   async migrateSessionOwnershipToUser(sessionId: string, userId: string): Promise<void> {
     const db = await this.db();
