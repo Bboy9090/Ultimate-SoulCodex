@@ -63,7 +63,7 @@ test("iOS export remains App Store scoped with the canonical team", async () => 
 test("store workflow constructs and validates both Capacitor native payloads", async () => {
   const workflow = await text(storeWorkflowPath);
   assert.match(workflow, /pull_request:[\s\S]*release\/ios-4\.0\.0-final-truth-fix/);
-  assert.match(workflow, /actions\/checkout@v5/);
+  assert.match(workflow, /actions\/checkout@v7/);
   assert.match(workflow, /actions\/setup-node@v7/);
   assert.match(workflow, /npm run build:capacitor/);
   assert.match(workflow, /npm run mobile:validate:android/);
@@ -80,15 +80,20 @@ test("Google Play qualification requires signed main candidates and records a de
     "ANDROID_KEYSTORE_PASSWORD",
     "ANDROID_KEY_ALIAS",
     "ANDROID_KEY_PASSWORD",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
   ]) {
     assert.match(workflow, new RegExp(secret));
   }
   assert.match(workflow, /keytool -list/);
   assert.match(workflow, /Detect Google Play publishing credentials/);
+  assert.match(workflow, /permissions:[\s\S]*id-token:\s*write/);
+  assert.match(workflow, /google-github-actions\/auth@v3/);
+  assert.match(workflow, /github-actions\/providers\/github-ultimate-soulcodex/);
+  assert.match(workflow, /soulcodex-play-publisher@soul-codex-platform\.iam\.gserviceaccount\.com/);
+  assert.match(workflow, /access_token_scopes:\s*https:\/\/www\.googleapis\.com\/auth\/androidpublisher/);
   assert.match(workflow, /id:\s*play/);
   assert.match(workflow, /steps\.play\.outputs\.available/);
   assert.match(workflow, /Google Play production handoff blocked/);
+  assert.match(workflow, /play_credentials_mode=/);
   assert.match(workflow, /\.\/gradlew --no-daemon bundleRelease/);
   assert.match(workflow, /test -s "\$AAB"/);
   assert.match(workflow, /jarsigner -verify "\$AAB"/);
