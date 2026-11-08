@@ -93,7 +93,7 @@ const requiredExternalTests = [
   "tests/no-simulated-release-routes.test.ts",
 ];
 check("CI-01", "CodeBuild retains required trust/privacy/security tests", requiredExternalTests.every((test) => files.codebuild.includes(test)));
-check("CI-02", "CodeBuild runs locked install, checks, tests, audit, invariant audit, and production build", files.codebuild.includes("npm ci") && files.codebuild.includes("npm run check") && files.codebuild.includes("npm test") && files.codebuild.includes("npm audit --omit=dev --audit-level=high") && files.codebuild.includes("npm run build") && files.buildspec.includes("./scripts/ci/codebuild-core.sh"));
+check("CI-02", "CodeBuild runs locked install, checks, tests, audit, invariant audit, and production build", files.codebuild.includes("npm ci") && files.codebuild.includes("npm run check") && files.codebuild.includes("npm test") && files.codebuild.includes("npm audit --omit=dev --audit-level=moderate") && files.codebuild.includes("npm run build") && files.buildspec.includes("./scripts/ci/codebuild-core.sh"));
 
 const failures = checks.filter((entry) => !entry.passed);
 const receipt = {
