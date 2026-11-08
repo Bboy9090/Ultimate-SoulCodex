@@ -8,13 +8,14 @@ test("Google RTDN re-queries Play and derives account-bound durable state", asyn
   const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
 
   const previous = {
-    service: process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON,
+    service: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     monthly: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
     annual: process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID,
   };
 
-  process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = JSON.stringify({
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
     client_email: "billing-test@example.iam.gserviceaccount.com",
     private_key: pem,
     token_uri: "https://oauth2.googleapis.com/token",
@@ -79,8 +80,9 @@ test("Google RTDN re-queries Play and derives account-bound durable state", asyn
     assert.equal(event.providerEventId, "google_rtdn:pubsub-message-1");
     assert.equal(event.occurredAt.toISOString(), "2026-10-03T16:01:00.000Z");
   } finally {
-    if (previous.service === undefined) delete process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON;
-    else process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = previous.service;
+    if (previous.service === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.service;
+    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.monthly === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
