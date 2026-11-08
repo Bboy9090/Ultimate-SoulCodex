@@ -151,7 +151,8 @@ function appleNativeVerifierConfigured(): boolean {
 
 function googleNativeVerifierConfigured(): boolean {
   return Boolean(
-    process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim() &&
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON?.trim() &&
+      process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL?.trim() &&
       process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
   );
 }
@@ -795,6 +796,7 @@ export function registerBillingRoutes(app: Express): void {
         "apple_account_binding_mismatch",
         "apple_expiry_time_invalid",
         "google_play_verifier_not_configured",
+        "google_play_verifier_identity_mismatch",
         "google_play_service_account_invalid",
         "google_play_oauth_failed",
         "google_play_verification_failed",

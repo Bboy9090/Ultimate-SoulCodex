@@ -300,8 +300,9 @@ type GoogleServiceAccount = {
 };
 
 function googleServiceAccount(): GoogleServiceAccount {
-  const raw = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON?.trim();
-  if (!raw) throw new Error("google_play_verifier_not_configured");
+  const raw = process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON?.trim();
+  const expectedEmail = process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL?.trim();
+  if (!raw || !expectedEmail) throw new Error("google_play_verifier_not_configured");
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -313,7 +314,11 @@ function googleServiceAccount(): GoogleServiceAccount {
     private_key: z.string().min(40),
     token_uri: z.string().url().optional(),
   });
-  return schema.parse(parsed);
+  const serviceAccount = schema.parse(parsed);
+  if (serviceAccount.client_email.toLowerCase() !== expectedEmail.toLowerCase()) {
+    throw new Error("google_play_verifier_identity_mismatch");
+  }
+  return serviceAccount;
 }
 
 async function googleAccessToken(fetchImpl: typeof fetch): Promise<string> {

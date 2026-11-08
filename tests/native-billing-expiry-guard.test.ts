@@ -24,13 +24,15 @@ const serviceAccount = JSON.stringify({
 
 function withGoogleConfiguration<T>(fn: () => Promise<T>): Promise<T> {
   const names = [
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
     "GOOGLE_PLAY_PACKAGE_NAME",
     "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
     "GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID",
   ] as const;
   const previous = names.map((name) => process.env[name]);
-  process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON = serviceAccount;
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = serviceAccount;
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "test-service@example.iam.gserviceaccount.com";
   process.env.GOOGLE_PLAY_PACKAGE_NAME = "app.soulcodex.main";
   process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = PRODUCT;
   process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID = "soul_codex_plus_annual";
