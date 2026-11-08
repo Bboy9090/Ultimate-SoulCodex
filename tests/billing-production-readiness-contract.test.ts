@@ -16,7 +16,8 @@ test("billing readiness preflight covers all production provider boundaries", ()
     "APPLE_IAP_ROOT_CERTS_BASE64",
     "APPLE_PLUS_MONTHLY_PRODUCT_ID",
     "APPLE_PLUS_ANNUAL_PRODUCT_ID",
-    "GOOGLE_PLAY_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
     "GOOGLE_PLAY_PACKAGE_NAME",
     "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
     "GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID",
@@ -43,7 +44,7 @@ test("billing readiness preflight covers all production provider boundaries", ()
 });
 
 test("readiness preflight never prints secret values explicitly", () => {
-  assert.doesNotMatch(source, /console\.log\([^\n]*(STRIPE_SECRET_KEY|GOOGLE_PLAY_SERVICE_ACCOUNT_JSON|APPLE_IAP_ROOT_CERTS_BASE64)/);
+  assert.doesNotMatch(source, /console\.log\([^\n]*(STRIPE_SECRET_KEY|GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON|APPLE_IAP_ROOT_CERTS_BASE64)/);
 });
 
 
