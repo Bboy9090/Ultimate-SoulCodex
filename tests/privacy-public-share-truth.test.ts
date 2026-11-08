@@ -28,5 +28,5 @@ test("terms explain the practical limit of revocation", async () => {
   assert.match(source, /separate sanitized snapshot/);
   assert.match(source, /until you revoke it/);
   assert.match(source, /cannot recall\s+copies another person may already have saved or screenshotted/);
-  assert.match(source, /November 7, 2026/);
+  assert.match(source, /October 4, 2026/);
 });
