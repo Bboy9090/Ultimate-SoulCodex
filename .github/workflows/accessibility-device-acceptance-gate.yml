@@ -36,8 +36,8 @@ jobs:
       - name: Accessibility and device acceptance contracts
         run: node --import tsx --test tests/accessibility-device-acceptance-contract.test.ts
 
-      - name: Reject high or critical production dependency vulnerabilities
-        run: npm audit --omit=dev --audit-level=high
+      - name: Reject moderate, high, or critical production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Typecheck
         run: npm run check
