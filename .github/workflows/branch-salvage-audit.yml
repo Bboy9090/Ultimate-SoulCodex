@@ -1,0 +1,36 @@
+name: Branch Salvage Read-Only Qualification
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/audit_branch_salvage.py'
+      - 'tests/test_branch_salvage.py'
+      - '.github/workflows/branch-salvage-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/audit_branch_salvage.py'
+      - 'tests/test_branch_salvage.py'
+      - '.github/workflows/branch-salvage-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact submitted revision
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify classifier unit tests
+        run: python3 -m unittest discover -s tests -p test_branch_salvage.py -v
+      - name: Validate CLI
+        run: python3 scripts/audit_branch_salvage.py --help
