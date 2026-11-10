@@ -90,13 +90,15 @@ test("a public 13+ badge needs no intended-audience age warning but does not qua
   assert.equal(receipt.appStoreConnectPrivacyQualified, false);
 });
 
-test("weekly audit fetches only on schedule or explicit dispatch, never on a PR", () => {
+test("live audit fetches on main merge, schedule or dispatch, never on a PR", () => {
   const workflow = readFileSync(
     new URL("../.github/workflows/public-app-storefront-disclosure-audit.yml", import.meta.url),
     "utf8",
   );
   assert.ok(workflow.includes('cron: "17 15 * * 1"'));
   assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.ok(workflow.includes("push:"));
+  assert.ok(workflow.includes("branches: [main]"));
   assert.ok(workflow.includes("if: github.event_name != 'pull_request'"));
   assert.ok(workflow.includes("permissions:") && workflow.includes("  contents: read"));
   for (const forbidden of ["id-token: write", "pages: write", "track: production", "google-github-actions/auth"]) {
