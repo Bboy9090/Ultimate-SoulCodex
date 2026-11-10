@@ -1,6 +1,6 @@
 # Soul Codex Store Submission Packet
 
-Prepared from the current shipped-app contract and release process as of October 4, 2026.
+Maintained for Soul Codex 4.1.0. Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
 
 Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
@@ -185,24 +185,27 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Final candidate SHA: take this from the successful exact-head Store Candidate / hardening receipt immediately before submission; do not copy a historical SHA from this document.
 - Railway production deployment: verify the live `/health` release SHA matches that exact candidate before submission.
 - Static store-review legal/support host: `bboy9090.github.io/Ultimate-SoulCodex` (GitHub Pages, HTTPS verified)
-- Android signed AAB: built and `jarsigner -verify` passed
+- Android 4.1.0 / versionCode `4000016`: uploaded to Google Play **Alpha closed testing** on November 8, 2026, according to the release tracker and Play edit receipt. This is not a production release. New signed Store Candidate artifacts built from later commits do not automatically replace the uploaded closed-test binary.
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android app-owned manifest requests `android.permission.INTERNET`; merged store builds also include framework/billing permissions such as network state, Play Billing/license, and an app-scoped dynamic-receiver permission. `READ_CONTACTS` and `WRITE_CONTACTS` are explicitly removed from the merged manifest; Android contact import falls back to manual entry.
 - iOS simulator Release and generic-device archive qualification: passed
 - App Store listing: Soul Codex, numeric ID `6764221944`
 - Google Play developer account: active at `harebugz23@gmail.com`
-- Automated Google Play publishing remains optional; the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` blocks only the CI upload path, not manual Play Console AAB upload
+- Google Play publishing uses a separate **keyless Workload Identity Federation** publisher. It does not require a long-lived `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` key. The publishing workflow must preserve its closed-test/explicit-release boundaries; a green build does not authorize or prove a production upload.
 
 ## Remaining Store-Owner Gates
 
-1. Capture final Android phone screenshots from the actual final build.
-2. Complete physical-device Android smoke testing.
-3. In Play Console, select/create Soul Codex for package `soulcodex.app`.
-4. Upload the exact-current signed `app-release.aab` from the latest exact-head Android store artifact; verify its `RELEASE-CANDIDATE-SHA.txt` matches current release authority before upload.
-5. Complete Data Safety, app access, content rating, target audience, ads, and privacy declarations using this packet and the shipped privacy page.
-6. Use the verified GitHub Pages URLs in this packet for privacy, support, and account deletion. Backend/runtime qualification is independent and must not be inferred from the legal-host status.
-7. Submit through the required testing or production track for the account and preserve the Play Console receipt.
-8. For Apple, use the Apple-managed Xcode Cloud archive from the same exact qualified candidate SHA used for submission evidence. The checked-in project build setting remains `4000014`; App Store Connect may assign a separate Xcode Cloud build counter, which must be recorded in the release receipt.
+These are outstanding qualification steps, **not instructions to recreate the app or re-upload an already committed Alpha release**.
+
+1. Capture final Android phone screenshots from an actual approved build and verify the screenshot content matches the submitted binary.
+2. Complete physical-device Android onboarding, sign-in, offline, entitlement and navigation smoke tests. Native purchase/restore requires its own provider-backed qualification before enabling billing.
+3. In Play Console, verify the **existing** `soulcodex.app` Alpha closed-test release `4000016`, preserve its actual binary/track receipt and confirm the currently published test listing metadata. Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release.
+4. Reconcile Play Data Safety, app access, content rating, target audience, ads, and privacy declarations against the exact active release and provider contracts.
+5. Maintain the verified GitHub Pages privacy, support and account-deletion URLs. Backend/runtime qualification remains independent of the legal-host status.
+6. Complete the Play Console production-access qualification required for this account through genuine opted-in participation and qualifying duration. The latest provider-confirmed count on November 8 was **1 opted-in tester**; a configured tester email list is not an opt-in count. This external gate must not block independent code/metadata/QA improvements.
+7. Apply for production access and obtain an explicit production release approval only after the Console eligibility and native payment/device gates are satisfied; do not let CI auto-promote an Alpha build.
+8. For Apple, reconcile live App Store Connect privacy, age-rating, support URL, EULA and subscription metadata using the exact iOS submission candidate; retain screenshots/receipts. Use its Apple-managed Xcode Cloud archive and record the actual App Store Connect build counter separately from the checked-in `4000014` setting.
+9. Preserve exact release-candidate SHA, signed binary checksum, provider upload ID, track, and store acceptance in the release ledger whenever a *new* candidate is intentionally submitted.
 
 
 ## Soul Codex+ 4.1 subscription catalog
