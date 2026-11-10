@@ -9,6 +9,7 @@ test("Google RTDN re-queries Play and derives account-bound durable state", asyn
 
   const previous = {
     service: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     monthly: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
     annual: process.env.GOOGLE_PLAY_PLUS_ANNUAL_PRODUCT_ID,
@@ -82,7 +83,8 @@ test("Google RTDN re-queries Play and derives account-bound durable state", asyn
   } finally {
     if (previous.service === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.service;
-    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.monthly === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
@@ -109,5 +111,71 @@ test("Google provider test notification is acknowledged without an entitlement e
   } finally {
     if (previous === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous;
+  }
+});
+
+
+test("Google RTDN does not persist an active entitlement with an unrecognized acknowledgement state", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const keys = [
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+    client_email: "billing-test@example.iam.gserviceaccount.com",
+    private_key: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+  process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+  process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+  const data = Buffer.from(JSON.stringify({
+    version: "1.0",
+    packageName: "soulcodex.app",
+    eventTimeMillis: "1791043260000",
+    subscriptionNotification: {
+      version: "1.0",
+      notificationType: 2,
+      purchaseToken: "purchase-token-long-enough-for-ack-validation",
+    },
+  }), "utf8").toString("base64");
+
+  let acknowledgementRequests = 0;
+  const fakeFetch = (async (input: string | URL | Request) => {
+    const url = String(input);
+    if (url === "https://oauth2.googleapis.com/token") {
+      return new Response(JSON.stringify({ access_token: "test" }), { status: 200 });
+    }
+    if (url.includes("/purchases/subscriptionsv2/tokens/")) {
+      return new Response(JSON.stringify({
+        startTime: "2026-11-01T12:00:00.000Z",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_UNSPECIFIED",
+        externalAccountIdentifiers: { obfuscatedExternalAccountId: "11111111-1111-4111-8111-111111111111" },
+        lineItems: [{ productId: "soul_codex_plus_monthly", expiryTime: "2026-12-01T12:00:00.000Z" }],
+      }), { status: 200 });
+    }
+    acknowledgementRequests++;
+    throw new Error("unexpected acknowledgement request");
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      verifyGoogleRtdnNotification({
+        message: { data, messageId: "pubsub-ack-unknown" },
+      }, new Date("2026-11-09T12:00:00.000Z"), fakeFetch),
+      /google_play_acknowledgement_state_invalid/,
+    );
+    assert.equal(acknowledgementRequests, 0);
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
   }
 });
