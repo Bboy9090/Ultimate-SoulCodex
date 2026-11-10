@@ -27,12 +27,12 @@ export function parsePublicAppStoreHtml(html) {
 // Missing/changed Apple markup is UNKNOWN, never a negative collection claim.
 export function findPublicPreciseLocationDisclosure(html) {
   if (typeof html !== "string") return null;
-  const heading = /<h[1-6]\\b[^>]*>\\s*App Privacy\\s*<\\/h[1-6]>/i.exec(html);
+  const heading = /<h[1-6]\b[^>]*>\s*App Privacy\s*<\/h[1-6]>/i.exec(html);
   if (!heading || heading.index === undefined) return null;
   const content = html.slice(heading.index + heading[0].length, heading.index + heading[0].length + 40000);
-  const end = /<h[1-6]\\b[^>]*>\\s*(?:Accessibility|Information)\\s*<\\/h[1-6]>/i.exec(content);
+  const end = /<h[1-6]\b[^>]*>\s*(?:Accessibility|Information)\s*<\/h[1-6]>/i.exec(content);
   const section = end ? content.slice(0, end.index) : content;
-  return />\\s*Precise Location\\s*</i.test(section) ? true : null;
+  return />\s*Precise Location\s*</i.test(section) ? true : null;
 }
 
 export async function inspectPublicStorefront(fetchImpl = fetch) {
@@ -116,7 +116,7 @@ async function main() {
     report: path,
   }) + "\n");
   if (report.publicPreciseLocationReviewRequired) {
-    process.stdout.write("::warning::Public Apple privacy disclosure lists Precise Location, while store packet denies live device location; reconcile with actual behavior and App Store Connect.\\n");
+    process.stdout.write("::warning::Public Apple privacy disclosure lists Precise Location, while store packet denies live device location; reconcile with actual behavior and App Store Connect.\n");
   }
   if (report.publicAgeRatingReviewRequired) {
     process.stdout.write("::warning::Public Apple age badge is below the product’s intended 13+ audience; verify the live App Store Connect questionnaire.\n");
