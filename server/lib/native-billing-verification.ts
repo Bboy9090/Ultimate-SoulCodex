@@ -449,7 +449,9 @@ export async function verifyGoogleBillingEvidence(
     throw new Error("google_play_expiry_time_missing");
   }
   requireGoogleAcknowledgementForGrant(purchase.acknowledgementState, accessStatus);
-  const providerTransactionId = purchase.latestOrderId || evidence.transactionId;
+  // When Play omits an order ID (for example, test purchases), derive a stable
+  // identifier from the Play-verified token, never the client-supplied field.
+  const providerTransactionId = purchase.latestOrderId || sha256Hex(evidence.purchaseToken);
   const googleEnvironment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
 
   if (
