@@ -98,7 +98,7 @@ test("weekly audit fetches only on schedule or explicit dispatch, never on a PR"
   assert.ok(workflow.includes('cron: "17 15 * * 1"'));
   assert.ok(workflow.includes("workflow_dispatch:"));
   assert.ok(workflow.includes("if: github.event_name != 'pull_request'"));
-  assert.ok(workflow.includes("permissions:\\n  contents: read"));
+  assert.ok(workflow.includes("permissions:") && workflow.includes("  contents: read"));
   for (const forbidden of ["id-token: write", "pages: write", "track: production", "google-github-actions/auth"]) {
     assert.equal(workflow.includes(forbidden), false);
   }
