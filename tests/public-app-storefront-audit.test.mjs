@@ -95,11 +95,12 @@ test("weekly audit fetches only on schedule or explicit dispatch, never on a PR"
     new URL("../.github/workflows/public-app-storefront-disclosure-audit.yml", import.meta.url),
     "utf8",
   );
-  assert.match(workflow, /schedule:/);
-  assert.match(workflow, /cron: "17 15 \\* \\* 1"/);
-  assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /if: github\\.event_name != 'pull_request'/);
-  assert.match(workflow, /permissions:\\s*\\n  contents: read/);
-  assert.doesNotMatch(workflow, /id-token: write|pages: write|track: production|google-github-actions\\/auth/);
-  assert.match(workflow, /retention-days: 30/);
+  assert.ok(workflow.includes('cron: "17 15 * * 1"'));
+  assert.ok(workflow.includes("workflow_dispatch:"));
+  assert.ok(workflow.includes("if: github.event_name != 'pull_request'"));
+  assert.ok(workflow.includes("permissions:\\n  contents: read"));
+  for (const forbidden of ["id-token: write", "pages: write", "track: production", "google-github-actions/auth"]) {
+    assert.equal(workflow.includes(forbidden), false);
+  }
+  assert.ok(workflow.includes("retention-days: 30"));
 });
