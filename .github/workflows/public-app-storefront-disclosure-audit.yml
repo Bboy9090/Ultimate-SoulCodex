@@ -7,6 +7,9 @@ on:
       - "tests/public-app-storefront-audit.test.mjs"
       - ".github/workflows/public-app-storefront-disclosure-audit.yml"
   workflow_dispatch:
+  schedule:
+    # Weekly Monday UTC: public listing reconciliation, read-only and nonblocking.
+    - cron: "17 15 * * 1"
 
 permissions:
   contents: read
@@ -26,11 +29,11 @@ jobs:
           node-version: "22"
       - name: Test fail-closed public listing parser
         run: node --test tests/public-app-storefront-audit.test.mjs
-      - name: Inspect live public storefront (manual runs only)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Inspect live public storefront (weekly or manual)
+        if: github.event_name != 'pull_request'
         run: node scripts/audit-public-app-storefront.mjs
-      - name: Publish JSON public evidence
-        if: github.event_name == 'workflow_dispatch'
+      - name: Publish timestamped JSON public evidence
+        if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: public-app-storefront-receipt
