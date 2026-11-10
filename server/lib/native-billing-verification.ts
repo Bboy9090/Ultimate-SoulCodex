@@ -397,6 +397,20 @@ function googleAccessStatus(
   }
 }
 
+/** An unknown Play acknowledgement value must never produce a paid entitlement. */
+function requireGoogleAcknowledgementForGrant(
+  state: GoogleSubscriptionV2["acknowledgementState"],
+  accessStatus: VerifiedBillingEvent["accessStatus"],
+): void {
+  if (!["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus)) return;
+  if (
+    state !== "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" &&
+    state !== "ACKNOWLEDGEMENT_STATE_PENDING"
+  ) {
+    throw new Error("google_play_acknowledgement_state_invalid");
+  }
+}
+
 export async function verifyGoogleBillingEvidence(
   userId: string,
   evidenceInput: NativeBillingEvidence,
@@ -434,6 +448,7 @@ export async function verifyGoogleBillingEvidence(
   if (["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus) && !expiresAt) {
     throw new Error("google_play_expiry_time_missing");
   }
+  requireGoogleAcknowledgementForGrant(purchase.acknowledgementState, accessStatus);
   const providerTransactionId = purchase.latestOrderId || evidence.transactionId;
   const googleEnvironment: "sandbox" | "production" = purchase.testPurchase ? "sandbox" : "production";
 
@@ -713,6 +728,7 @@ export async function verifyGoogleRtdnNotification(
   if (["active", "grace_period", "canceled_pending_expiry"].includes(accessStatus) && !expiresAt) {
     throw new Error("google_play_expiry_time_missing");
   }
+  requireGoogleAcknowledgementForGrant(purchase.acknowledgementState, accessStatus);
 
   if (
     purchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
