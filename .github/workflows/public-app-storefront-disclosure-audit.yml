@@ -1,6 +1,12 @@
 name: Public App Storefront Disclosure Audit
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/audit-public-app-storefront.mjs"
+      - "tests/public-app-storefront-audit.test.mjs"
+      - ".github/workflows/public-app-storefront-disclosure-audit.yml"
   pull_request:
     paths:
       - "scripts/audit-public-app-storefront.mjs"
