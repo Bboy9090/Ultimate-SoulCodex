@@ -54,6 +54,13 @@ export async function inspectPublicStorefront(fetchImpl = fetch) {
   }
   const canonicalHostReady = LEGAL_ROUTES.every((route) => legal[route].reachable);
   const publicPrivacyUrlMatches = parsed.privacyPolicyUrl === canonicalPrivacyUrl;
+  // Intended audience is 13+ in the submission packet. The public age badge
+  // can differ from product intent and must be reviewed in App Store Connect;
+  // public HTML alone cannot establish a policy violation or an approved rating.
+  const publicAgeRatingReviewRequired =
+    /^\d+\+$/.test(parsed.ageRating ?? "")
+      ? Number.parseInt(parsed.ageRating, 10) < 13
+      : null;
   const status = !listing.ok || !canonicalHostReady || parsed.parseStatus !== "observed"
     ? "INCOMPLETE"
     : publicPrivacyUrlMatches ? "PUBLIC_URL_ALIGNED" : "ACTION_REQUIRED";
@@ -66,6 +73,7 @@ export async function inspectPublicStorefront(fetchImpl = fetch) {
     legal,
     observed: parsed,
     publicPrivacyUrlMatches,
+    publicAgeRatingReviewRequired,
     status,
     // Public HTML cannot prove private App Store Connect metadata, privacy selections,
     // exact binary under review, age questionnaire, subscription approval or submission.
@@ -84,8 +92,12 @@ async function main() {
     listingHttpStatus: report.listingHttpStatus,
     publicPrivacyUrlMatches: report.publicPrivacyUrlMatches,
     ageRating: report.observed.ageRating,
+    publicAgeRatingReviewRequired: report.publicAgeRatingReviewRequired,
     report: path,
   }) + "\n");
+  if (report.publicAgeRatingReviewRequired) {
+    process.stdout.write("::warning::Public Apple age badge is below the product’s intended 13+ audience; verify the live App Store Connect questionnaire.\\n");
+  }
   if (report.status !== "PUBLIC_URL_ALIGNED") {
     process.stdout.write("::warning::Public App Store listing or legal pages require manual reconciliation; private App Store Connect state is NOT verified.\n");
   }
