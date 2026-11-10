@@ -160,3 +160,21 @@ test("Navigation and planetary browser acceptance: saved Identity keeps personal
     contentType: "application/json",
   });
 });
+
+
+test("Navigation and planetary browser acceptance: 320px and 375px touch precision", async ({ page }) => {
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto("/systems", { waitUntil: "domcontentloaded" });
+    const explorer = page.getByTestId("planetary-educational-preview");
+    await expect(explorer).toBeVisible();
+    const target = page.getByTestId("planetary-hit-target-neptune");
+    const bounds = await target.boundingBox();
+    expect(bounds, `planetary hit target at ${width}px`).not.toBeNull();
+    expect(bounds.width, `minimum finger target at ${width}px`).toBeGreaterThanOrEqual(44);
+    await target.click({ position: { x: 3, y: bounds.height / 2 } });
+    await expect(page.getByTestId("planetary-preview-selection")).toContainText("Imagination");
+    await expect(page.locator('g[aria-label="Explore Neptune"]')).toHaveAttribute("aria-pressed", "true");
+    await assertNoOverflow(page, `narrow planetary preview ${width}px`);
+  }
+});
