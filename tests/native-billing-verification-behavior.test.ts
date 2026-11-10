@@ -9,6 +9,7 @@ test("active Google subscription becomes effective at purchase time, not future 
 
   const previous = {
     serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
@@ -78,7 +79,8 @@ test("active Google subscription becomes effective at purchase time, not future 
   } finally {
     if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
-    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
@@ -92,6 +94,7 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
   const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
   const previous = {
     serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
@@ -154,7 +157,8 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
   } finally {
     if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
-    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
@@ -214,5 +218,53 @@ test("Google Play verifier rejects a credential whose client email does not matc
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
     else process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = previous.productId;
+  }
+});
+
+
+test("Google Play verifier rejects untrusted OAuth token_uri without issuing a signed assertion", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const keys = [
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  let networkCalls = 0;
+  try {
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      client_email: "billing-test@example.iam.gserviceaccount.com",
+      private_key: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+      token_uri: "https://attacker.example/oauth/collect",
+    });
+    process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+    process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+    const fakeFetch = (async () => {
+      networkCalls += 1;
+      throw new Error("no network request should be performed");
+    }) as typeof fetch;
+    await assert.rejects(
+      verifyGoogleBillingEvidence(
+        "11111111-1111-4111-8111-111111111111",
+        {
+          platform: "android",
+          productId: "soul_codex_plus_monthly",
+          transactionId: "GPA.UNTRUSTED-ENDPOINT",
+          purchaseToken: "play-purchase-token-test-untrusted-endpoint",
+        },
+        new Date("2026-11-09T12:00:00.000Z"),
+        fakeFetch,
+      ),
+      /google_play_token_endpoint_invalid/,
+    );
+    assert.equal(networkCalls, 0);
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
   }
 });
