@@ -18,8 +18,8 @@ const PLANETS = [
 type PlanetKey = (typeof PLANETS)[number]["key"];
 
 // Invisible orbit targets must be larger than the visible planetary glyphs.
-// A 30-unit radius also leaves adequate separation at the 360-unit SVG viewBox.
-const PLANET_ORBIT_HIT_RADIUS = 30;
+// A 33-unit radius leaves separation between neighbors while staying above 44 CSS px at a 320px viewport.
+const PLANET_ORBIT_HIT_RADIUS = 33;
 
 export default function InteractivePlanetaryPreview() {
   const reducedMotion = useReducedMotion();
