@@ -31,10 +31,14 @@ def git(*args: str) -> str:
     return process.stdout.strip()
 
 
-def classify(ahead: int, behind: int, unrepresented: int | None) -> str:
+def classify(ahead: int, behind: int, unrepresented: int | None, merge_count: int = 0) -> str:
     """Classify graph ancestry, then patch-ID evidence (not merge safety)."""
     if ahead == 0:
         return "ancestor_or_equal"
+    # git cherry omits merge commits. Zero unmatched non-merge patches does
+    # not prove equivalence if the branch contains unrepresented merges.
+    if unrepresented == 0 and merge_count > 0:
+        return "manual_review"
     if unrepresented == 0:
         return "patch_equivalent_review"
     if unrepresented is None:
@@ -48,8 +52,10 @@ def inspect_branch(base: str, branch: str) -> dict:
     counts = git("rev-list", "--left-right", "--count", f"{base}...{branch}")
     behind, ahead = [int(x) for x in counts.split()]
     unrepresented = None
+    merge_count = 0
     representative = []
     if ahead:
+        merge_count = int(git("rev-list", "--merges", "--count", f"{base}..{branch}"))
         try:
             # git cherry compares patch IDs against base. A leading '+' indicates
             # no corresponding patch ID was found. Merge commits are excluded.
@@ -66,8 +72,9 @@ def inspect_branch(base: str, branch: str) -> dict:
         "ahead": ahead,
         "behind": behind,
         "unrepresented_patch_ids": unrepresented,
+        "exclusive_merge_commits": merge_count,
         "sample_unique_commits": representative[:12],
-        "status": classify(ahead, behind, unrepresented),
+        "status": classify(ahead, behind, unrepresented, merge_count),
     }
 
 
@@ -110,7 +117,8 @@ def main() -> int:
         "errors": errors,
         "interpretation": (
             "Ahead does not prove useful missing functionality. Patch-ID matches "
-            "are advisory, not semantic equivalence. Inspect current main, old "
+            "are advisory, not semantic equivalence. Merge commits are omitted "
+            "from git cherry and flagged for manual review. Inspect current main, old "
             "PRs, tests, and files before porting anything."
         ),
     }
