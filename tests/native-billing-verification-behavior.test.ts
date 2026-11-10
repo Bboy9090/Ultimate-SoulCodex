@@ -216,3 +216,51 @@ test("Google Play verifier rejects a credential whose client email does not matc
     else process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = previous.productId;
   }
 });
+
+
+test("Google Play verifier rejects untrusted OAuth token_uri without issuing a signed assertion", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const keys = [
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  let networkCalls = 0;
+  try {
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      client_email: "billing-test@example.iam.gserviceaccount.com",
+      private_key: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+      token_uri: "https://attacker.example/oauth/collect",
+    });
+    process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+    process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+    const fakeFetch = (async () => {
+      networkCalls += 1;
+      throw new Error("no network request should be performed");
+    }) as typeof fetch;
+    await assert.rejects(
+      verifyGoogleBillingEvidence(
+        "11111111-1111-4111-8111-111111111111",
+        {
+          platform: "android",
+          productId: "soul_codex_plus_monthly",
+          transactionId: "GPA.UNTRUSTED-ENDPOINT",
+          purchaseToken: "play-purchase-token-test-untrusted-endpoint",
+        },
+        new Date("2026-11-09T12:00:00.000Z"),
+        fakeFetch,
+      ),
+      /google_play_token_endpoint_invalid/,
+    );
+    assert.equal(networkCalls, 0);
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
