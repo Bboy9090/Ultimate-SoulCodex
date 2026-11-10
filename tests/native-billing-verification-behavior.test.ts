@@ -9,6 +9,7 @@ test("active Google subscription becomes effective at purchase time, not future 
 
   const previous = {
     serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
@@ -78,7 +79,8 @@ test("active Google subscription becomes effective at purchase time, not future 
   } finally {
     if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
-    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
@@ -92,6 +94,7 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
   const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
   const previous = {
     serviceAccount: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON,
+    verifierEmail: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
     packageName: process.env.GOOGLE_PLAY_PACKAGE_NAME,
     productId: process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID,
   };
@@ -154,7 +157,8 @@ test("Google license-tester subscription evidence is classified as sandbox", asy
   } finally {
     if (previous.serviceAccount === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON;
     else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = previous.serviceAccount;
-    delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    if (previous.verifierEmail === undefined) delete process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL;
+    else process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = previous.verifierEmail;
     if (previous.packageName === undefined) delete process.env.GOOGLE_PLAY_PACKAGE_NAME;
     else process.env.GOOGLE_PLAY_PACKAGE_NAME = previous.packageName;
     if (previous.productId === undefined) delete process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID;
