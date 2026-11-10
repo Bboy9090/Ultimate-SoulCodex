@@ -17,6 +17,10 @@ const PLANETS = [
 
 type PlanetKey = (typeof PLANETS)[number]["key"];
 
+// Invisible orbit targets must be larger than the visible planetary glyphs.
+// A 33-unit radius leaves separation between neighbors while staying above 44 CSS px at a 320px viewport.
+const PLANET_ORBIT_HIT_RADIUS = 33;
+
 export default function InteractivePlanetaryPreview() {
   const reducedMotion = useReducedMotion();
   const [selectedKey, setSelectedKey] = useState<PlanetKey>("sun");
@@ -73,6 +77,11 @@ export default function InteractivePlanetaryPreview() {
                   }}
                   className="cursor-pointer outline-none focus-visible:opacity-70"
                 >
+                  <circle
+                    cx={x} cy={y} r={PLANET_ORBIT_HIT_RADIUS}
+                    fill="transparent" stroke="none"
+                    data-testid={`planetary-hit-target-${planet.key}`}
+                  />
                   <circle
                     cx={x} cy={y} r={active ? 19 : 17}
                     fill={active ? "rgba(217,182,111,.18)" : "rgba(8,6,13,.94)"}
