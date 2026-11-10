@@ -69,6 +69,15 @@ test("Navigation and planetary browser acceptance: clickable routes, alias, and 
     await expect(explorer).toContainText(/not a personal chart/i);
     await expect(page.getByTestId("planetary-preview-selection")).toContainText("Sun");
 
+    // Click the transparent outer band, outside the smaller painted planet.
+    // The earlier source-only contract could pass without proving this touch behavior.
+    const venusHit = page.getByTestId("planetary-hit-target-venus");
+    const hitBounds = await venusHit.boundingBox();
+    expect(hitBounds, "SVG planetary hit area must have a real browser bounding box").not.toBeNull();
+    expect(hitBounds.width, "Planetary hit area should be finger-sized").toBeGreaterThanOrEqual(44);
+    await venusHit.click({ position: { x: 3, y: hitBounds.height / 2 } });
+    await expect(page.getByTestId("planetary-preview-selection")).toContainText("Values and connection");
+
     await page.locator('g[aria-label="Explore Moon"]').click();
     await expect(page.locator('g[aria-label="Explore Moon"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("planetary-preview-selection")).toContainText("Emotional needs");
@@ -150,4 +159,22 @@ test("Navigation and planetary browser acceptance: saved Identity keeps personal
     body: Buffer.from(JSON.stringify({ noBirthTime: true, verifiedDegreesDrawn: 0, pageErrors }, null, 2)),
     contentType: "application/json",
   });
+});
+
+
+test("Navigation and planetary browser acceptance: 320px and 375px touch precision", async ({ page }) => {
+  for (const width of [320, 375]) {
+    await page.setViewportSize({ width, height: 812 });
+    await page.goto("/systems", { waitUntil: "domcontentloaded" });
+    const explorer = page.getByTestId("planetary-educational-preview");
+    await expect(explorer).toBeVisible();
+    const target = page.getByTestId("planetary-hit-target-neptune");
+    const bounds = await target.boundingBox();
+    expect(bounds, `planetary hit target at ${width}px`).not.toBeNull();
+    expect(bounds.width, `minimum finger target at ${width}px`).toBeGreaterThanOrEqual(44);
+    await target.click({ position: { x: 3, y: bounds.height / 2 } });
+    await expect(page.getByTestId("planetary-preview-selection")).toContainText("Imagination");
+    await expect(page.locator('g[aria-label="Explore Neptune"]')).toHaveAttribute("aria-pressed", "true");
+    await assertNoOverflow(page, `narrow planetary preview ${width}px`);
+  }
 });
