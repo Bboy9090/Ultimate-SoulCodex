@@ -323,7 +323,13 @@ function googleServiceAccount(): GoogleServiceAccount {
 
 async function googleAccessToken(fetchImpl: typeof fetch): Promise<string> {
   const serviceAccount = googleServiceAccount();
-  const tokenUri = serviceAccount.token_uri || "https://oauth2.googleapis.com/token";
+  // The JSON key file is deployment configuration, not authority to send a
+  // signed OAuth assertion to an arbitrary URL. Never follow token_uri to a
+  // third-party host (or an attacker-controlled local endpoint).
+  const tokenUri = "https://oauth2.googleapis.com/token";
+  if (serviceAccount.token_uri && serviceAccount.token_uri !== tokenUri) {
+    throw new Error("google_play_token_endpoint_invalid");
+  }
   const issuedAt = Math.floor(Date.now() / 1000);
   const assertion = jwt.sign(
     {
