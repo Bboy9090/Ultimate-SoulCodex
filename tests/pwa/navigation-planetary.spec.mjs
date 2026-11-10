@@ -69,6 +69,15 @@ test("Navigation and planetary browser acceptance: clickable routes, alias, and 
     await expect(explorer).toContainText(/not a personal chart/i);
     await expect(page.getByTestId("planetary-preview-selection")).toContainText("Sun");
 
+    // Click the transparent outer band, outside the smaller painted planet.
+    // The earlier source-only contract could pass without proving this touch behavior.
+    const venusHit = page.getByTestId("planetary-hit-target-venus");
+    const hitBounds = await venusHit.boundingBox();
+    expect(hitBounds, "SVG planetary hit area must have a real browser bounding box").not.toBeNull();
+    expect(hitBounds.width, "Planetary hit area should be finger-sized").toBeGreaterThanOrEqual(44);
+    await venusHit.click({ position: { x: 3, y: hitBounds.height / 2 } });
+    await expect(page.getByTestId("planetary-preview-selection")).toContainText("Values and connection");
+
     await page.locator('g[aria-label="Explore Moon"]').click();
     await expect(page.locator('g[aria-label="Explore Moon"]')).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByTestId("planetary-preview-selection")).toContainText("Emotional needs");
