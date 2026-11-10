@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { inspectPublicStorefront, parsePublicAppStoreHtml } from "../scripts/audit-public-app-storefront.mjs";
+import { inspectPublicStorefront, parsePublicAppStoreHtml, findPublicPreciseLocationDisclosure } from "../scripts/audit-public-app-storefront.mjs";
 
 const exampleHtml = `
 <div><span>Age Rating</span></div><div><span>9+</span></div>
@@ -105,4 +105,33 @@ test("live audit fetches on main merge, schedule or dispatch, never on a PR", ()
     assert.equal(workflow.includes(forbidden), false);
   }
   assert.ok(workflow.includes("retention-days: 30"));
+});
+
+
+test("public App Privacy precise-location label raises a review signal only", async () => {
+  const privacyBlock = '<h2>App Privacy</h2><div>Data Linked to You</div><span>Precise Location</span><h2>Accessibility</h2>';
+  const html = exampleHtml + privacyBlock;
+  assert.equal(findPublicPreciseLocationDisclosure(html), true);
+  const result = await inspectPublicStorefront(async (url) => new Response(
+    url.includes("apps.apple.com") ? html : "ok", { status: 200 },
+  ));
+  assert.equal(result.publicPreciseLocationDisclosed, true);
+  assert.equal(result.publicPreciseLocationReviewRequired, true);
+  assert.equal(result.appStoreConnectPrivacyQualified, false);
+  assert.equal(result.binarySubmissionQualified, false);
+});
+
+test("unrelated Precise Location text outside App Privacy must not be treated as a disclosure", () => {
+  const html = exampleHtml + '<h2>App Privacy</h2><span>Coarse Location</span><h2>Accessibility</h2><span>Precise Location</span>';
+  assert.equal(findPublicPreciseLocationDisclosure(html), null);
+  assert.equal(findPublicPreciseLocationDisclosure('<html>Precise Location</html>'), null);
+  assert.equal(findPublicPreciseLocationDisclosure(null), null);
+});
+
+test("missing disclosure markup remains unknown, not a negative collection claim", async () => {
+  const result = await inspectPublicStorefront(async (url) => new Response(
+    url.includes("apps.apple.com") ? exampleHtml : "ok", { status: 200 },
+  ));
+  assert.equal(result.publicPreciseLocationDisclosed, null);
+  assert.equal(result.publicPreciseLocationReviewRequired, false);
 });

@@ -35,6 +35,15 @@ Tracking domains: **None**
 
 Raw payment-card or bank information collected by Soul Codex: **No**
 
+## Unresolved public disclosure discrepancy (November 10, 2026)
+
+The public Soul Codex App Store listing currently displays **Precise Location**
+under Data Linked to You, while the 4.1 submission packet says native Soul
+Codex does not collect precise/live device location. The submitted binary's
+actual behavior and the private App Store Connect category selection have not
+been independently confirmed. This discrepancy is **NOT RESOLVED** by source
+code, a passing CI test, or the public listing alone.
+
 ## Owner-entered App Store Connect evidence
 
 Complete every line before marking this receipt PASS.
@@ -44,6 +53,7 @@ Complete every line before marking this receipt PASS.
 - [ ] Email Address answer matches the table above
 - [ ] User ID answer matches the table above
 - [ ] Coarse Location answer matches the table above
+- [ ] Reconcile the publicly displayed **Precise Location** category against actual native/device/network behavior; do not infer GPS collection from storefront metadata or silently mark the category approved
 - [ ] Sensitive Info answer matches the table above
 - [ ] Purchase History answer matches the table above
 - [ ] Other User Content answer matches the table above
