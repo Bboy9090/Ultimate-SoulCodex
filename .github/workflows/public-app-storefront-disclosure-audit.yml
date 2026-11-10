@@ -1,0 +1,39 @@
+name: Public App Storefront Disclosure Audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/audit-public-app-storefront.mjs"
+      - "tests/public-app-storefront-audit.test.mjs"
+      - ".github/workflows/public-app-storefront-disclosure-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  read-only-storefront:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test fail-closed public listing parser
+        run: node --test tests/public-app-storefront-audit.test.mjs
+      - name: Inspect live public storefront (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        run: node scripts/audit-public-app-storefront.mjs
+      - name: Publish JSON public evidence
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-app-storefront-receipt
+          path: artifacts/public-app-storefront-audit.json
+          if-no-files-found: error
+          retention-days: 30
