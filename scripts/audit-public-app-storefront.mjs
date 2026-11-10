@@ -96,7 +96,7 @@ async function main() {
     report: path,
   }) + "\n");
   if (report.publicAgeRatingReviewRequired) {
-    process.stdout.write("::warning::Public Apple age badge is below the product’s intended 13+ audience; verify the live App Store Connect questionnaire.\\n");
+    process.stdout.write("::warning::Public Apple age badge is below the product’s intended 13+ audience; verify the live App Store Connect questionnaire.\n");
   }
   if (report.status !== "PUBLIC_URL_ALIGNED") {
     process.stdout.write("::warning::Public App Store listing or legal pages require manual reconciliation; private App Store Connect state is NOT verified.\n");
