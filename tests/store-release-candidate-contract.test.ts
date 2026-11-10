@@ -178,3 +178,17 @@ test("subscription listing descriptions retain the Apple EULA required by App Re
   }
   assert.match(packet, /every enabled App Store localization/);
 });
+
+
+test("store submission handoff distinguishes existing closed test from future production release", async () => {
+  const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
+  assert.match(packet, /versionCode `4000016`: uploaded to Google Play \*\*Alpha closed testing\*\*/);
+  assert.match(packet, /keyless Workload Identity Federation/);
+  assert.match(packet, /does not require a long-lived `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` key/);
+  assert.match(packet, /Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release/);
+  assert.match(packet, /This external gate must not block independent code\/metadata\/QA improvements/);
+  assert.match(packet, /No source-code test|source-code test|live App Store Connect privacy/);
+  assert.doesNotMatch(packet, /In Play Console, select\/create Soul Codex/);
+  assert.doesNotMatch(packet, /the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` blocks/);
+  assert.doesNotMatch(packet, /Upload the exact-current signed `app-release\.aab` from the latest/);
+});
