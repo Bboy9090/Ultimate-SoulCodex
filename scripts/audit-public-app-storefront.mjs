@@ -23,6 +23,18 @@ export function parsePublicAppStoreHtml(html) {
   };
 }
 
+// Only report positive evidence from the rendered App Privacy section.
+// Missing/changed Apple markup is UNKNOWN, never a negative collection claim.
+export function findPublicPreciseLocationDisclosure(html) {
+  if (typeof html !== "string") return null;
+  const heading = /<h[1-6]\\b[^>]*>\\s*App Privacy\\s*<\\/h[1-6]>/i.exec(html);
+  if (!heading || heading.index === undefined) return null;
+  const content = html.slice(heading.index + heading[0].length, heading.index + heading[0].length + 40000);
+  const end = /<h[1-6]\\b[^>]*>\\s*(?:Accessibility|Information)\\s*<\\/h[1-6]>/i.exec(content);
+  const section = end ? content.slice(0, end.index) : content;
+  return />\\s*Precise Location\\s*</i.test(section) ? true : null;
+}
+
 export async function inspectPublicStorefront(fetchImpl = fetch) {
   const checkedAt = new Date().toISOString();
   const request = async (url) => {
@@ -45,9 +57,12 @@ export async function inspectPublicStorefront(fetchImpl = fetch) {
   }
   const listing = await request(PUBLIC_APP_STORE_URL);
   let parsed = { privacyPolicyUrl: null, ageRating: null, parseStatus: "unavailable" };
+  let publicPreciseLocationDisclosed = null;
   if (listing.ok) {
     try {
-      parsed = parsePublicAppStoreHtml(await listing.response.text());
+      const html = await listing.response.text();
+      parsed = parsePublicAppStoreHtml(html);
+      publicPreciseLocationDisclosed = findPublicPreciseLocationDisclosure(html);
     } catch {
       parsed = { privacyPolicyUrl: null, ageRating: null, parseStatus: "incomplete" };
     }
@@ -74,6 +89,10 @@ export async function inspectPublicStorefront(fetchImpl = fetch) {
     observed: parsed,
     publicPrivacyUrlMatches,
     publicAgeRatingReviewRequired,
+    publicPreciseLocationDisclosed,
+    // A public Precise Location category conflicts with the current packet's
+    // no-live-device-location claim, but cannot establish actual GPS access.
+    publicPreciseLocationReviewRequired: publicPreciseLocationDisclosed === true,
     status,
     // Public HTML cannot prove private App Store Connect metadata, privacy selections,
     // exact binary under review, age questionnaire, subscription approval or submission.
@@ -93,8 +112,12 @@ async function main() {
     publicPrivacyUrlMatches: report.publicPrivacyUrlMatches,
     ageRating: report.observed.ageRating,
     publicAgeRatingReviewRequired: report.publicAgeRatingReviewRequired,
+    publicPreciseLocationReviewRequired: report.publicPreciseLocationReviewRequired,
     report: path,
   }) + "\n");
+  if (report.publicPreciseLocationReviewRequired) {
+    process.stdout.write("::warning::Public Apple privacy disclosure lists Precise Location, while store packet denies live device location; reconcile with actual behavior and App Store Connect.\\n");
+  }
   if (report.publicAgeRatingReviewRequired) {
     process.stdout.write("::warning::Public Apple age badge is below the product’s intended 13+ audience; verify the live App Store Connect questionnaire.\n");
   }
