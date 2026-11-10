@@ -151,6 +151,23 @@ This draft reflects the final release line and the checked-in privacy policy. Co
 - SMS, call logs, or device contacts
 - Payment card or bank information
 
+## Public Apple privacy-category reconciliation — November 10, 2026
+
+A fresh public App Store listing inspection shows **Data Linked to You**, including
+**Location → Precise Location** under both personalization and app functionality.
+This **conflicts with the checked-in declaration that the native app does not
+collect precise/live device location**. The public metadata is not evidence that
+the binary actually accesses device GPS. Do not blindly add a precise-location
+permission or change the store declaration to match it: inspect the submitted
+binary, installed plugins, network payloads, and App Store Connect responses,
+then remove any inaccurate category or amend app disclosures with evidence.
+
+The public listing also continues to link the older Railway privacy route and
+displays a 9+ badge. The documented 13+ audience is product intent; Apple owns
+the age-rating decision. **All three items require live App Store Connect
+reconciliation**, separately from Google Play tester participation. The
+public read-only audit records observed differences, not an approval verdict.
+
 ## App Store Privacy Draft
 
 Live-storefront reconciliation receipt: [V4_1_APP_STORE_LIVE_DISCLOSURE_READINESS_2026-10-13.md](../governance/release-audits/V4_1_APP_STORE_LIVE_DISCLOSURE_READINESS_2026-10-13.md). That receipt records public storefront observations only and does not claim private App Store Connect product state.
