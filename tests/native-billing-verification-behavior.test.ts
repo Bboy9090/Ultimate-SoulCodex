@@ -268,3 +268,67 @@ test("Google Play verifier rejects untrusted OAuth token_uri without issuing a s
     }
   }
 });
+
+
+test("Google Play direct verifier fails closed on missing or unspecified acknowledgement state", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const keys = [
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON",
+    "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_PACKAGE_NAME",
+    "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID",
+  ] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+    client_email: "billing-test@example.iam.gserviceaccount.com",
+    private_key: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+  process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+  process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+
+  try {
+    for (const acknowledgementState of [undefined, "ACKNOWLEDGEMENT_STATE_UNSPECIFIED", "UNEXPECTED_STATE"]) {
+      let acknowledgeCalls = 0;
+      const fakeFetch = (async (input: string | URL | Request) => {
+        const url = String(input);
+        if (url === "https://oauth2.googleapis.com/token") {
+          return new Response(JSON.stringify({ access_token: "test" }), { status: 200 });
+        }
+        if (url.includes("/purchases/subscriptionsv2/tokens/")) {
+          return new Response(JSON.stringify({
+            startTime: "2026-11-01T12:00:00.000Z",
+            subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+            ...(acknowledgementState ? { acknowledgementState } : {}),
+            externalAccountIdentifiers: { obfuscatedExternalAccountId: "11111111-1111-4111-8111-111111111111" },
+            lineItems: [{ productId: "soul_codex_plus_monthly", expiryTime: "2026-12-01T12:00:00.000Z" }],
+          }), { status: 200 });
+        }
+        acknowledgeCalls++;
+        throw new Error("unexpected acknowledgement request");
+      }) as typeof fetch;
+
+      await assert.rejects(
+        verifyGoogleBillingEvidence(
+          "11111111-1111-4111-8111-111111111111",
+          {
+            platform: "android",
+            productId: "soul_codex_plus_monthly",
+            transactionId: "GPA.ACK-UNKNOWN",
+            purchaseToken: "play-token-with-valid-length-for-ack-state-test",
+          },
+          new Date("2026-11-09T12:00:00.000Z"),
+          fakeFetch,
+        ),
+        /google_play_acknowledgement_state_invalid/,
+      );
+      assert.equal(acknowledgeCalls, 0);
+    }
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
