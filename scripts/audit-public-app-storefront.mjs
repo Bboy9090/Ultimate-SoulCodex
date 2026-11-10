@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 
 export const PUBLIC_APP_STORE_URL = "https://apps.apple.com/us/app/soul-codex/id6764221944";
 export const CANONICAL_LEGAL_BASE = "https://bboy9090.github.io/Ultimate-SoulCodex";
@@ -76,10 +77,7 @@ export async function inspectPublicStorefront(fetchImpl = fetch) {
 async function main() {
   const report = await inspectPublicStorefront();
   const path = process.env.SOUL_CODEX_PUBLIC_STORE_REPORT || "artifacts/public-app-storefront-audit.json";
-  await mkdir(fileURLToPath(new URL(".", `file://${process.cwd()}/${path}`)), { recursive: true }).catch(async () => {
-    const { dirname } = await import("node:path");
-    await mkdir(dirname(path), { recursive: true });
-  });
+  await mkdir(dirname(path), { recursive: true });
   await writeFile(path, JSON.stringify(report, null, 2) + "\n");
   process.stdout.write(JSON.stringify({
     status: report.status,
