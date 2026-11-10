@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { generateKeyPairSync } from "node:crypto";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import { verifyGoogleBillingEvidence } from "../server/lib/native-billing-verification";
 
@@ -324,6 +324,54 @@ test("Google Play direct verifier fails closed on missing or unspecified acknowl
         /google_play_acknowledgement_state_invalid/,
       );
       assert.equal(acknowledgeCalls, 0);
+    }
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key];
+      else process.env[key] = previous[key];
+    }
+  }
+});
+
+
+test("Google order ID fallback is stable and provider-derived, not supplied by client", async () => {
+  const { privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const keys = ["GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON", "GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL",
+    "GOOGLE_PLAY_PACKAGE_NAME", "GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID"] as const;
+  const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  const purchaseToken = "play-provider-token-for-stable-order-fallback";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL = "billing-test@example.iam.gserviceaccount.com";
+  process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON = JSON.stringify({
+    client_email: process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL,
+    private_key: privateKey.export({ type: "pkcs8", format: "pem" }).toString(),
+    token_uri: "https://oauth2.googleapis.com/token",
+  });
+  process.env.GOOGLE_PLAY_PACKAGE_NAME = "soulcodex.app";
+  process.env.GOOGLE_PLAY_PLUS_MONTHLY_PRODUCT_ID = "soul_codex_plus_monthly";
+  const fakeFetch = (async (input: string | URL | Request) => {
+    if (String(input) === "https://oauth2.googleapis.com/token")
+      return new Response(JSON.stringify({ access_token: "test" }), { status: 200 });
+    if (String(input).includes("/purchases/subscriptionsv2/tokens/"))
+      return new Response(JSON.stringify({
+        startTime: "2026-11-01T12:00:00.000Z",
+        subscriptionState: "SUBSCRIPTION_STATE_ACTIVE",
+        acknowledgementState: "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+        externalAccountIdentifiers: { obfuscatedExternalAccountId: "11111111-1111-4111-8111-111111111111" },
+        lineItems: [{ productId: "soul_codex_plus_monthly", expiryTime: "2026-12-01T12:00:00.000Z" }],
+      }), { status: 200 });
+    throw Error("unexpected fetch");
+  }) as typeof fetch;
+  try {
+    const expected = createHash("sha256").update(purchaseToken).digest("hex");
+    for (const clientTransactionId of ["CLIENT-FORGED-A", "CLIENT-FORGED-B"]) {
+      const verified = await verifyGoogleBillingEvidence(
+        "11111111-1111-4111-8111-111111111111",
+        { platform: "android", productId: "soul_codex_plus_monthly",
+          transactionId: clientTransactionId, purchaseToken },
+        new Date("2026-11-09T12:00:00.000Z"), fakeFetch);
+      assert.equal(verified.providerTransactionId, expected);
+      assert.equal(verified.diagnosticMetadata.hasOrderId, false);
+      assert.notEqual(verified.providerTransactionId, clientTransactionId);
     }
   } finally {
     for (const key of keys) {
