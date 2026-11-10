@@ -1,0 +1,44 @@
+name: Historical Branch Salvage Inventory
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/historical-branch-salvage-inventory.yml'
+      - 'scripts/audit_branch_salvage.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout exact qualification commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Fetch remote branch tips without changing server branches
+        run: |
+          git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+          git show -s --format='Baseline %H %s' origin/main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify read-only classifier before inventory
+        run: python3 -m unittest discover -s tests -p test_branch_salvage.py -v
+      - name: Audit all fetched remote refs against latest main
+        run: |
+          mkdir -p artifacts
+          python3 scripts/audit_branch_salvage.py --base origin/main --remote origin --output artifacts/branch-salvage.json
+      - name: Upload branch evidence (no secrets or worktree content)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soulcodex-branch-salvage-inventory
+          path: artifacts/branch-salvage.json
+          if-no-files-found: warn
+          retention-days: 30
