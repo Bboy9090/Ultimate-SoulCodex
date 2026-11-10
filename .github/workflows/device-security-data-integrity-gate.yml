@@ -51,6 +51,7 @@ jobs:
           tests/native-billing-session-recovery-contract.test.ts
           tests/ios-billing-qualification-build-contract.test.ts
           tests/ios-billing-qualification-cors-contract.test.ts
+          tests/native-billing-verification-behavior.test.ts
           tests/native-billing-server-verification-contract.test.ts
           tests/native-billing-expiry-guard.test.ts
           tests/native-billing-lifecycle-contract.test.ts
