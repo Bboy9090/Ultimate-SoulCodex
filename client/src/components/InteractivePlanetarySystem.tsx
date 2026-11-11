@@ -20,6 +20,11 @@ const GLYPH: Record<string, string> = {
   pluto: "♇",
 };
 
+// A 32-unit radius stays above 44 CSS px when the 360-unit SVG
+// scales to about 260 px on a narrow phone. The visible glyph remains small.
+// Overlapping longitude controls remain selectable in the button list.
+const VERIFIED_PLANET_HIT_RADIUS = 32;
+
 const SIGN_GLYPH = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
 const SIGN_NAMES = ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"];
 
@@ -138,7 +143,7 @@ export default function InteractivePlanetarySystem({
                   key={placement.key}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${placement.label} in ${placement.sign}`}
+                  aria-label={`${placement.label} in ${placement.sign}; ${placement.evidenceState === "verified" ? "verified" : "stable across birth-time range"}`}
                   aria-pressed={active}
                   onClick={() => setSelectedKey(placement.key)}
                   onKeyDown={(event) => {
@@ -154,7 +159,16 @@ export default function InteractivePlanetarySystem({
                   <circle
                     cx={p.x}
                     cy={p.y}
+                    r={VERIFIED_PLANET_HIT_RADIUS}
+                    fill="transparent"
+                    stroke="none"
+                    data-testid={`verified-planet-hit-target-${placement.key}`}
+                  />
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
                     r={active ? 15 : 12}
+                    pointerEvents="none"
                     fill={active ? "rgba(217,182,111,.20)" : "rgba(8,6,13,.88)"}
                     stroke={active ? "rgba(239,208,141,.9)" : "rgba(245,234,215,.28)"}
                     strokeWidth={active ? 2 : 1}
