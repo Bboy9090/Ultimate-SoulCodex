@@ -59,7 +59,7 @@ test('equivalent instants are invariant to the supplied clock offset', () => {
 });
 
 test('invalid and missing offsets fail closed rather than creating guessed birth facts', () => {
-  for (const value of ['1990-09-17T11:11:00-04:60', '1990-13-17T11:11:00-04:00', 'not-a-date']) {
+  for (const value of ['1990-09-17T11:11:00-04:60', '1990-13-17T11:11:00-04:00', '1990-02-30T11:11:00-05:00', 'not-a-date']) {
     assert.throws(() => calculateBirthMomentLunarEvidence(value, true), RangeError);
   }
 });
