@@ -1,0 +1,41 @@
+name: Public Runtime Parity Read-Only Audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/audit-public-runtime-parity.mjs"
+      - "tests/public-runtime-parity.test.mjs"
+      - ".github/workflows/public-runtime-parity.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "37 15 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  public-runtime-audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test strict release and readiness contracts
+        run: node --test tests/public-runtime-parity.test.mjs
+      - name: Inspect public runtime (weekly or manual only)
+        if: github.event_name != 'pull_request'
+        run: node scripts/audit-public-runtime-parity.mjs
+      - name: Publish time-stamped read-only JSON evidence
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-runtime-parity-receipt
+          path: artifacts/public-runtime-parity.json
+          if-no-files-found: error
+          retention-days: 30
