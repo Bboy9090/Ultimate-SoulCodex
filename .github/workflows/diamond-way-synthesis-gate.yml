@@ -88,6 +88,7 @@ jobs:
             tests/daily-guidance-differentiation-corpus.test.ts \
             tests/daily-context-authority.test.ts \
             tests/birth-moment-lunar-evidence.test.ts \
+            tests/profile-birth-moment-integration.test.ts \
             tests/ai-structure-repetition.test.ts \
             packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \
             packages/core/__tests__/personal-numbers.test.ts
