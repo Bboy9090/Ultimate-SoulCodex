@@ -11,7 +11,17 @@ type BirthProfileInput = {
 };
 
 export type ProfileBirthMomentEvidence =
-  | BirthMomentLunarEvidence
+  | Exclude<BirthMomentLunarEvidence, { status: 'verified_calculation' }>
+  | (Extract<BirthMomentLunarEvidence, { status: 'verified_calculation' }> & {
+      astronomicalFacts: Extract<BirthMomentLunarEvidence, { status: 'verified_calculation' }>['astronomicalFacts'] & {
+        civilTimeProvenance: {
+          ianaTimezone: string;
+          localTimestamp: string;
+          conversionMethod: 'standard-iana-tzdb';
+          runtimeTzdbVersion: string | null;
+        };
+      };
+    })
   | {
       status: 'unavailable';
       reason: 'birth_date_invalid' | 'birth_timezone_unknown' | 'birth_time_unresolved';
@@ -62,7 +72,22 @@ export function buildProfileBirthMomentEvidence(profile: BirthProfileInput): Pro
     String(Math.floor(absoluteMinutes / 60)).padStart(2, '0') + ':' +
     String(absoluteMinutes % 60).padStart(2, '0');
   try {
-    return calculateBirthMomentLunarEvidence(resolution.localTimestamp + offset, true);
+    const lunar = calculateBirthMomentLunarEvidence(resolution.localTimestamp + offset, true);
+    if (lunar.status !== 'verified_calculation') return unavailable('birth_time_unresolved');
+    // This IANA timezone belongs to the saved profile; unlike the numeric
+    // offset, it is not a user-entered ISO offset. Keep their provenance distinct.
+    return {
+      ...lunar,
+      astronomicalFacts: {
+        ...lunar.astronomicalFacts,
+        civilTimeProvenance: {
+          ianaTimezone: resolution.timezone,
+          localTimestamp: resolution.localTimestamp,
+          conversionMethod: resolution.conversionMethod,
+          runtimeTzdbVersion: resolution.runtimeTzdbVersion,
+        },
+      },
+    };
   } catch {
     return unavailable('birth_time_unresolved');
   }
