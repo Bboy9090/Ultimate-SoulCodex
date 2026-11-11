@@ -42,6 +42,7 @@ import {
 import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { projectInterpretationInputsForTier } from "./lib/profile-interpretation-access";
 import { projectProfileResponseForTier } from "./lib/profile-response-access";
+import { buildProfileBirthMomentEvidence } from "./lib/profile-birth-moment";
 import { tierAllowsCapability } from "@shared/product-access";
 import { registerBillingRoutes } from "./billing";
 
@@ -252,6 +253,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error getting profile:", error);
       res.status(500).json({ message: "Failed to get profile" });
+    }
+  });
+
+  // Read-only, owner-scoped astronomical facts available on Free and Plus.
+  // This endpoint never persists data or uses symbolic text to grant entitlements.
+  app.get("/api/profiles/:id/birth-moment", async (req: any, res) => {
+    try {
+      const profile = await storage.getProfile(req.params.id);
+      if (!profile || !requestOwnsProfile(req, profile)) return profileNotFound(res);
+      res.setHeader("Cache-Control", "private, no-store, max-age=0");
+      res.status(200).json(buildProfileBirthMomentEvidence(profile));
+    } catch (error) {
+      console.error("[BirthMoment] Failed to resolve profile lunar evidence:", error);
+      res.status(500).json({ message: "Birth moment unavailable" });
     }
   });
 
