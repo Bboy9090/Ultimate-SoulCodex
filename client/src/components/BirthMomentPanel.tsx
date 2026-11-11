@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import BirthMomentLunarPhaseTrack from "./BirthMomentLunarPhaseTrack";
 
 type BirthMomentResponse =
   | {
@@ -6,6 +7,12 @@ type BirthMomentResponse =
       astronomicalFacts: {
         utcInstant: string;
         timezoneProvenance: { kind: "explicit_iso_offset"; suppliedOffset: string };
+        civilTimeProvenance: {
+          ianaTimezone: string;
+          localTimestamp: string;
+          conversionMethod: "standard-iana-tzdb";
+          runtimeTzdbVersion: string | null;
+        };
         moonPhase: string;
         illuminationPercent: number;
         elongationDegrees: number;
@@ -57,11 +64,15 @@ export default function BirthMomentPanel({ profileId }: { profileId: string }) {
             {data.astronomicalFacts.moonPhase} · {data.astronomicalFacts.illuminationPercent}% illuminated
           </p>
           <p>Sun–Moon elongation: {data.astronomicalFacts.elongationDegrees.toFixed(1)}°.</p>
+          <BirthMomentLunarPhaseTrack phase={data.astronomicalFacts.moonPhase} />
           <details className="rounded-xl border border-white/10 p-3">
             <summary className="cursor-pointer font-medium text-[var(--sc-ivory)]">Source and calculation evidence</summary>
             <dl className="mt-3 space-y-1">
               <div><dt className="inline font-semibold">UTC instant: </dt><dd className="inline">{data.astronomicalFacts.utcInstant}</dd></div>
-              <div><dt className="inline font-semibold">Saved offset: </dt><dd className="inline">{data.astronomicalFacts.timezoneProvenance.suppliedOffset}</dd></div>
+              <div><dt className="inline font-semibold">Saved IANA timezone: </dt><dd className="inline">{data.astronomicalFacts.civilTimeProvenance.ianaTimezone}</dd></div>
+              <div><dt className="inline font-semibold">Local birth clock: </dt><dd className="inline">{data.astronomicalFacts.civilTimeProvenance.localTimestamp}</dd></div>
+              <div><dt className="inline font-semibold">Calculated UTC offset: </dt><dd className="inline">{data.astronomicalFacts.timezoneProvenance.suppliedOffset}</dd></div>
+              <div><dt className="inline font-semibold">Timezone resolver: </dt><dd className="inline">{data.astronomicalFacts.civilTimeProvenance.conversionMethod}{data.astronomicalFacts.civilTimeProvenance.runtimeTzdbVersion ? ` · tzdb ${data.astronomicalFacts.civilTimeProvenance.runtimeTzdbVersion}` : " · tzdb version unavailable"}</dd></div>
               <div><dt className="inline font-semibold">Engine: </dt><dd className="inline">{data.astronomicalFacts.source}</dd></div>
               <div><dt className="inline font-semibold">Contract: </dt><dd className="inline">{data.astronomicalFacts.calculationContract}</dd></div>
             </dl>

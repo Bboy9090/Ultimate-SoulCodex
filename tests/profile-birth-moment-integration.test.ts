@@ -12,6 +12,9 @@ test("saved NYC profile resolves a sourced birth moment from IANA civil time", (
   if (result.status !== "verified_calculation") return;
   assert.equal(result.astronomicalFacts.utcInstant, "1990-09-17T15:11:00.000Z");
   assert.equal(result.astronomicalFacts.timezoneProvenance.suppliedOffset, "-04:00");
+  assert.deepEqual(result.astronomicalFacts.civilTimeProvenance.ianaTimezone, "America/New_York");
+  assert.equal(result.astronomicalFacts.civilTimeProvenance.localTimestamp, "1990-09-17T11:11:00");
+  assert.equal(result.astronomicalFacts.civilTimeProvenance.conversionMethod, "standard-iana-tzdb");
   assert.equal(result.astronomicalFacts.source, "astronomy-engine");
   assert.equal(result.astronomicalFacts.calculationContract, "SOUL-BIRTH-MOMENT-LUNAR-v1");
   assert.equal(result.symbolicInterpretation, null);
@@ -23,6 +26,7 @@ test("historical EST profiles resolve the verified instant, not the server timez
   if (result.status === "verified_calculation") {
     assert.equal(result.astronomicalFacts.utcInstant, "1987-11-17T02:00:00.000Z");
     assert.equal(result.astronomicalFacts.timezoneProvenance.suppliedOffset, "-05:00");
+    assert.equal(result.astronomicalFacts.civilTimeProvenance.ianaTimezone, "America/New_York");
   }
 });
 
@@ -82,4 +86,39 @@ test("owned profile includes an accessible Free factual panel with explicit unav
   assert.match(panel, /role="status"/);
   assert.match(panel, /not a personality diagnosis/);
   assert.doesNotMatch(panel, /purchase|checkout|upgrade\(/i);
+});
+
+
+test("IANA provenance preserves historical zone and seasonal offset without server-local assumptions", () => {
+  const summer = buildProfileBirthMomentEvidence(profile("2024-07-10", "11:11", "America/New_York"));
+  const winter = buildProfileBirthMomentEvidence(profile("2024-01-10", "11:11", "America/New_York"));
+  for (const record of [summer, winter]) {
+    assert.equal(record.status, "verified_calculation");
+    if (record.status !== "verified_calculation") return;
+    assert.equal(record.astronomicalFacts.civilTimeProvenance.ianaTimezone, "America/New_York");
+    assert.equal(record.astronomicalFacts.civilTimeProvenance.conversionMethod, "standard-iana-tzdb");
+    assert.equal(record.symbolicInterpretation, null);
+  }
+  if (summer.status !== "verified_calculation" || winter.status !== "verified_calculation") return;
+  assert.equal(summer.astronomicalFacts.timezoneProvenance.suppliedOffset, "-04:00");
+  assert.equal(winter.astronomicalFacts.timezoneProvenance.suppliedOffset, "-05:00");
+  assert.equal(summer.astronomicalFacts.civilTimeProvenance.localTimestamp, "2024-07-10T11:11:00");
+});
+
+test("visible Moon phase track stays accessible, responsive, and evidence-bound", () => {
+  const panel = readFileSync(new URL("../client/src/components/BirthMomentPanel.tsx", import.meta.url), "utf8");
+  const track = readFileSync(new URL("../client/src/components/BirthMomentLunarPhaseTrack.tsx", import.meta.url), "utf8");
+  assert.match(panel, /<BirthMomentLunarPhaseTrack phase=\{data\.astronomicalFacts\.moonPhase\} \/>/);
+  assert.match(panel, /Saved IANA timezone:/);
+  assert.match(panel, /Calculated UTC offset:/);
+  assert.match(panel, /runtimeTzdbVersion/);
+  assert.doesNotMatch(panel, /Saved offset:/);
+  for (const name of ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+    "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"]) {
+    assert.ok(track.includes(name), name);
+  }
+  assert.match(track, /aria-current=\{active \? "step" : undefined\}/);
+  assert.match(track, /sm:grid-cols-8/);
+  assert.match(track, /aria-hidden="true"/);
+  assert.doesNotMatch(track, /getMoonPhase|Math\.random|Date\.now|personality diagnosis/);
 });
