@@ -18,6 +18,8 @@
   "include": [
     "index.ts",
     "astrology.ts",
+    "birth-moment.ts",
+    "daily-context.ts",
     "human-design.ts",
     "human-design-display-data.ts",
     "gene-keys.ts",

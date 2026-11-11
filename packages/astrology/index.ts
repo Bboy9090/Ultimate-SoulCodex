@@ -6,3 +6,4 @@ export * from './vedic-astrology';
 export * from './numerology';
 export * from './kabbalah';
 export * from './mayan-astrology';
+export * from './birth-moment';
