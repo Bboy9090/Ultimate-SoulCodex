@@ -5,6 +5,12 @@
 **Last verified pre-status-update main/runtime checkpoint:** `8c149f6987b7aec2c32a809ebc3def8c62ea5c0b`  
 **Current Milestone:** Soul Codex 4.1.0 split-store launch / external provider and store-owner completion
 
+## Fresh Railway public routing receipt — 2026-11-11
+
+See [the verified Railway service/domain and rollback inventory](release-audits/RAILWAY_PUBLIC_ROUTING_2026-11-11.md) for the dated provider-side distinction between the **public `soulcodex-recovery` service** and the intentionally isolated **rollback-only `soulcodex` service**. The public domain's latest successful release at that checkpoint is `d8c8fd6487f89ad23618faa101df3d1138a83947`. The old rollback lane's normal `main` push events are SKIPPED **by configuration**, not an unexplained public-release failure. The actual Railway builder is Railpack despite the repository Dockerfile-only contract; do not change live build settings without an isolated qualification and explicit cutover.
+
+The read-only public `/health` and `/ready` parity workflow can generate additional dated receipts. A green PR run by itself does not establish that a live fetch occurred.
+
 ## Current Authority Model
 
 Soul Codex now uses separate evidence classes. Do not collapse these into one “release SHA.”
