@@ -11,6 +11,7 @@ import HumanDepthSurface, { type HumanDepthItem } from "@/components/HumanDepthS
 import NatalReportDownloadButton from "@/components/NatalReportDownloadButton";
 import ProfileSystemVerificationButton from "@/components/ProfileSystemVerificationButton";
 import GalacticCodePanel from "@/components/GalacticCodePanel";
+import BirthMomentPanel from "@/components/BirthMomentPanel";
 import { ShareModal } from "@/components/ShareModal";
 import { Button } from "@/components/ui/button";
 import type { Profile } from "@shared/schema";
@@ -293,6 +294,8 @@ export default function ProfilePage() {
             </SoulInteractive>
           </SoulStaggerItem>
         </SoulStagger>
+
+        <BirthMomentPanel profileId={String(id)} />
 
         <SoulReveal>
           <ProfileSystemVerificationButton profile={profile} />
