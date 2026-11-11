@@ -40,7 +40,11 @@ function unavailable(reason: 'birth_date_invalid' | 'birth_timezone_unknown' | '
  */
 export function buildProfileBirthMomentEvidence(profile: BirthProfileInput): ProfileBirthMomentEvidence {
   if (!profile.birthTime?.trim()) {
-    return calculateBirthMomentLunarEvidence(null, false);
+    const missing = calculateBirthMomentLunarEvidence(null, false);
+    // The core calculator currently returns unavailable for unknown time;
+    // narrow its union before returning our stricter profile response type.
+    if (missing.status !== 'unavailable') return unavailable('birth_time_unresolved');
+    return missing;
   }
   if (!profile.timezone?.trim()) return unavailable('birth_timezone_unknown');
 
