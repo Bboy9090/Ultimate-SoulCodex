@@ -67,6 +67,18 @@ export function calculateBirthMomentLunarEvidence(
     throw new RangeError('birth_moment_instant_invalid');
   }
 
+  // Date parsing can silently normalize impossible dates (e.g. February 30).
+  // Reconstruct the user-supplied wall clock using the explicit offset and
+  // require the original YYYY-MM-DDTHH:mm to survive unchanged.
+  const offsetMinutes = suppliedOffset === 'Z'
+    ? 0
+    : (suppliedOffset.startsWith('+') ? 1 : -1) *
+      (Number(suppliedOffset.slice(1, 3)) * 60 + Number(suppliedOffset.slice(4, 6)));
+  const wallClock = new Date(instant.getTime() + offsetMinutes * 60_000);
+  if (wallClock.toISOString().slice(0, 16) !== birthTimestampWithOffset.slice(0, 16)) {
+    throw new RangeError('birth_moment_calendar_date_invalid');
+  }
+
   const phase = getMoonPhase(instant);
   const elongationDegrees = Astro.MoonPhase(instant);
   if (
