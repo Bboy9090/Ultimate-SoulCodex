@@ -108,7 +108,7 @@ test("a partial verified chart keeps its wheel, personal planet meanings and Fre
     return { before, after: sample() };
   });
   expect(motionSamples.after).toEqual(motionSamples.before);
-  await system.locator('g[aria-label="Moon in Virgo"]').evaluate(node => node.focus());
+  await system.locator('g[aria-label^="Moon in Virgo;"]').evaluate(node => node.focus());
   await page.keyboard.press("Enter");
   await expect(selected).toContainText("emotional needs");
   await system.getByRole("button", { name: "☉ Sun Virgo · verified", exact: true }).click();
