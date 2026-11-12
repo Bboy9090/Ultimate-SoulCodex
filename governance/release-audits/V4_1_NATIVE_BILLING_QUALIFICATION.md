@@ -87,6 +87,25 @@ Required checkpoints:
 
 Distribution source: Google Play internal testing or another approved Play test track.
 
+### Fail-closed Play qualification activation
+
+Normal production purchasing remains disabled throughout qualification:
+
+- `SOUL_CODEX_PLUS_ANDROID_BILLING_ENABLED=false`
+- legacy `SOUL_CODEX_PLUS_NATIVE_BILLING_ENABLED=false`
+
+For the bounded Google Play internal/closed-test qualification window only:
+
+1. Deploy code that contains the Android qualification gate.
+2. Set server-side `SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED=true`; leave the Android production flag false.
+3. Build a dedicated Play test artifact with `VITE_BILLING_QUALIFICATION_MODE=true` and distribute it only through the approved internal/closed test track.
+4. Confirm the tester account is a real Play license tester and has opted into the test track.
+5. Run a real Play test subscription purchase. The Play Developer API must return `testPurchase`; the backend treats that provider-confirmed state as sandbox evidence.
+6. The backend must reject production purchases during qualification and reject Play test purchases outside qualification. The qualification header alone never grants access.
+7. When evidence collection is complete, set `SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED=false` and build normal release artifacts with `VITE_BILLING_QUALIFICATION_MODE=false`.
+
+The qualification switch does not itself grant access. Google Play Developer API lookup, package/product match, obfuscated account binding, expiry, acknowledgement, and durable entitlement verification are still mandatory.
+
 Required checkpoints:
 
 1. **Catalog** — monthly and annual subscriptions resolve with provider-supplied localized price/currency.
