@@ -35,6 +35,18 @@ test("every supported placement is directly selectable", () => {
   assert.match(system, /planetary-system-selection/);
 });
 
+test("verified chart exposes a phone-sized SVG hit region without faking geometry", () => {
+  assert.match(system, /const VERIFIED_PLANET_HIT_RADIUS = 32;/);
+  assert.match(system, /r=\{VERIFIED_PLANET_HIT_RADIUS\}/);
+  assert.match(system, /data-testid=\{`verified-planet-hit-target-\$\{placement\.key\}`\}/);
+  assert.match(system, /pointerEvents="none"/);
+  assert.match(system, /placement\.evidenceState === "verified" \? "verified" : "stable across birth-time range"/);
+  assert.match(system, /aria-pressed=\{active\}/);
+  assert.match(system, /event\.key === "Enter" \|\| event\.key === " "/);
+  // The existing accessible list remains the fallback for nearly conjunct planets.
+  assert.match(system, /<button[\s\S]*?aria-pressed=\{selected\?\.key === placement\.key\}/);
+});
+
 test("Systems is a labeled primary navigation destination when a profile exists", () => {
   assert.match(navigation, /href: "\/systems", label: "Systems"/);
   assert.doesNotMatch(navigation, /data-testid="link-underlying-systems"/);
