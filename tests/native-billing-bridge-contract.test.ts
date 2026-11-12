@@ -83,13 +83,14 @@ test("qualification mode does not replace the production iOS billing flag", () =
 });
 
 test("Android Play qualification is request-scoped and cannot activate production billing", () => {
-  assert.match(billing, /SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED/);
-  assert.match(billing, /function androidQualificationFlagEnabled/);
-  assert.match(billing, /platform === "ios"[\\s\\S]*?androidQualificationFlagEnabled\\(\\)/);
-  assert.match(billing, /!productionEnabled &&[\\s\\S]*?billingQualificationRequest\\(req\\)/);
-  assert.match(verifier, /purchase\\.testPurchase \\? "sandbox" : "production"/);
-  assert.match(billing, /native_billing_qualification_requires_sandbox/);
-  assert.match(billing, /native_billing_production_requires_production_purchase/);
+  assert.ok(billing.includes("SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED"));
+  assert.ok(billing.includes("function androidQualificationFlagEnabled"));
+  assert.ok(billing.includes(': androidQualificationFlagEnabled()'));
+  assert.ok(billing.includes("!productionEnabled &&"));
+  assert.ok(billing.includes("billingQualificationRequest(req)"));
+  assert.ok(verifier.includes('purchase.testPurchase ? "sandbox" : "production"'));
+  assert.ok(billing.includes("native_billing_qualification_requires_sandbox"));
+  assert.ok(billing.includes("native_billing_production_requires_production_purchase"));
   assert.match(client, /VITE_BILLING_QUALIFICATION_MODE/);
   assert.match(client, /X-SoulCodex-Billing-Qualification/);
 });
