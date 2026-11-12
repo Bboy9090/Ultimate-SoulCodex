@@ -1,0 +1,41 @@
+name: Public Native Billing Boundary Read-Only Audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/audit-public-native-billing-boundary.mjs"
+      - "tests/public-native-billing-boundary.test.mjs"
+      - ".github/workflows/public-native-billing-boundary.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "47 15 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  public-native-billing-boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test strict public billing boundary contracts
+        run: node --test tests/public-native-billing-boundary.test.mjs
+      - name: Read live production and sandbox billing configuration
+        if: github.event_name != 'pull_request'
+        run: node scripts/audit-public-native-billing-boundary.mjs
+      - name: Save redacted read-only public billing receipt
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-native-billing-boundary-receipt
+          path: artifacts/public-billing-boundary.json
+          if-no-files-found: error
+          retention-days: 30
