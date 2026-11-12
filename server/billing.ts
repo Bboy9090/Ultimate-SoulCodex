@@ -110,6 +110,10 @@ function iosQualificationFlagEnabled(): boolean {
   return process.env.SOUL_CODEX_PLUS_IOS_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true";
 }
 
+function androidQualificationFlagEnabled(): boolean {
+  return process.env.SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED?.trim().toLowerCase() === "true";
+}
+
 function billingQualificationRequest(req: Request): boolean {
   const marker = req.headers["x-soulcodex-billing-qualification"];
   return marker === "1";
@@ -661,7 +665,11 @@ export function registerBillingRoutes(app: Express): void {
 
     const productionEnabled = platformNativeBillingFlagEnabled(platform);
     const qualificationEnabled =
-      platform === "ios" && iosQualificationFlagEnabled() && billingQualificationRequest(req);
+      !productionEnabled &&
+      billingQualificationRequest(req) &&
+      (platform === "ios"
+        ? iosQualificationFlagEnabled()
+        : androidQualificationFlagEnabled());
     const enabled = productionEnabled || qualificationEnabled;
 
     const monthlyProductId =
@@ -711,9 +719,11 @@ export function registerBillingRoutes(app: Express): void {
 
     const productionEnabled = platformNativeBillingFlagEnabled(parsed.data.platform);
     const qualificationEnabled =
-      parsed.data.platform === "ios" &&
-      iosQualificationFlagEnabled() &&
-      billingQualificationRequest(req);
+      !productionEnabled &&
+      billingQualificationRequest(req) &&
+      (parsed.data.platform === "ios"
+        ? iosQualificationFlagEnabled()
+        : androidQualificationFlagEnabled());
 
     if (!productionEnabled && !qualificationEnabled) {
       return res.status(503).json({
@@ -751,8 +761,14 @@ export function registerBillingRoutes(app: Express): void {
 
       if (qualificationEnabled && verifiedEvent.environment !== "sandbox") {
         return res.status(409).json({
-          message: "Qualification mode accepts sandbox StoreKit evidence only.",
+          message: "Qualification mode accepts sandbox store evidence only.",
           code: "native_billing_qualification_requires_sandbox",
+        });
+      }
+      if (!qualificationEnabled && verifiedEvent.environment !== "production") {
+        return res.status(409).json({
+          message: "Production native billing accepts production store transactions only.",
+          code: "native_billing_production_requires_production_purchase",
         });
       }
 
