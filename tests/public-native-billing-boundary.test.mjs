@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
-import { assessBillingBoundary, inspectPublicBillingBoundary } from "../scripts/audit-public-native-billing-boundary.mjs";
+import { assessBillingBoundary, inspectPublicBillingBoundary, billingAuditExitCode } from "../scripts/audit-public-native-billing-boundary.mjs";
 
 const response = (platform, enabled, qualificationMode = false, verifierConfigured = true) => ({
   httpStatus: 200,
@@ -13,6 +13,17 @@ const safe = () => ({
   androidQualification: response("android", false, false, false),
   ios: response("ios", false),
   iosQualification: response("ios", true, true),
+});
+
+test("live billing monitor fails closed while preserving evidence", () => {
+  assert.equal(billingAuditExitCode("PRODUCTION_OFF"), 0);
+  for (const state of ["INCOMPLETE", "PRODUCTION_BILLING_REVIEW_REQUIRED", "UNKNOWN", null]) {
+    assert.equal(billingAuditExitCode(state), 1);
+  }
+  const source = readFileSync(new URL("../scripts/audit-public-native-billing-boundary.mjs", import.meta.url), "utf8");
+  assert.ok(source.includes("process.exitCode = 1"));
+  const workflow = readFileSync(new URL("../.github/workflows/public-native-billing-boundary.yml", import.meta.url), "utf8");
+  assert.ok(workflow.includes("if: always() && github.event_name != 'pull_request'"));
 });
 
 test("normal production remains off even while sandbox iOS is qualified", () => {
