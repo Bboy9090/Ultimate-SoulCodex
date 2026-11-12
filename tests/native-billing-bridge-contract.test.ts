@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const billing = readFileSync(new URL("../server/billing.ts", import.meta.url), "utf8");
+const verifier = readFileSync(new URL("../server/lib/native-billing-verification.ts", import.meta.url), "utf8");
 const client = readFileSync(new URL("../client/src/lib/nativeBilling.ts", import.meta.url), "utf8");
 const swift = readFileSync(new URL("../ios/App/App/SoulCodexNativeBillingPlugin.swift", import.meta.url), "utf8");
 const storyboard = readFileSync(new URL("../ios/App/App/Base.lproj/Main.storyboard", import.meta.url), "utf8");
@@ -79,4 +80,16 @@ test("qualification mode does not replace the production iOS billing flag", () =
   assert.match(billing, /!productionEnabled && qualificationEnabled/);
   assert.match(billing, /enabled: enabled && configured && verifierConfigured/);
   assert.doesNotMatch(client, /SOUL_CODEX_PLUS_IOS_BILLING_ENABLED/);
+});
+
+test("Android Play qualification is request-scoped and cannot activate production billing", () => {
+  assert.match(billing, /SOUL_CODEX_PLUS_ANDROID_QUALIFICATION_ENABLED/);
+  assert.match(billing, /function androidQualificationFlagEnabled/);
+  assert.match(billing, /platform === "ios"[\\s\\S]*?androidQualificationFlagEnabled\\(\\)/);
+  assert.match(billing, /!productionEnabled &&[\\s\\S]*?billingQualificationRequest\\(req\\)/);
+  assert.match(verifier, /purchase\\.testPurchase \\? "sandbox" : "production"/);
+  assert.match(billing, /native_billing_qualification_requires_sandbox/);
+  assert.match(billing, /native_billing_production_requires_production_purchase/);
+  assert.match(client, /VITE_BILLING_QUALIFICATION_MODE/);
+  assert.match(client, /X-SoulCodex-Billing-Qualification/);
 });
