@@ -34,6 +34,11 @@ export function assessBillingBoundary({ web, android, androidQualification, ios,
   return { status: "PRODUCTION_OFF", productionDisabled: true, iosSandboxAvailable, androidSandboxAvailable };
 }
 
+/** A live audit must be red whenever the public production boundary cannot be verified. */
+export function billingAuditExitCode(status) {
+  return status === "PRODUCTION_OFF" ? 0 : 1;
+}
+
 export async function inspectPublicBillingBoundary(fetchImpl = fetch) {
   const get = async (path, qualification = false) => {
     try {
@@ -94,8 +99,10 @@ async function main() {
     androidSandboxAvailable: result.androidSandboxAvailable,
     path: output,
   }) + "\n");
-  if (result.status !== "PRODUCTION_OFF") {
-    process.stdout.write("::warning::Production billing disabled state could not be verified; review live catalog and provider receipts.\n");
+  if (billingAuditExitCode(result.status) !== 0) {
+    process.stdout.write("::error::Production billing safety is not verified; inspect the archived JSON receipt and provider state.\n");
+    // Fail the scheduled/manual workflow while retaining the JSON evidence.
+    process.exitCode = 1;
   }
 }
 
