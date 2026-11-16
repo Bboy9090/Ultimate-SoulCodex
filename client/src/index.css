@@ -675,3 +675,38 @@ html[data-cosmic-motion="still"] .sc-cosmic-root :is(.sc-card-link, .feature-car
   .sc-orbit-body { width: clamp(47px, 15%, 62px); min-height: 44px; padding: 5px; }
   .sc-orbit-body-label { font-size: .59rem; }
 }
+
+/* Wave 4: replace crowded orbital targets with ergonomic touch controls on phones. */
+.sc-orbit-mobile-picker { display: none; }
+@media (max-width: 639px) {
+  .sc-orbit-stage { display: none; }
+  .sc-orbit-mobile-picker {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: .65rem;
+  }
+  .sc-orbit-mobile-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    min-width: 0;
+    padding: .65rem .5rem;
+    border: 1px solid rgba(189,165,255,.34);
+    border-radius: .9rem;
+    color: var(--sc-ivory);
+    font-size: .88rem;
+    font-weight: 650;
+    background: linear-gradient(145deg,rgba(42,35,73,.87),rgba(17,22,41,.96));
+    overflow-wrap: anywhere;
+    transition: border-color .22s ease, background-color .22s ease;
+  }
+  .sc-orbit-mobile-option[aria-pressed="true"] {
+    border-color: var(--sc-gold-bright);
+    background: rgba(126,87,176,.33);
+  }
+  .sc-orbit-mobile-option:focus-visible {
+    outline: 3px solid var(--sc-gold-bright);
+    outline-offset: 3px;
+  }
+}
