@@ -5,6 +5,7 @@ import { generateDailyAffirmations, type Affirmation } from './affirmations';
 import crypto from 'crypto';
 import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
 import { hasApprovedVerifiedHumanDesignTrust } from '../server/services/human-design-trust';
+import { boundHumanDesignForStoredProfile } from '../server/lib/profile-birth-evidence-integrity';
 
 export interface DailyInsightData {
   date: string;
@@ -32,7 +33,7 @@ export interface DailyInsightData {
 
 export function extractDailyProfileSummary(profile: Profile) {
   const verifiedAstrology = extractVerifiedAstrology(profile);
-  const hdData = profile.humanDesignData as any;
+  const hdData = boundHumanDesignForStoredProfile(profile) as any;
   const numData = profile.numerologyData as any;
   const personalityData = profile.personalityData as any;
   const hdVerified = hasApprovedVerifiedHumanDesignTrust(hdData);
