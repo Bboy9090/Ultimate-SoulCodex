@@ -43,6 +43,7 @@ import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { projectInterpretationInputsForTier } from "./lib/profile-interpretation-access";
 import { projectProfileResponseForTier } from "./lib/profile-response-access";
 import { buildProfileBirthMomentEvidence } from "./lib/profile-birth-moment";
+import { bindStoredEvidence } from "./lib/profile-birth-evidence-integrity";
 import { tierAllowsCapability } from "@shared/product-access";
 import { registerBillingRoutes } from "./billing";
 
@@ -171,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!requireDurableFeature(res)) return;
     try {
       const birthData = birthDataSchema.parse(req.body);
-      const humanDesignData = calculateProfileHumanDesign(birthData);
+      const rawHumanDesignData = calculateProfileHumanDesign(birthData);
       const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
@@ -179,7 +180,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         longitude: finiteCoordinate(birthData.longitude),
         timezone: birthData.timezone,
       });
-      const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
+      const evidenceInputs = {
+        birthDate: birthData.birthDate,
+        birthTime: birthData.birthTime,
+        timezone: birthData.timezone,
+        latitude: birthData.latitude,
+        longitude: birthData.longitude,
+      };
+      const humanDesignData = bindStoredEvidence(rawHumanDesignData, evidenceInputs);
+      const astrologyData = bindStoredEvidence(
+        withVerifiedLegacyAliases(verifiedAstrologyData),
+        evidenceInputs,
+      );
       const numerologyData = calculateNumerology(birthData.fullBirthName, birthData.birthDate);
       const tarotCards = getTarotBirthCards(birthData.birthDate);
       const authenticatedUserId = req.session?.userId ?? null;
