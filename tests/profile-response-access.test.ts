@@ -1,11 +1,21 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { projectProfileResponseForTier } from "../server/lib/profile-response-access.ts";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity.ts";
+
+const birthInputs = {
+  birthDate: new Date("1990-09-17T00:00:00.000Z"),
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: "40.8448",
+  longitude: "-73.8648",
+};
 
 const profile = {
   id: "profile-1",
   name: "Bobby",
-  astrologyData: {},
+  ...birthInputs,
+  astrologyData: bindStoredEvidence({}, birthInputs),
   personalityData: {},
   archetypeData: { title: "Stored Plus Archetype", description: "stored plus description", guidance: "stored plus guidance", shadows: ["stored shadow"] },
   biography: "stored plus biography secret",
@@ -31,7 +41,7 @@ const profile = {
       maturity: "maturity",
     },
   },
-  humanDesignData: {
+  humanDesignData: bindStoredEvidence({
     status: "verified",
     type: "Reflector",
     strategy: "Wait a lunar cycle",
@@ -48,7 +58,7 @@ const profile = {
     verificationReceiptId: "receipt",
     independentSource: "independent",
     verifiedAt: "2026-09-19T23:03:08.000Z",
-  },
+  }, birthInputs),
 };
 
 test("Free profile response preserves date numerology while withholding paid name numerology", () => {
@@ -109,4 +119,16 @@ test("Plus profile response preserves stored interpretation depth", () => {
   assert.equal(out.dailyGuidance, "stored plus guidance secret");
   assert.deepEqual(out.depthInterpretation, { secret: "paid depth" });
   assert.deepEqual(out.synthesis, { secret: "paid synthesis" });
+});
+
+
+test("unbound legacy server evidence is quarantined from profile responses", () => {
+  const legacy: any = {
+    ...profile,
+    astrologyData: { sun: { sign: "Aries", verificationStatus: "verified" } },
+    humanDesignData: { ...profile.humanDesignData, birthEvidenceInput: undefined },
+  };
+  const out = projectProfileResponseForTier(legacy, "plus");
+  assert.deepEqual(out.astrologyData, {});
+  assert.deepEqual(out.humanDesignData, {});
 });
