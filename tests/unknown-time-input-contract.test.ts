@@ -46,8 +46,12 @@ test("timed profiles require a valid timezone and bounded coordinates", () => {
   );
 });
 
-test("a provided birth time must use HH:MM instead of accepting arbitrary text", () => {
-  assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "not-a-time" }), /Birth time must use HH:MM/);
+test("a provided birth time must be a real 24-hour HH:MM clock value", () => {
+  assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "not-a-time" }), /real 24-hour HH:MM/);
+  assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "24:00" }), /real 24-hour HH:MM/);
+  assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "12:60" }), /real 24-hour HH:MM/);
+  assert.equal(birthDataSchema.parse({ ...base, birthTime: "00:00" }).birthTime, "00:00");
+  assert.equal(birthDataSchema.parse({ ...base, birthTime: "23:59" }).birthTime, "23:59");
   assert.equal(birthDataSchema.parse({ ...base, birthTime: "11:11" }).birthTime, "11:11");
 });
 
