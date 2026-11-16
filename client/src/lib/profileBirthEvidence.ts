@@ -1,4 +1,5 @@
-import { resolveCivilTimeStrict } from "@soulcodex/core";
+import { parseDateOnly, resolveCivilTimeStrict } from "@soulcodex/core";
+import { isValidIanaTimezone } from "@shared/schema";
 
 /** The inputs used by a completed verification request, never a confidence score. */
 export type BirthEvidenceInput = {
@@ -22,7 +23,12 @@ export function birthEvidenceInput(profile: any): BirthEvidenceInput | null {
   if (!profile || typeof profile !== "object") return null;
   const birthDate = typeof profile.birthDate === "string" ? profile.birthDate.slice(0, 10) : "";
   const timezone = typeof profile.timezone === "string" ? profile.timezone.trim() : "";
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !timezone) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || !isValidIanaTimezone(timezone)) return null;
+  try {
+    parseDateOnly(birthDate);
+  } catch {
+    return null;
+  }
   const unknown = profile.birthTimeStatus === "unknown" || profile.birthTime === null ||
     profile.birthTime === undefined || (typeof profile.birthTime === "string" && !profile.birthTime.trim());
   let utc: string | null = null;
