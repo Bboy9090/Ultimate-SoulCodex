@@ -89,7 +89,7 @@ test("store workflow qualifies exact candidate without auto-publishing productio
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
-  assert.match(validator, /releaseVersion !== "4\.1\.1"/);
+  assert.match(validator, /platform === "ios" && releaseVersion !== "4\.1\.1"/);
   assert.match(validator, /android\/app\/build\.gradle/);
   assert.match(validator, /versionCode\\s\+4000016/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000015/);
@@ -111,7 +111,7 @@ test("store metadata points at the verified public legal host and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.1 \/ versionCode 4000016/);
+  assert.match(packet, /4\.1\.0 \/ versionCode 4000016/);
   assert.match(packet, /4\.1\.1 \/ build 4000015/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
