@@ -96,8 +96,14 @@ export function staleBirthEvidenceReason(profile: any, requireStoredBinding = fa
     typeof hd?.independentSource === "string" && hd.independentSource.trim() &&
     typeof hd?.verifiedAt === "string" && hd.verifiedAt.trim()
   );
+  const persistedHdCarriesSourceInstant = Boolean(
+    requireStoredBinding &&
+    hd?.status === "verified" &&
+    typeof hd?.inputTimestampUtc === "string" &&
+    hd.inputTimestampUtc.trim()
+  );
   const shouldCheckHumanDesignBirthInstant =
-    hdPresentsTrustEnvelope || (requireStoredBinding && hd?.status === "verified");
+    hdPresentsTrustEnvelope || persistedHdCarriesSourceInstant;
   if (shouldCheckHumanDesignBirthInstant) {
     if (current.mode === "unknown") return "exact_evidence_for_unknown_birth_time";
     if (typeof hd.inputTimestampUtc !== "string" || Number.isNaN(new Date(hd.inputTimestampUtc).getTime())) {
