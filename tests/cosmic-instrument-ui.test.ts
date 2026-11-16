@@ -7,6 +7,8 @@ const app = new URL("../client/src/App.tsx", import.meta.url);
 const styles = new URL("../client/src/index.css", import.meta.url);
 const settings = new URL("../client/src/pages/SettingsPage.tsx", import.meta.url);
 const preference = new URL("../client/src/lib/cosmicMotionPreference.ts", import.meta.url);
+const orbit = new URL("../client/src/components/CosmicComparisonOrbit.tsx", import.meta.url);
+const comparison = new URL("../client/src/pages/CompatibilityPersonPage.tsx", import.meta.url);
 
 test("app mounts the decorative atmosphere once outside routed content", async () => {
   const source = await readFile(app, "utf8");
@@ -52,4 +54,19 @@ test("device motion choices have local persistence, accessible controls and syst
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(appSource, /className="sc-cosmic-route"/);
   assert.match(appSource, /id="main-content" tabIndex=\{-1\}/);
+});
+
+test("interactive shared orbit is evidence-bounded and keyboard accessible", async () => {
+  const [orbitSource, compareSource, css] = await Promise.all([
+    readFile(orbit, "utf8"), readFile(comparison, "utf8"), readFile(styles, "utf8"),
+  ]);
+  assert.match(compareSource, /<CosmicComparisonOrbit pairs={placementComparisons\.map/);
+  assert.match(orbitSource, /aria-pressed={active\.key === pair\.key}/);
+  assert.match(orbitSource, /type="button"/);
+  assert.match(orbitSource, /aria-live="polite"/);
+  assert.match(orbitSource, /not astronomical longitudes or aspects/);
+  assert.match(orbitSource, /supported = pairs\.filter/);
+  assert.doesNotMatch(orbitSource, /Math\.random|Date\.now|fetch\(/);
+  assert.match(css, /\.sc-orbit-body:focus-visible/);
+  assert.match(css, /data-cosmic-motion="still"/);
 });
