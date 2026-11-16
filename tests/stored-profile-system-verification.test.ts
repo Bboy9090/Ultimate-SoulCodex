@@ -55,6 +55,16 @@ test("explicit stored verification checks ownership and updates the same existin
   assert.equal(writes, 1);
   assert.equal(stored.humanDesignData.status, "verified");
   assert.equal(stored.humanDesignData.type, "Reflector");
+  assert.deepEqual(stored.humanDesignData.birthEvidenceInput, {
+    version: 1,
+    birthDate: "1990-09-17",
+    timezone: "America/New_York",
+    mode: "known",
+    utc: "1990-09-17T15:11:00.000Z",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+  assert.deepEqual(stored.astrologyData.birthEvidenceInput, stored.humanDesignData.birthEvidenceInput);
   assert.match(verified.headers["Cache-Control"], /no-store/);
 });
 
