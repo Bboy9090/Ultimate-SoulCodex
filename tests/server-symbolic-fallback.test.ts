@@ -2,14 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { generateFallbackBiography, generateFallbackGuidance, type BiographyRequest } from "../server/services/openai-service";
 import { canonicalNumberPattern, canonicalSignPattern } from "../shared/symbolic-vocabulary";
-import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
+import { extractVerifiedAstrologyFromBoundData } from "../server/lib/verified-astrology";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 import { calculateProfileHumanDesign } from "../server/services/profile-human-design";
 
 const evidence = { source: "independent ephemeris", engine: "qualified-engine", calculatedAt: "2026-10-07T12:00:00Z" };
+const birthInputs = { birthDate: "1990-09-17", birthTime: "11:11", timezone: "America/New_York", latitude: 40.8448, longitude: -73.8648 };
 function profile(sign: string, path: number): BiographyRequest {
-  return { name: "Shared Name", archetypeTitle: "Shared Title", astrologyData: {
+  return { name: "Shared Name", archetypeTitle: "Shared Title", astrologyData: bindStoredEvidence({
     sun: { sign, verificationStatus: "verified", evidence },
-  }, numerologyData: { lifePath: path }, personalityData: {}, archetype: {} };
+  }, birthInputs), numerologyData: { lifePath: path }, personalityData: {}, archetype: {} };
 }
 
 test("server fallback changes actual action and interpretive substance across supported profiles", () => {
@@ -39,8 +41,8 @@ test("unsupported signs, whitespace provenance, and malformed timestamps are rej
     { sign: "InventedSign", verificationStatus: "verified", evidence },
     { sign: "Virgo", verificationStatus: "verified", evidence: { ...evidence, calculatedAt: "not-a-date" } },
     { sign: "Virgo", verificationStatus: "verified", evidence: { ...evidence, source: " " } },
-  ]) assert.equal(extractVerifiedAstrology({ astrologyData: { sun: placement } }).sun, undefined);
-  assert.equal(extractVerifiedAstrology({ astrologyData: { sun: { sign: " vIRgO ", verificationStatus: "verified", evidence } } }).sun, "Virgo");
+  ]) assert.equal(extractVerifiedAstrologyFromBoundData(bindStoredEvidence({ sun: placement }, birthInputs)).sun, undefined);
+  assert.equal(extractVerifiedAstrologyFromBoundData(bindStoredEvidence({ sun: { sign: " vIRgO ", verificationStatus: "verified", evidence } }, birthInputs)).sun, "Virgo");
 });
 
 test("forged Human Design status cannot enter deterministic fallback words", () => {
