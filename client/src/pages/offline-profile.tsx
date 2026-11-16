@@ -256,7 +256,7 @@ export default function OfflineProfilePage() {
             <div><dt>Birthplace timezone</dt><dd>{profile.timezone || "Unresolved"}</dd></div>
             <div><dt>Birthplace coordinates</dt><dd>{profile.latitude ?? "Unresolved"}, {profile.longitude ?? "Unresolved"}</dd></div>
           </dl>
-          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first.</p>
+          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart calculation. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first. Coordinates resolved from a city or place lookup may be a reference point rather than the exact birth site.</p>
           {!needsOnlineVerification && canRequestOnlineEvidence && <button type="button" className="sc-button-secondary mt-4" disabled={verificationAttempt === "running"} onClick={() => void requestOnlineVerification()}>Recheck this saved chart online</button>}
         </details>
 
