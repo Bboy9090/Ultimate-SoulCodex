@@ -5,6 +5,8 @@ import { readFile } from "node:fs/promises";
 const atmosphere = new URL("../client/src/components/CosmicAtmosphere.tsx", import.meta.url);
 const app = new URL("../client/src/App.tsx", import.meta.url);
 const styles = new URL("../client/src/index.css", import.meta.url);
+const settings = new URL("../client/src/pages/SettingsPage.tsx", import.meta.url);
+const preference = new URL("../client/src/lib/cosmicMotionPreference.ts", import.meta.url);
 
 test("app mounts the decorative atmosphere once outside routed content", async () => {
   const source = await readFile(app, "utf8");
@@ -33,4 +35,20 @@ test("cosmic styling keeps controls accessible and layers noninteractive", async
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(css, /focus-visible/);
   assert.match(css, /max-width: 767px/);
+});
+
+test("device motion choices have local persistence, accessible controls and system safeguards", async () => {
+  const [settingsSource, prefsSource, atmosphereSource, css, appSource] = await Promise.all([
+    readFile(settings, "utf8"), readFile(preference, "utf8"),
+    readFile(atmosphere, "utf8"), readFile(styles, "utf8"), readFile(app, "utf8"),
+  ]);
+  assert.match(settingsSource, /role="radiogroup" aria-label="Celestial motion intensity"/);
+  assert.match(settingsSource, /aria-checked={cosmicMotion === level}/);
+  assert.match(settingsSource, /writeCosmicMotion\(value\)/);
+  assert.match(prefsSource, /soulcodex\.cosmic-motion\.v1/);
+  assert.match(prefsSource, /localStorage\.setItem/);
+  assert.match(atmosphereSource, /readCosmicMotion\(\) !== "full"/);
+  assert.match(css, /data-cosmic-motion="still"/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.match(appSource, /className="sc-cosmic-route"/);
 });
