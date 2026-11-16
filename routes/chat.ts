@@ -7,6 +7,7 @@ import { validateDiamondOutput } from "../src/ai/diamondClarity";
 import { runSoulCodexEngine } from "@soulcodex/core";
 import { buildVerifiedAstrologyLines, extractVerifiedAstrology } from "../server/lib/verified-astrology";
 import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
+import { boundHumanDesignForStoredProfile } from "../server/lib/profile-birth-evidence-integrity";
 
 const SAFE_DIAMOND_REFUSAL = `**Pattern**
 The first response did not meet Soul Codex clarity standards.
@@ -107,8 +108,9 @@ export function registerChatRoutes(app: Express) {
       let systemInstruction = "";
       if (profile) {
         const verifiedAstrology = extractVerifiedAstrology(profile);
-        const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(profile?.humanDesignData)
-          ? profile.humanDesignData
+        const boundHumanDesign = boundHumanDesignForStoredProfile(profile);
+        const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(boundHumanDesign)
+          ? boundHumanDesign
           : null;
         const engineData = runSoulCodexEngine({
           toneMode: "challenging",
@@ -218,8 +220,9 @@ export function buildProfileContextPrompt(profile: any): string {
   if (profile.name) parts.push(`- Name: ${profile.name}`);
   if (profile.archetype) parts.push(`- Archetype: ${profile.archetype}`);
   parts.push(...buildVerifiedAstrologyLines(profile));
-  const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(profile?.humanDesignData)
-    ? profile.humanDesignData
+  const boundHumanDesign = boundHumanDesignForStoredProfile(profile);
+  const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(boundHumanDesign)
+    ? boundHumanDesign
     : null;
   if (verifiedHumanDesign?.type) parts.push(`- Human Design: ${verifiedHumanDesign.type}`);
   if (profile.lifePath) parts.push(`- Numerology: Life Path ${profile.lifePath}`);
