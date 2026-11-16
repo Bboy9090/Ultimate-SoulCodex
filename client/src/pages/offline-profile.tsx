@@ -154,6 +154,16 @@ export default function OfflineProfilePage() {
     ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.sun?.evidenceState)) &&
     ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.moon?.evidenceState)),
   );
+  const civilRangeEvidence = (verifiedAstrology as any)?.sun?.rangeEvidence;
+  const rangeTestedInstants = Number.isFinite(Number(civilRangeEvidence?.testedValues))
+    ? Number(civilRangeEvidence.testedValues)
+    : null;
+  const rangeNonexistentMinutes = Number.isFinite(Number(civilRangeEvidence?.nonexistentLocalMinutes))
+    ? Number(civilRangeEvidence.nonexistentLocalMinutes)
+    : 0;
+  const rangeAmbiguousMinutes = Number.isFinite(Number(civilRangeEvidence?.ambiguousLocalMinutes))
+    ? Number(civilRangeEvidence.ambiguousLocalMinutes)
+    : 0;
   const conditionalAstrology = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto", "rising"]
     .map((key) => {
       const placement = key === "rising"
@@ -266,10 +276,13 @@ export default function OfflineProfilePage() {
                 <p className="sc-eyebrow">Unknown-time evidence map</p>
                 <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Known, conditional, and locked are kept separate.</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                  Soul Codex evaluated every HH:MM birth time across this civil day. Stable results may influence synthesis with range provenance. Conditional results stay as branches and do not become personality facts.
+                  Soul Codex enumerated every HH:MM wall-clock label for this civil day and evaluated every valid instant represented by the saved timezone. Stable results may influence synthesis with range provenance. Conditional results stay as branches and do not become personality facts.
+                  {(rangeNonexistentMinutes > 0 || rangeAmbiguousMinutes > 0) && (
+                    <> This date crosses a timezone transition: {rangeNonexistentMinutes > 0 ? `${rangeNonexistentMinutes} nonexistent local minute${rangeNonexistentMinutes === 1 ? "" : "s"} were excluded` : ""}{rangeNonexistentMinutes > 0 && rangeAmbiguousMinutes > 0 ? "; " : ""}{rangeAmbiguousMinutes > 0 ? `${rangeAmbiguousMinutes} repeated local minute${rangeAmbiguousMinutes === 1 ? "" : "s"} were evaluated at both UTC instants` : ""}.</>
+                  )}
                 </p>
               </div>
-              <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">1,440-minute sweep</span>
+              <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">{rangeTestedInstants === null ? "complete civil-day sweep" : `${rangeTestedInstants.toLocaleString()} valid instant${rangeTestedInstants === 1 ? "" : "s"}`}</span>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -289,7 +302,7 @@ export default function OfflineProfilePage() {
 
               <div className="rounded-2xl border border-[rgba(217,182,111,.24)] bg-[rgba(217,182,111,.04)] p-4" data-testid="evidence-state-stable-range">
                 <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-gold-bright)]">Stable across range</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across all 1,440 tested minutes. It may influence synthesis with range provenance.</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across every valid civil instant represented by the saved date and timezone. It may influence synthesis with range provenance.</p>
                 <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
                   {synthesisSun && !verifiedSun && <p>Sun: <strong>{synthesisSun}</strong></p>}
                   {synthesisMoon && !verifiedMoon && <p>Moon: <strong>{synthesisMoon}</strong></p>}
