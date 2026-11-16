@@ -69,7 +69,7 @@ test("validate mode never commits and discards the edit", async () => {
   assert.equal(receipt.committed, false);
   assert.equal(receipt.editDiscarded, true);
   assert.equal(receipt.candidateSha, SHA);
-  assert.ok(!calls.some((call) => call.url.endsWith(":commit")));
+  assert.ok(!calls.some((call) => call.url.includes(":commit")));
   assert.ok(calls.some((call) => call.url.endsWith(":validate")));
   assert.equal(calls.at(-1)?.method, "DELETE");
   assert.ok(!JSON.stringify(receipt).includes('"t"'));
@@ -95,6 +95,9 @@ test("commit mode releases only the expected versionCode to the alpha track", as
     releases: [{ name: "Soul Codex 4.1.1 (4000017) Closed Testing", versionCodes: ["4000017"], status: "completed" }],
   });
   assert.ok(!calls.some((call) => call.method === "DELETE"));
+  const commitCalls = calls.filter((call) => call.url.includes(":commit"));
+  assert.equal(commitCalls.length, 1);
+  assert.equal(new URL(commitCalls[0].url).searchParams.get("changesInReviewBehavior"), "ERROR_IF_IN_REVIEW");
   for (const call of calls) {
     assert.doesNotMatch(call.url, /production|inappproducts|subscriptions|monetization/);
   }
@@ -112,7 +115,7 @@ test("a bundle with an unexpected versionCode is never assigned to a track or co
 
   assert.equal(receipt.outcome, "failed");
   assert.match(receipt.error.message, /expected 4000017/);
-  assert.ok(!calls.some((call) => call.url.includes("/tracks/") || call.url.endsWith(":commit")));
+  assert.ok(!calls.some((call) => call.url.includes("/tracks/") || call.url.includes(":commit")));
   assert.equal(receipt.editDiscarded, true);
 });
 

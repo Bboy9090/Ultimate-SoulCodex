@@ -151,7 +151,14 @@ export async function publishClosedTesting({ plan, token, aab, fetchImpl = fetch
     });
 
     if (plan.mode === "commit") {
-      receipt.commit = await callPlay(fetchImpl, token, "POST", `${app}/edits/${editId}:commit`);
+      // ERROR_IF_IN_REVIEW: never cancel an unrelated submission that is already under Play review.
+      // (The API default, CANCEL_IN_REVIEW_AND_SUBMIT, would cancel it and resubmit everything.)
+      receipt.commit = await callPlay(
+        fetchImpl,
+        token,
+        "POST",
+        `${app}/edits/${editId}:commit?changesInReviewBehavior=ERROR_IF_IN_REVIEW`,
+      );
       receipt.committed = true;
       receipt.outcome = "committed_to_closed_testing";
     } else {
