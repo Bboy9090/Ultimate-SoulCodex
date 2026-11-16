@@ -19,7 +19,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.0
+  VITE_RELEASE_VERSION: 4.1.1
   VITE_API_CONTRACT: foundation-v4
 
 jobs:
@@ -303,14 +303,14 @@ jobs:
           APP_PATH=$(cat simulator-app-path.txt)
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.1"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000015"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
-            echo "marketingVersion=4.1.0"
+            echo "marketingVersion=4.1.1"
             echo "buildNumber=4000015"
             echo "native_pwa_service_worker_registration=disabled"
             echo "simulator_launch=passed"
@@ -524,14 +524,14 @@ jobs:
           codesign --verify --deep --strict "$APP_PATH"
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.1"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000015"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
-            echo "marketingVersion=4.1.0"
+            echo "marketingVersion=4.1.1"
             echo "buildNumber=4000015"
             echo "signature=verified"
             echo "app_store_profile=verified"
