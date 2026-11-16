@@ -143,7 +143,7 @@ function Router() {
       </a>
       <RouteErrorBoundary key={pathname}>
       <Suspense fallback={<RouteLoadingFallback />}>
-        <div id="main-content" tabIndex={-1}>
+        <div id="main-content" className="sc-cosmic-route" tabIndex={-1}>
           <Switch>
       <Route path="/" component={Home} />
       <Route path="/create" component={LocalFirstInputForm} />
