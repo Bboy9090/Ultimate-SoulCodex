@@ -242,7 +242,7 @@ export default function LocalFirstInputForm() {
 
       toast({
         title: "Birth location ready",
-        description: `Coordinates and ${result.timezone} were resolved for the birth location.`,
+        description: `Coordinates and ${result.timezone} were resolved for the birth location. Place lookups use a reference point; for maximum Rising and house precision, replace the coordinates with the exact birth site if you know it.`,
       });
     } catch (error) {
       console.warn("[local-first-create] Location lookup failed", error);
