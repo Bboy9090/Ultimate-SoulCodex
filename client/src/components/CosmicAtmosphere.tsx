@@ -24,8 +24,10 @@ export default function CosmicAtmosphere() {
       if (document.hidden || !node.isConnected || reduce.matches) { active = false; return; }
       actualX += (targetX - actualX) * 0.075;
       actualY += (targetY - actualY) * 0.075;
-      node.style.setProperty("--cosmic-drift-x", actualX.toFixed(2) + "px");
-      node.style.setProperty("--cosmic-drift-y", actualY.toFixed(2) + "px");
+      for (const [layer, factor] of [["far", -.24], ["near", -.62], ["stars", -.9], ["near-stars", -1.4]] as const) {
+        node.style.setProperty(`--cosmic-${layer}-x`, (actualX * factor).toFixed(2) + "px");
+        node.style.setProperty(`--cosmic-${layer}-y`, (actualY * factor).toFixed(2) + "px");
+      }
       if (Math.abs(targetX - actualX) > 0.15 || Math.abs(targetY - actualY) > 0.15) {
         frame = window.requestAnimationFrame(animate);
       } else active = false;
