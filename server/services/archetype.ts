@@ -1,4 +1,4 @@
-import { extractVerifiedAstrology } from "../lib/verified-astrology";
+import { extractVerifiedAstrologyFromBoundData } from "../lib/verified-astrology";
 import { verifiedProfileHumanDesignSummary } from "./profile-human-design";
 import { canonicalNumberPattern, canonicalSignPattern, type CanonicalSymbolicPattern } from "@shared/symbolic-vocabulary";
 
@@ -39,7 +39,7 @@ export function synthesizeArchetype(
   personalityData: any,
   humanDesignData?: unknown,
 ): ArchetypeData {
-  const verified = extractVerifiedAstrology({ astrologyData });
+  const verified = extractVerifiedAstrologyFromBoundData(astrologyData);
   const sun = verified.sun?.toLowerCase() ?? null;
   const moon = verified.moon?.toLowerCase() ?? null;
   const rising = verified.rising?.toLowerCase() ?? null;
