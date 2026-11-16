@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateProfileHumanDesign, ProfileHumanDesignError, verifiedProfileHumanDesignSummary } from "../server/services/profile-human-design";
 import { synthesizeArchetype } from "../server/services/archetype";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 import { generateBiography, generateDailyGuidance } from "../server/services/openai-service";
 import { isGeminiAvailable } from "../gemini";
 import { readFileSync } from "node:fs";
@@ -16,10 +17,11 @@ test("server profile complete inputs produce actual trusted HD and symbolic arch
   assert.equal(design.inputTimestampUtc, "1990-09-17T15:11:00.000Z");
   assert.ok(Array.isArray(design.activatedGates) && design.activatedGates.length > 0);
   assert.match(verifiedProfileHumanDesignSummary(design)!, /Lunar Authority/);
-  const archetype = synthesizeArchetype({}, { lifePath: 9 }, {}, design);
+  const boundDesign = bindStoredEvidence(design, input);
+  const archetype = synthesizeArchetype({}, { lifePath: 9 }, {}, boundDesign);
   assert.match(archetype.description, /Reflector/);
   assert.ok(archetype.themes.some((theme) => theme.includes("2/5")));
-  assert.equal(synthesizeArchetype({}, {}, {}, design).title, "Human Design Reflector");
+  assert.equal(synthesizeArchetype({}, {}, {}, boundDesign).title, "Human Design Reflector");
   assert.equal(verifiedProfileHumanDesignSummary({ ...design, verificationReceiptId: "forged" }), null);
   assert.equal(verifiedProfileHumanDesignSummary({ status: "verified", type: "Reflector" }), null);
 });
@@ -40,7 +42,7 @@ test("server HD trust receipt and calculation use the same summer EST instant", 
 });
 
 test("deterministic server narration includes trusted HD and excludes forged evidence", { skip: isGeminiAvailable() }, async () => {
-  const humanDesignData = calculateProfileHumanDesign(input);
+  const humanDesignData = bindStoredEvidence(calculateProfileHumanDesign(input), input);
   const request = {
     name: "Actual engine profile", archetypeTitle: "Test reflection", astrologyData: {},
     numerologyData: { lifePath: 9 }, personalityData: {}, archetype: {}, humanDesignData,
@@ -65,7 +67,8 @@ test("canonical creation stores verified HD while narration uses entitlement-pro
   for (const assessment of ["enneagram", "mbti"]) {
     const start = source.indexOf(`app.post("/api/profiles/:id/${assessment}"`);
     const section = source.slice(start, source.indexOf("\n  app.", start + 1));
-    assert.match(section, /projectInterpretationInputsForTier\([\s\S]*entitlement\.tier[\s\S]*profile\.numerologyData[\s\S]*profile\.humanDesignData/);
+    assert.match(section, /boundHumanDesignForStoredProfile\(profile\)/);
+    assert.match(section, /projectInterpretationInputsForTier\([\s\S]*entitlement\.tier[\s\S]*profile\.numerologyData[\s\S]*boundHumanDesign/);
     assert.match(section, /synthesizeArchetype\([\s\S]*interpretationInputs\.numerologyData[\s\S]*updatedPersonalityData[\s\S]*interpretationInputs\.humanDesignData/);
     assert.equal((section.match(/humanDesignData:\s*interpretationInputs\.humanDesignData/g) ?? []).length, 2);
     assert.equal((section.match(/numerologyData:\s*interpretationInputs\.numerologyData/g) ?? []).length, 2);
