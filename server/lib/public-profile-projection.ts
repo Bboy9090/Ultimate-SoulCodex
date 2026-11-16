@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Profile } from "@shared/schema";
 import type { SoulCodexTier } from "@shared/product-access";
+import { hasMatchingStoredEvidenceBinding } from "./profile-birth-evidence-integrity";
 
 export type PublicShareField =
   | "displayName"
@@ -128,7 +129,9 @@ export function buildPublicProfileProjection(
     if (displayName) fields.displayName = displayName;
   }
 
-  const astrology = profile.astrologyData;
+  const astrology = hasMatchingStoredEvidenceBinding(profile, "astrology")
+    ? profile.astrologyData
+    : null;
   if (requested.has("sunSign")) {
     const value = verifiedSign(astrology, "sun");
     if (value) fields.sunSign = value;
