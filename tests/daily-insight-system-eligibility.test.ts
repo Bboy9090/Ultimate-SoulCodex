@@ -3,6 +3,7 @@ import test from "node:test";
 import { selectTemplates } from "../services/template-bank";
 import { extractDailyProfileSummary } from "../services/daily-insights";
 import { generateDailyAffirmations } from "../services/affirmations";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 
 const dailyContext = {
   date: "2026-09-26",
@@ -16,10 +17,19 @@ const dailyContext = {
   planetaryHour: "Saturn",
 };
 
+const trustedBirth = {
+  birthDate: "1990-09-17",
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: 40.8448,
+  longitude: -73.8648,
+};
+
 const evidence = {
   source: "independent ephemeris comparison",
   engine: "test-reference@1",
   calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 const hdTrust = {
@@ -36,7 +46,7 @@ function profile(overrides: Record<string, unknown> = {}) {
   return {
     id: "daily-policy-profile",
     name: "Daily Policy",
-    birthDate: "1990-09-17",
+    ...trustedBirth,
     astrologyData: {},
     numerologyData: { lifePath: 9 },
     humanDesignData: { status: "calculated_unverified", type: "Manifestor" },
@@ -84,14 +94,14 @@ test("daily insight system eligibility", async (suite) => {
 
   await suite.test("verified Human Design earns one daily slot but never opens legacy categories", () => {
     const summary = extractDailyProfileSummary(profile({
-      humanDesignData: {
+      humanDesignData: bindStoredEvidence({
         status: "verified",
         type: "Reflector",
-        strategy: "Wait a lunar cycle",
+        strategy: "To Wait a Lunar Cycle",
         profile: "2/5",
         authority: "Lunar Authority",
         ...hdTrust,
-      },
+      }, trustedBirth),
     }));
     const result = selectTemplates(dailyContext as any, summary, []);
 
@@ -128,14 +138,14 @@ test("daily insight system eligibility", async (suite) => {
 
   await suite.test("verified natal Sun can enter the summary only with provenance", () => {
     const summary = extractDailyProfileSummary(profile({
-      astrologyData: {
+      astrologyData: bindStoredEvidence({
         sun: {
           sign: "Virgo",
           verificationStatus: "verified",
           evidence,
           internalCandidate: { longitude: 174.2 },
         },
-      },
+      }, trustedBirth),
     }));
 
     assert.equal(summary.sunSign, "Virgo");
