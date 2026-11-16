@@ -24,7 +24,7 @@ Last verified pre-status-update checkpoint:
 - Latest exact-head Store Candidate source: `b1a2af702411a54ddc94da4ac8f89cfe4f927f8a`
 - Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
-  - Android cosmic update candidate: `4.1.1` / versionCode `4000017` / package `soulcodex.app`; historical Alpha closed-test 4.1.0 / 4000016 is already uploaded (2026-11-08).
+  - Android cosmic update candidate: `4.1.1` / versionCode `4000017` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-16 (run `43956396804`); historical Alpha closed-test 4.1.0 / 4000016 was uploaded 2026-11-08.
   - iOS source project (Cosmic post-merge candidate): `4.1.1` / build `4000015` / bundle `app.soulcodex.ios`; submission and signed Apple-managed archive remain unverified.
 - Latest qualified source artifacts:
   - release-gate artifact ID: `13585158689`
@@ -147,11 +147,21 @@ Canonical store/legal packet:
 Current source qualification:
 - signed Android AAB build: PASS
 - signature verification: PASS
-- versionCode: `4000016`
-- exact-head Android artifact ID: `13585049471`
+- versionCode: `4000017` (versionName `4.1.1`)
+- qualified commit: `75d6200dc96caa8ef394e9c842b23c412292ee24`, Store Candidate run `43948457688`
+- exact-head Android artifact ID: `14266711111`
 - generated final release manifest check: PASS — no `READ_CONTACTS` or `WRITE_CONTACTS`
 
-Authenticated Play Console receipt as of 2026-11-07:
+Play Developer API upload receipt, 2026-11-16:
+- workflow: `.github/workflows/play-closed-testing-upload.yml`, dispatched on `main` at `3395afe85c38dada964027b0f99e1f605880173a`
+- validate run `43955967071`: outcome `validated_not_committed` (receipt artifact ID `14269144571`)
+- commit run `43956396804`: outcome `committed_to_closed_testing` (receipt artifact ID `14272337326`)
+- package / track: `soulcodex.app` / `alpha` (closed testing)
+- versionCode committed: `4000017`
+- production track and billing catalog: not touched
+- evidence class: the outcomes above are read from the run logs; the receipt JSON artifacts hold the full Play API responses. This is an API acceptance receipt, not a Play Console observation. Google's review state and tester availability for `4000017` are **unverified** until read from Play Console.
+
+Authenticated Play Console receipt as of 2026-11-07 (predates the 4000016 and 4000017 uploads):
 - app: SOUL CODEX / `soulcodex.app`
 - Production: **Inactive**
 - Closed testing: **Active**
@@ -164,11 +174,11 @@ Authenticated Play Console receipt as of 2026-11-07:
 - configured Alpha tester email-list users: **29** (`test lkist`)\n- opted-in closed-test users: **1**
 - Google production-access requirement shown in Console: at least **12 opted-in testers for at least 14 days**
 
-Therefore Google Play production access is currently **not eligible**. The existing tester list is already large enough; the concrete blocker is opt-in conversion: reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access. The Play Console still serves uploaded versionCode `4000015`; qualified source versionCode `4000016` has not yet been uploaded.
+Therefore Google Play production access is currently **not eligible**. The existing tester list is already large enough; the concrete blocker is opt-in conversion: reach at least 12 opted-in closed-test users and maintain the qualifying test for at least 14 days before applying for production access. This paragraph reflects the 2026-11-07 Console receipt; versionCode `4000016` (2026-11-08) and `4000017` (2026-11-16) were uploaded to closed testing afterwards, and the opt-in count has not been re-read since.
 
 Publishing automation:
-- `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is currently absent in the qualifying GitHub Actions environment;
-- automated Play production upload remains unavailable;
+- closed-testing upload is automated through keyless Workload Identity Federation (`play-closed-testing-upload.yml`, manual dispatch only); no long-lived `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` key is used;
+- there is no automated Play production upload, and the upload script refuses any track other than `alpha`;
 - latest production-handoff artifact ID: `13585631821`.
 
 Play subscription catalog configuration is present and matches the repository contract: monthly base plan `monthly` and annual base plan `annual` are active; the annual U.S. price is $59.99/year.\n\nThis blocks only automated publishing. Manual Play Console handling remains possible. Real Google Play Billing purchase/restore/lifecycle qualification remains independently open.
