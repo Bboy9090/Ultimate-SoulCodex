@@ -1,4 +1,4 @@
-name: Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.1
+name: Soul Codex Store Candidate — Android 4.1.1 / iOS 4.1.1
 
 on:
   push:
@@ -26,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.0
+  VITE_RELEASE_VERSION: 4.1.1
   VITE_API_CONTRACT: foundation-v4
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -83,9 +83,9 @@ jobs:
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
           Soul Codex store candidate
           SHA=${CANDIDATE_SHA}
-          Android versionName=4.1.0
+          Android versionName=4.1.1
           Android applicationId=soulcodex.app
-          Android versionCode=4000016
+          Android versionCode=4000017
           iOS marketingVersion=4.1.1
           iOS bundleId=app.soulcodex.ios
           iOS build=4000015
@@ -228,8 +228,8 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "versionName=4.1.0"
-            echo "versionCode=4000016"
+            echo "versionName=4.1.1"
+            echo "versionCode=4000017"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
             echo "play_credentials_mode=${{ steps.play.outputs.mode }}"
@@ -237,7 +237,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-android
+          name: soulcodex-4.1.1-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
