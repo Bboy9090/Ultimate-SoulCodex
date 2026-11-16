@@ -99,10 +99,19 @@ export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 
-const birthTimeSchema = z.union([
-  z.literal(""),
-  z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
-]);
+function isValidBirthTime(value: string): boolean {
+  if (value === "") return true;
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return false;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+}
+
+const birthTimeSchema = z.string().refine(
+  isValidBirthTime,
+  "Birth time must use a real 24-hour HH:MM value when provided",
+);
 
 function isValidDateOnly(value: unknown): value is string {
   if (typeof value !== "string") return false;
