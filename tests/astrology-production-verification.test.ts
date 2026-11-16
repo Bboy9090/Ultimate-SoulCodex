@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { synthesizeArchetype } from "../server/services/archetype";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 import {
   calculateAstrology,
   calculateVerifiedAstrology,
@@ -322,7 +323,7 @@ test("legacy astrology labels cannot steer archetype synthesis without verified 
 
 test("verified astrology may contribute to archetype synthesis", () => {
   const archetype = synthesizeArchetype(
-    {
+    bindStoredEvidence({
       sun: {
         sign: "Virgo",
         verificationStatus: "verified",
@@ -334,7 +335,7 @@ test("verified astrology may contribute to archetype synthesis", () => {
       },
       moon: { sign: null, verificationStatus: "pending_independent_verification" },
       rising: { sign: null, verificationStatus: "pending_ephemeris" },
-    },
+    }, birthData),
     {},
     {},
   );
