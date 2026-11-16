@@ -53,7 +53,7 @@ export function synthesizeArchetype(
   const pathPattern = canonicalNumberPattern(lifePath);
   const expressionPattern = canonicalNumberPattern(expression);
   const soulPattern = canonicalNumberPattern(soulUrge);
-  const humanDesignSummary = verifiedProfileHumanDesignSummary(humanDesignData);
+  const humanDesignSummary = humanDesignData && typeof humanDesignData === "object" && (humanDesignData as any).birthEvidenceInput\n    ? verifiedProfileHumanDesignSummary(humanDesignData)\n    : null;
   const assessedDescriptions = [
     Number.isInteger(personalityData?.enneagram?.type) && personalityData.enneagram.type >= 1 && personalityData.enneagram.type <= 9
       ? personalityData.enneagram.description : null,
