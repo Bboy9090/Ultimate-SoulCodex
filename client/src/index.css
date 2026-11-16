@@ -476,7 +476,7 @@
     radial-gradient(ellipse 35% 31% at 84% 36%, rgba(32,105,172,.25), transparent 76%),
     radial-gradient(ellipse 46% 36% at 58% 90%, rgba(126,57,169,.18), transparent 76%);
   filter: blur(28px);
-  transform: translate3d(calc(var(--cosmic-drift-x) * -.24),calc(var(--cosmic-drift-y) * -.24),0);
+  transform: translate3d(var(--cosmic-far-x, 0px),var(--cosmic-far-y, 0px),0);
 }
 .sc-cosmic-nebula--near {
   opacity: .55;
@@ -484,11 +484,11 @@
     radial-gradient(ellipse 25% 45% at 69% 16%, rgba(141,77,203,.22), transparent 76%),
     radial-gradient(ellipse 39% 27% at 11% 76%, rgba(35,118,153,.18), transparent 75%);
   filter: blur(42px);
-  transform: translate3d(calc(var(--cosmic-drift-x) * -.62),calc(var(--cosmic-drift-y) * -.62),0);
+  transform: translate3d(var(--cosmic-near-x, 0px),var(--cosmic-near-y, 0px),0);
 }
 .sc-cosmic-stars {
   background-repeat: repeat;
-  transform: translate3d(calc(var(--cosmic-drift-x) * -.9),calc(var(--cosmic-drift-y) * -.9),0);
+  transform: translate3d(var(--cosmic-stars-x, 0px),var(--cosmic-stars-y, 0px),0);
 }
 .sc-cosmic-stars--far {
   opacity: .36;
@@ -505,7 +505,7 @@
     radial-gradient(circle, rgba(207,204,255,.8) 0 .85px, transparent 1.35px);
   background-size: 397px 359px, 463px 431px;
   background-position: 77px 86px, 180px 33px;
-  transform: translate3d(calc(var(--cosmic-drift-x) * -1.4),calc(var(--cosmic-drift-y) * -1.4),0);
+  transform: translate3d(var(--cosmic-near-stars-x, 0px),var(--cosmic-near-stars-y, 0px),0);
 }
 .sc-cosmic-horizon {
   inset: 0;
