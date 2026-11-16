@@ -64,7 +64,7 @@ test("interactive shared orbit is evidence-bounded and keyboard accessible", asy
   assert.match(orbitSource, /aria-pressed={active\.key === pair\.key}/);
   assert.match(orbitSource, /type="button"/);
   assert.match(orbitSource, /aria-live="polite"/);
-  assert.match(orbitSource, /not astronomical longitudes or aspects/);
+  assert.match(orbitSource, /NOT astronomical longitudes or aspects/);
   assert.match(orbitSource, /supported = pairs\.filter/);
   assert.doesNotMatch(orbitSource, /Math\.random|Date\.now|fetch\(/);
   assert.match(css, /\.sc-orbit-body:focus-visible/);
