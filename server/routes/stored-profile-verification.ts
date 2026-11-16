@@ -10,6 +10,7 @@ import type { IStorage } from "../storage";
 import { resolveProductEntitlementForUser } from "../lib/product-entitlement";
 import { projectInterpretationInputsForTier } from "../lib/profile-interpretation-access";
 import { projectProfileResponseForTier } from "../lib/profile-response-access";
+import { bindStoredEvidence } from "../lib/profile-birth-evidence-integrity";
 
 export function storedProfileVerificationHandler(dependencies: {
   storage: Pick<IStorage, "getProfile" | "updateProfile" | "getUser" | "getLatestEntitlementGrant">;
@@ -33,11 +34,13 @@ export function storedProfileVerificationHandler(dependencies: {
         birthDate, birthTime: profile.birthTime ?? undefined, timezone: profile.timezone ?? undefined,
         latitude: profile.latitude ?? undefined, longitude: profile.longitude ?? undefined,
       };
-      const humanDesignData = calculateProfileHumanDesign(input);
-      const astrologyData = await (dependencies.calculateAstrology ?? calculateVerifiedAstrology)({
+      const rawHumanDesignData = calculateProfileHumanDesign(input);
+      const rawAstrologyData = await (dependencies.calculateAstrology ?? calculateVerifiedAstrology)({
         ...input, latitude: input.latitude?.trim() ? Number(input.latitude) : undefined,
         longitude: input.longitude?.trim() ? Number(input.longitude) : undefined,
       });
+      const humanDesignData = bindStoredEvidence(rawHumanDesignData, input);
+      const astrologyData = bindStoredEvidence(rawAstrologyData, input);
       const numerologyData = calculateNumerology(profile.fullBirthName ?? undefined, birthDate);
       const entitlement = await resolveProductEntitlementForUser(dependencies.storage, userId);
       const interpretationInputs = projectInterpretationInputsForTier(entitlement.tier, numerologyData, humanDesignData);
