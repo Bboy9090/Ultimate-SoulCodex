@@ -1,6 +1,6 @@
 import { resolveCivilTimeStrict } from "@soulcodex/core";
 import { calculateHumanDesign } from "../../packages/astrology/human-design";
-import { createVerifiedHumanDesignTrustRecord } from "./human-design-trust";
+import { createVerifiedHumanDesignTrustRecord, hasApprovedVerifiedHumanDesignTrust } from "./human-design-trust";
 
 export class ProfileHumanDesignError extends Error {}
 
@@ -35,16 +35,11 @@ export function calculateProfileHumanDesign(input: {
 }
 
 export function verifiedProfileHumanDesignSummary(value: unknown): string | null {
-  if (!value || typeof value !== "object") return null;
+  if (!hasApprovedVerifiedHumanDesignTrust(value)) return null;
   const data = value as Record<string, any>;
-  if (data.status !== "verified") return null;
-  try {
-    const expected = createVerifiedHumanDesignTrustRecord({
-      birthTimeKnown: true, inputTimestampUtc: data.inputTimestampUtc,
-      calculatedAt: data.calculatedAt, candidate: data,
-    });
-    if (expected.status !== "verified" || !data.source?.trim() ||
-      ["engine", "verificationReceiptId", "independentSource", "verifiedAt"].some((key) => data[key] !== (expected as any)[key])) return null;
-    return `${data.type}; strategy ${data.strategy}; authority ${data.authority}; profile ${data.profile}`;
-  } catch { return null; }
+  const candidate =
+    data.candidate && typeof data.candidate === "object" && !Array.isArray(data.candidate)
+      ? data.candidate
+      : data;
+  return `${candidate.type}; strategy ${candidate.strategy}; authority ${candidate.authority}; profile ${candidate.profile}`;
 }
