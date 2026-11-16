@@ -571,3 +571,30 @@
   .sc-cosmic-root .sc-panel { background: #130f20; border-color: #8a82a3; }
   .sc-cosmic-stars, .sc-cosmic-nebula { opacity: .1; }
 }
+
+/* Device-local cosmic motion modes: system accessibility always overrides. */
+html[data-cosmic-motion="still"] .sc-cosmic-nebula,
+html[data-cosmic-motion="still"] .sc-cosmic-stars {
+  transform: none !important;
+}
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal::before,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal::after,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbit-dot {
+  animation: none !important;
+}
+html[data-cosmic-motion="still"] .sc-cosmic-root :is(.sc-card-link, .feature-card, .sc-button-primary, .sc-button-secondary) {
+  transition-duration: 0.01ms !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-cosmic-motion="still"]) .sc-cosmic-route {
+    animation: sc-cosmic-arrival .38s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes sc-cosmic-arrival {
+    from { opacity: .65; transform: translate3d(0, 8px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-cosmic-route { animation: none !important; }
+}
