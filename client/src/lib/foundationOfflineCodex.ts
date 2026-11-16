@@ -30,28 +30,6 @@ export type OfflineCodexProfile = CoreOfflineCodexProfile & {
   birthTimeStatus?: "known" | "unknown";
 };
 
-function parseDate(dateISO: string) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateISO);
-  if (!match) throw new Error("birthDate must use YYYY-MM-DD");
-  return { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) };
-}
-
-function sunSignForDate(dateISO: string): string | null {
-  const { month, day } = parseDate(dateISO);
-  const boundaries: Array<[number, number, string]> = [
-    [1, 20, "Aquarius"], [2, 19, "Pisces"], [3, 21, "Aries"], [4, 20, "Taurus"],
-    [5, 21, "Gemini"], [6, 21, "Cancer"], [7, 23, "Leo"], [8, 23, "Virgo"],
-    [9, 23, "Libra"], [10, 23, "Scorpio"], [11, 22, "Sagittarius"], [12, 22, "Capricorn"],
-  ];
-  const current = boundaries.find(([candidate]) => candidate === month);
-  const boundaryDay = current?.[1] ?? 22;
-  if (Math.abs(day - boundaryDay) <= 1) return null;
-  const next = current?.[2] ?? "Capricorn";
-  const zodiac = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"] as const;
-  const previous = zodiac[(zodiac.indexOf(next as (typeof zodiac)[number]) + 11) % 12];
-  return day > boundaryDay ? next : previous;
-}
-
 function elementForSign(sign: string): "Fire" | "Earth" | "Air" | "Water" | null {
   if (["Aries", "Leo", "Sagittarius"].includes(sign)) return "Fire";
   if (["Taurus", "Virgo", "Capricorn"].includes(sign)) return "Earth";
