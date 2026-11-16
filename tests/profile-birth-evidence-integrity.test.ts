@@ -1,5 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {
+  bindStoredEvidence,
+  buildStoredBirthEvidenceInput,
+  boundAstrologyForStoredProfile,
+  hasMatchingStoredEvidenceBinding,
+} from "../server/lib/profile-birth-evidence-integrity";
 import { loadActiveProfile, saveActiveProfile } from "../client/src/lib/ActiveProfileRepository.ts";
 import { loadOfflineProfile, saveOfflineProfile } from "../client/src/lib/offlineProfileStore.ts";
 import { generateFoundationOfflineCodexProfile, repairStaleBirthEvidence } from "../client/src/lib/foundationOfflineCodex.ts";
@@ -216,4 +222,55 @@ test("malformed legacy fields stay accessible and unchanged while old chart evid
   assert.equal(birthEvidenceInput({ ...input, latitude: { toString: 123 } }), null);
   assert.equal(birthEvidenceInput({ ...input, birthTime: "", birthTimeStatus: "unknown", birthDate: "2026-02-31" }), null);
   assert.equal(birthEvidenceInput({ ...input, birthTime: "", birthTimeStatus: "unknown", timezone: "Not/A_Real_Zone" }), null);
+});
+
+
+test("server stored evidence binding invalidates coordinate, time, and timezone drift", () => {
+  const birth = {
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    birthTime: "11:11",
+    timezone: "America/New_York",
+    latitude: "40.8448",
+    longitude: "-73.8648",
+  };
+  assert.deepEqual(buildStoredBirthEvidenceInput(birth), {
+    version: 1,
+    birthDate: "1990-09-17",
+    timezone: "America/New_York",
+    mode: "known",
+    utc: "1990-09-17T15:11:00.000Z",
+    latitude: 40.8448,
+    longitude: -73.8648,
+  });
+
+  const profile: any = {
+    ...birth,
+    astrologyData: bindStoredEvidence({
+      sun: { sign: "Virgo", verificationStatus: "verified" },
+    }, birth),
+  };
+  assert.equal(hasMatchingStoredEvidenceBinding(profile, "astrology"), true);
+  assert.equal(boundAstrologyForStoredProfile(profile).sun.sign, "Virgo");
+  assert.equal(hasMatchingStoredEvidenceBinding({ ...profile, latitude: "40.9000" }, "astrology"), false);
+  assert.equal(hasMatchingStoredEvidenceBinding({ ...profile, birthTime: "11:12" }, "astrology"), false);
+  assert.equal(hasMatchingStoredEvidenceBinding({ ...profile, timezone: "America/Chicago" }, "astrology"), false);
+});
+
+test("server legacy verified-looking evidence without a birth binding is quarantined", () => {
+  const profile: any = {
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    birthTime: "11:11",
+    timezone: "America/New_York",
+    latitude: "40.8448",
+    longitude: "-73.8648",
+    astrologyData: {
+      sun: {
+        sign: "Aries",
+        verificationStatus: "verified",
+        evidence: { source: "legacy", engine: "legacy", calculatedAt: "2026-01-01T00:00:00.000Z" },
+      },
+    },
+  };
+  assert.equal(hasMatchingStoredEvidenceBinding(profile, "astrology"), false);
+  assert.deepEqual(boundAstrologyForStoredProfile(profile), {});
 });
