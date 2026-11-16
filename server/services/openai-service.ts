@@ -20,7 +20,7 @@ function verifiedAstrologyFor(data: BiographyRequest) {
 function astrologyPromptLines(data: BiographyRequest): string[] {
   const astrology = verifiedAstrologyFor(data);
   const lines: string[] = [];
-  const humanDesign = verifiedProfileHumanDesignSummary(data.humanDesignData);
+  const humanDesign = data.humanDesignData && typeof data.humanDesignData === "object" && (data.humanDesignData as any).birthEvidenceInput\n    ? verifiedProfileHumanDesignSummary(data.humanDesignData)\n    : null;
   if (humanDesign) lines.push(`- Verified Human Design core (interpretation is symbolic): ${humanDesign}`);
   if (astrology.sun) lines.push(`- Sun: ${astrology.sun}`);
   if (astrology.moon) lines.push(`- Moon: ${astrology.moon}`);
@@ -105,7 +105,7 @@ function supportedReflectionLayers(data: BiographyRequest) {
 
 export function generateFallbackBiography(data: BiographyRequest): string {
   const layers = supportedReflectionLayers(data);
-  const humanDesign = verifiedProfileHumanDesignSummary(data.humanDesignData);
+  const humanDesign = data.humanDesignData && typeof data.humanDesignData === "object" && (data.humanDesignData as any).birthEvidenceInput\n    ? verifiedProfileHumanDesignSummary(data.humanDesignData)\n    : null;
   const reflections = layers.map(({ label, pattern }) =>
     `${label} symbolism emphasizes ${pattern.drive}. Its constructive theme is ${pattern.gift}; its overuse risk is ${pattern.shadow}.`);
   if (humanDesign) reflections.push(`Verified Human Design adds ${humanDesign}. Strategy and Authority offer an optional decision practice, not a demonstrated psychological trait.`);
@@ -122,7 +122,7 @@ export function generateFallbackGuidance(data: BiographyRequest): string {
     actions.set(pattern.action, [...(actions.get(pattern.action) ?? []), label]);
   }
   const reflections = [...actions].map(([action, labels]) => `${labels.join(" / ")} reflection: ${action}`);
-  const humanDesign = verifiedProfileHumanDesignSummary(data.humanDesignData);
+  const humanDesign = data.humanDesignData && typeof data.humanDesignData === "object" && (data.humanDesignData as any).birthEvidenceInput\n    ? verifiedProfileHumanDesignSummary(data.humanDesignData)\n    : null;
   if (humanDesign) reflections.push(`Human Design decision experiment (${humanDesign}): try the supported Strategy and Authority for a low-stakes choice, then record what happened. This is an optional symbolic practice.`);
   if (!reflections.length) return "No source-specific guidance is available until a governed calculation or assessment is supplied.";
   return `Optional symbolic experiments for today: ${reflections.join(" ")}`;
