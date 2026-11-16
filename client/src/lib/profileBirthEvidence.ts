@@ -87,7 +87,16 @@ export function staleBirthEvidenceReason(profile: any, requireStoredBinding = fa
     }
   }
   const hd = profile.humanDesignData;
-  if (hd?.status === "verified") {
+  const hdPresentsTrustEnvelope = Boolean(
+    hd?.status === "verified" &&
+    typeof hd?.engine === "string" && hd.engine.trim() &&
+    typeof hd?.source === "string" && hd.source.trim() &&
+    typeof hd?.calculatedAt === "string" && hd.calculatedAt.trim() &&
+    typeof hd?.verificationReceiptId === "string" && hd.verificationReceiptId.trim() &&
+    typeof hd?.independentSource === "string" && hd.independentSource.trim() &&
+    typeof hd?.verifiedAt === "string" && hd.verifiedAt.trim()
+  );
+  if (hdPresentsTrustEnvelope) {
     if (current.mode === "unknown") return "exact_evidence_for_unknown_birth_time";
     if (typeof hd.inputTimestampUtc !== "string" || Number.isNaN(new Date(hd.inputTimestampUtc).getTime())) {
       return "human_design_birth_instant_missing";
