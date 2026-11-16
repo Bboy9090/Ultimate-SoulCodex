@@ -15,10 +15,10 @@
     "expectedMoonSign": "Taurus",
     "expectedAscendantSign": "Aquarius",
     "expectedSunLongitude": 123.36,
-    "expectedMoonLongitude": 33.15,
+    "expectedMoonLongitude": 45.56,
     "allowedLongitudeTolerance": 0.5,
     "confidenceImpact": "verified",
-    "notes": "Do not treat as precision anchor unless source and timezone rules are confirmed. Carl Jung's birth record is rated A from a direct family member statement."
+    "notes": "Historical birth-time sourcing has variants, so do not use this as an exact-time precision anchor. The Moon longitude was corrected from stale 33.15° to 45.56°, consistent with Astrodienst charts around 19:29–19:32 LMT showing Taurus 15°33′; the fixture keeps a 0.5° independent-engine tolerance."
   },
   {
     "id": "fixture_02_albert_einstein",
