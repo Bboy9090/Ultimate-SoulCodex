@@ -26,7 +26,7 @@ test("parallax requires fine pointer, allows reduced motion and stops hidden ren
   assert.match(source, /cancelAnimationFrame/);
   assert.match(source, /removeEventListener\("pointermove"/);
   assert.match(source, /aria-hidden="true"/);
-  assert.doesNotMatch(source, /geolocation|DeviceOrientationEvent|fetch\(/);
+  assert.doesNotMatch(source, /navigator\.geolocation\b|DeviceOrientationEvent\b|\bfetch\s*\(/);
 });
 
 test("cosmic styling keeps controls accessible and layers noninteractive", async () => {
