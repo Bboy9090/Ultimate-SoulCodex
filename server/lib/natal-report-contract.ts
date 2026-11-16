@@ -1,5 +1,6 @@
 import type { NatalReportInput } from "../natalReportPdf";
 import { hasApprovedVerifiedHumanDesignTrust } from "../services/human-design-trust";
+import { boundAstrologyForStoredProfile, boundHumanDesignForStoredProfile } from "./profile-birth-evidence-integrity";
 
 type PlacementLike = {
   sign?: unknown;
@@ -25,6 +26,9 @@ type ProfileLike = {
   birthDate: Date;
   birthTime?: string | null;
   birthLocation?: string | null;
+  timezone?: string | null;
+  latitude?: string | number | null;
+  longitude?: string | number | null;
   astrologyData?: unknown;
   numerologyData?: unknown;
   humanDesignData?: unknown;
@@ -131,9 +135,9 @@ function reportHighlights(astrology: Record<string, any>, numerology: Record<str
 }
 
 export function buildNatalReportInput(profile: ProfileLike, options: { premiumAccess?: boolean } = {}): NatalReportInput {
-  const astrology = record(profile.astrologyData);
+  const astrology = boundAstrologyForStoredProfile(profile);
   const numerology = record(profile.numerologyData);
-  const humanDesignRecord = record(profile.humanDesignData);
+  const humanDesignRecord = boundHumanDesignForStoredProfile(profile);
   const archetype = record(profile.archetypeData);
 
   const sunSign = verifiedSign(astrology.sun);
