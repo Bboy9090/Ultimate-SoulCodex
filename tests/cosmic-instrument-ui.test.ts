@@ -51,4 +51,5 @@ test("device motion choices have local persistence, accessible controls and syst
   assert.match(css, /data-cosmic-motion="still"/);
   assert.match(css, /prefers-reduced-motion: reduce/);
   assert.match(appSource, /className="sc-cosmic-route"/);
+  assert.match(appSource, /id="main-content" tabIndex=\{-1\}/);
 });
