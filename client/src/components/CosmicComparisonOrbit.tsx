@@ -28,7 +28,16 @@ export default function CosmicComparisonOrbit({ pairs }: { pairs: readonly Orbit
         Choose a shared planet or chart point. Its orbit location is an interface arrangement—not a calculated sky position, aspect or compatibility score.
       </p>
       <div className="mt-5 grid items-center gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,.8fr)]">
-        <div className="sc-orbit-stage" role="group" aria-label="Select a shared chart placement">
+        <div className="sc-orbit-mobile-picker" role="group" aria-label="Select a shared chart placement">
+          {supported.map(pair => (
+            <button key={pair.key} type="button" aria-pressed={active.key === pair.key}
+              aria-label={`Compare ${pair.label}: ${pair.yours.sign} with ${pair.theirs.sign}`}
+              className="sc-orbit-mobile-option" onClick={() => setSelected(pair.key)}>
+              {pair.label}
+            </button>
+          ))}
+        </div>
+        <div className="sc-orbit-stage" role="group" aria-label="Orbital selection of shared chart placements">
           <span className="sc-orbit-track sc-orbit-track--outer" aria-hidden="true" />
           <span className="sc-orbit-track sc-orbit-track--inner" aria-hidden="true" />
           <div className="sc-orbit-core" aria-hidden="true"><span>SOUL</span><span>CODEX</span></div>
