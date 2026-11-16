@@ -1,5 +1,7 @@
 import { calcLifePath } from "@soulcodex/core";
 import { hasApprovedVerifiedHumanDesignTrust } from "../../server/services/human-design-trust";
+import { extractVerifiedAstrology } from "../../server/lib/verified-astrology";
+import { boundHumanDesignForStoredProfile } from "../../server/lib/profile-birth-evidence-integrity";
 
 /**
  * Shared types for all Codex tools.
@@ -77,9 +79,9 @@ function canonicalLifePath(profile: ProfileInput, numData: any): number | "" {
 }
 
 export function extractCore(profile: ProfileInput) {
-  const astro = profile?.verifiedAstrologyData || profile?.astrologyData || {};
+  const verifiedAstrology = extractVerifiedAstrology(profile);
   const numData = profile?.numerologyData || {};
-  const hdData = profile?.humanDesignData || {};
+  const hdData = boundHumanDesignForStoredProfile(profile);
   const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
   const verifiedHumanDesignFields = verifiedHumanDesign
     ? ((verifiedHumanDesign.candidate && typeof verifiedHumanDesign.candidate === "object")
@@ -92,9 +94,9 @@ export function extractCore(profile: ProfileInput) {
 
   return {
     name: profile?.name || "You",
-    sunSign: verifiedAstrologySign(astro?.sun ?? astro?.planets?.sun),
-    moonSign: verifiedAstrologySign(astro?.moon ?? astro?.planets?.moon),
-    risingSign: verifiedAstrologySign(astro?.rising),
+    sunSign: verifiedAstrology.sun || "",
+    moonSign: verifiedAstrology.moon || "",
+    risingSign: verifiedAstrology.rising || "",
     lifePath: canonicalLifePath(profile, numData),
     hdType: verifiedHumanDesignFields.type || "",
     hdStrategy: verifiedHumanDesignFields.strategy || "",
