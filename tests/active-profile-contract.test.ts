@@ -133,7 +133,7 @@ test("canonical active Soul Profile contract", async (t) => {
     }), "partial");
   });
 
-  await t.test("canonical save downgrades verified astrology labels that lack provenance", () => {
+  await t.test("canonical save clears verified astrology labels that lack provenance", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
       configurable: true,
@@ -152,10 +152,10 @@ test("canonical active Soul Profile contract", async (t) => {
     });
 
     const restored = loadActiveProfile();
-    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
-    assert.strictEqual(restored?.astrologyData?.moon?.status, "pending_independent_verification");
-    assert.strictEqual(restored?.astrologyData?.rising?.verificationStatus, "unresolved");
-    assert.strictEqual(restored?.astrologyData?.planets?.mercury?.verificationStatus, "pending_independent_verification");
+    assert.equal(restored?.astrologyData?.sun, undefined);
+    assert.equal(restored?.astrologyData?.moon, undefined);
+    assert.equal(restored?.astrologyData?.rising, undefined);
+    assert.equal(restored?.astrologyData?.planets?.mercury, undefined);
   });
 
   await t.test("canonical save downgrades Human Design verified status without trust receipt", () => {
@@ -206,7 +206,7 @@ test("canonical active Soul Profile contract", async (t) => {
     assert.strictEqual(restored?.humanDesignData?.verificationReceiptId, humanDesignData.verificationReceiptId);
   });
 
-  await t.test("canonical save rejects malformed verification timestamps", () => {
+  await t.test("canonical save clears evidence with malformed verification timestamps", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
       configurable: true,
@@ -235,7 +235,7 @@ test("canonical active Soul Profile contract", async (t) => {
     });
 
     const restored = loadActiveProfile();
-    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
+    assert.equal(restored?.astrologyData?.sun, undefined);
     assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
   });
 
