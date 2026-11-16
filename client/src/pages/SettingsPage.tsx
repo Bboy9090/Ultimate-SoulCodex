@@ -18,6 +18,7 @@ import AppleSignInButton from "@/components/AppleSignInButton";
 import EmailAccountAuth from "@/components/EmailAccountAuth";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import { clearActiveProfile } from "../lib/ActiveProfileRepository";
+import { COSMIC_MOTION_OPTIONS, readCosmicMotion, writeCosmicMotion, type CosmicMotion } from "../lib/cosmicMotionPreference";
 import { clearDailyPulseEntries } from "../lib/dailyPulseStorage";
 import { clearOfflineProfiles } from "../lib/offlineProfileStore";
 import { apiRequest, queryClient } from "../lib/queryClient";
@@ -47,6 +48,8 @@ export default function SettingsPage() {
   const showAppleSignIn = platform !== "android";
   const showGoogleSignIn = platform !== "ios";
   const [reflectionLens, setReflectionLens] = useState<ReflectionLens>(() => readReflectionLens());
+  const [cosmicMotion, setCosmicMotion] = useState<CosmicMotion>(() => readCosmicMotion());
+  const [cosmicMotionError, setCosmicMotionError] = useState("");
   const [telemetryConsent, setTelemetryConsent] = useState<TelemetryConsentState>(() =>
     typeof window === "undefined" ? "unset" : readPersistedTelemetryConsent(window.localStorage),
   );
@@ -86,6 +89,16 @@ export default function SettingsPage() {
     await apiRequest("POST", "/api/auth/logout");
     queryClient.setQueryData(["/api/auth/user"], null);
     queryClient.setQueryData(["/api/user"], null);
+  };
+
+  const selectCosmicMotion = (value: CosmicMotion) => {
+    try {
+      writeCosmicMotion(value);
+      setCosmicMotion(value);
+      setCosmicMotionError("");
+    } catch {
+      setCosmicMotionError("Motion preference could not be saved on this device.");
+    }
   };
 
   const selectReflectionLens = (value: ReflectionLens) => {
@@ -244,6 +257,30 @@ export default function SettingsPage() {
           <div className="mt-4 rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4 text-xs leading-5 text-[var(--sc-stone)]">
             Current choice: <strong className="text-[var(--sc-ivory-soft)]">{telemetryConsent}</strong>. Clearing this device also clears this local preference, which returns the policy to fail-closed <strong className="text-[var(--sc-ivory-soft)]">unset</strong>.
           </div>
+        </section>
+
+        <section className="sc-panel mt-4 p-6" aria-label="Celestial motion settings">
+          <SectionHeading icon={<Sparkles className="h-5 w-5" />} eyebrow="Appearance" title="Celestial motion" />
+          <p className="mt-4 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
+            Choose the intensity of the deep-space interface on this device. Your system's Reduce Motion setting always takes priority. Chart calculations, contact privacy, and readings are unaffected.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Celestial motion intensity">
+            {COSMIC_MOTION_OPTIONS.map((level) => (
+              <button key={level} type="button" role="radio" aria-checked={cosmicMotion === level}
+                data-testid={`cosmic-motion-${level}`} onClick={() => selectCosmicMotion(level)}
+                className={`min-h-24 rounded-2xl border p-4 text-left transition ${cosmicMotion === level
+                  ? "border-[rgba(239,208,141,.5)] bg-[rgba(239,208,141,.08)]"
+                  : "border-white/[0.1] bg-white/[0.025] hover:border-[rgba(239,208,141,.25)]"}`}>
+                <strong className="block font-serif text-xl capitalize">{level}</strong>
+                <span className="mt-2 block text-xs leading-5 text-[var(--sc-stone)]">
+                  {level === "full" ? "Pointer-responsive parallax and celestial ambience" :
+                    level === "ambient" ? "Nebula depth and subtle atmospheric motion" :
+                      "Still cosmic background with no ambient animations"}
+                </span>
+              </button>
+            ))}
+          </div>
+          {cosmicMotionError && <p role="alert" className="mt-3 text-sm text-red-300">{cosmicMotionError}</p>}
         </section>
 
         <section className="sc-panel mt-4 p-6">
