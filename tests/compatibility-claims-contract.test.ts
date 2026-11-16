@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import { buildMatchResponse } from "../routes/compatibility";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 import { calculateArchetypeMatches } from "../services/archetype-matches";
 
 const engineSource = fs.readFileSync("services/archetype-matches.ts", "utf8");
@@ -11,6 +12,13 @@ const verifiedEvidence = {
   source: "independent ephemeris comparison",
   engine: "engine-a+engine-b",
   calculatedAt: "2026-08-14T00:00:00Z",
+};
+const trustedBirth = {
+  birthDate: "1990-09-17",
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: 40.8448,
+  longitude: -73.8648,
 };
 
 describe("compatibility evidence framing", () => {
@@ -83,13 +91,14 @@ describe("compatibility evidence framing", () => {
 
   it("labels even verified-input results as a symbolic relationship model", () => {
     const result = buildMatchResponse({
-      astrologyData: {
+      ...trustedBirth,
+      astrologyData: bindStoredEvidence({
         sun: {
           sign: "Virgo",
           verificationStatus: "verified",
           evidence: verifiedEvidence,
         },
-      },
+      }, trustedBirth),
       numerologyData: { lifePath: 9 },
     });
 
