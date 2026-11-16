@@ -232,10 +232,23 @@ export function isCoordinateWithinRange(
   return Number.isFinite(numeric) && numeric >= minimum && numeric <= maximum;
 }
 
+export function isValidDateOnly(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12) return false;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day >= 1 && day <= daysInMonth[month - 1];
+}
+
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Display name is required"),
   fullBirthName: z.string().optional(),
-  birthDate: z.string().min(1, "Birth date is required"),
+  birthDate: z.string().min(1, "Birth date is required").refine(isValidDateOnly, "Birth date must be a real calendar date in YYYY-MM-DD format"),
   // Empty string is an explicit unknown-time state. Never force the user to
   // invent a clock time just to satisfy validation.
   birthTime: birthTimeSchema,
