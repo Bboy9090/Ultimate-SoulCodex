@@ -8,6 +8,7 @@
 import type { AIRequest } from "../src/types/ai";
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
+import { boundHumanDesignForStoredProfile } from "../server/lib/profile-birth-evidence-integrity";
 
 interface FallbackResult {
   title: string;
@@ -81,7 +82,7 @@ function verifiedHumanDesign(profile: any): {
   strategy: string;
   authority: string;
 } {
-  const hd = profile?.humanDesignData;
+  const hd = boundHumanDesignForStoredProfile(profile);
   if (!hasApprovedVerifiedHumanDesignTrust(hd)) {
     return { type: "", strategy: "", authority: "" };
   }
