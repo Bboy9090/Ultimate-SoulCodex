@@ -231,3 +231,18 @@ The exact operator handoff for creating and qualifying the paid catalog is
 [`docs/SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md`](SOUL_CODEX_PLUS_STORE_CATALOG_4_1.md).
 
 Do not mark the subscription catalog complete merely because identifiers are documented. Store products, prices, provider credentials, sandbox evidence, and production activation are separate release evidence classes.
+
+## Google Play closed testing upload automation
+
+`.github/workflows/play-closed-testing-upload.yml` is a manually triggered workflow that uploads an already-qualified signed AAB to the Google Play closed testing track (`alpha`). It does not build or sign anything, cannot target production, and does not change billing products.
+
+How to run it (Actions → "Soul Codex Google Play Closed Testing Upload" → Run workflow, on `main`):
+
+1. `source_run_id`: the run ID of the successful Store Candidate run on `main` that built the signed AAB.
+2. `candidate_sha`: the full commit SHA that run qualified. The workflow rejects the run unless SHA, branch, event, conclusion, artifact checksum, and `jarsigner` verification all match.
+3. `mode`: run `validate` first. Google Play validates the edit and the workflow discards it; nothing is released.
+4. For `commit`, also set `confirm` to `closed-testing <versionCode>`. This releases the bundle to closed testers.
+
+Each run preserves `google-play-closed-testing-receipt.json` (the Google Play API responses, or the provider error) as a 90-day artifact. Only that receipt, or the Play Console itself, is evidence of an upload. A passing unit test or a green Store Candidate run is not.
+
+Status as of 2026-11-16: the workflow has not yet been run against Google Play. Whether the publisher service account has release permission on `soulcodex.app` in Play Console is unverified until the first `validate` run.

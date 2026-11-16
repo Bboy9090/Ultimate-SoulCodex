@@ -1,0 +1,168 @@
+name: Soul Codex Google Play Closed Testing Upload
+
+# Manually triggered only. Takes the signed AAB that the Store Candidate workflow already
+# built and verified for an exact commit on main, and uploads that same file to the Google
+# Play closed testing track. It never builds or signs, never targets production, and never
+# changes billing products. "validate" mode asks Play to validate and then discards the edit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Run ID of the successful Store Candidate run on main that built the signed AAB"
+        required: true
+        type: string
+      candidate_sha:
+        description: "Full 40-character commit SHA that the source run qualified"
+        required: true
+        type: string
+      mode:
+        description: "validate = Play validates the edit and it is discarded; commit = release to closed testing"
+        required: true
+        type: choice
+        default: validate
+        options:
+          - validate
+          - commit
+      confirm:
+        description: 'Required for commit: type "closed-testing <versionCode>" (for example: closed-testing 4000017)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: soulcodex-play-closed-testing-upload
+  cancel-in-progress: false
+
+env:
+  PLAY_PACKAGE_NAME: soulcodex.app
+  PLAY_TRACK: alpha
+  EXPECTED_VERSION_NAME: 4.1.1
+  EXPECTED_VERSION_CODE: "4000017"
+  SOURCE_WORKFLOW_PATH: .github/workflows/store-4.0.0-release.yml
+  SOURCE_ARTIFACT_NAME: soulcodex-4.1.1-android
+
+jobs:
+  upload-closed-testing:
+    if: github.repository == 'Bboy9090/Ultimate-SoulCodex' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      SOURCE_RUN_ID: ${{ inputs.source_run_id }}
+      CANDIDATE_SHA: ${{ inputs.candidate_sha }}
+      PLAY_PUBLISH_MODE: ${{ inputs.mode }}
+      CONFIRM: ${{ inputs.confirm }}
+      GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER: projects/137127337841/locations/global/workloadIdentityPools/github-actions/providers/github-ultimate-soulcodex
+      GOOGLE_PLAY_PUBLISHER_SERVICE_ACCOUNT: soulcodex-play-publisher@soul-codex-platform.iam.gserviceaccount.com
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          [[ "$SOURCE_RUN_ID" =~ ^[0-9]+$ ]] || { echo "::error::source_run_id must be numeric."; exit 2; }
+          [[ "$CANDIDATE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::candidate_sha must be a full 40-character SHA."; exit 2; }
+          [[ "$PLAY_PUBLISH_MODE" == "validate" || "$PLAY_PUBLISH_MODE" == "commit" ]] || { echo "::error::mode must be validate or commit."; exit 2; }
+          [[ "$PLAY_TRACK" == "alpha" ]] || { echo "::error::Only the closed testing track is allowed."; exit 2; }
+          if [[ "$PLAY_PUBLISH_MODE" == "commit" && "$CONFIRM" != "closed-testing $EXPECTED_VERSION_CODE" ]]; then
+            echo "::error::commit requires confirm to be exactly: closed-testing $EXPECTED_VERSION_CODE"
+            exit 2
+          fi
+      - name: Checkout main with history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Prove candidate commit is on main
+        shell: bash
+        run: |
+          git cat-file -e "${CANDIDATE_SHA}^{commit}"
+          git merge-base --is-ancestor "$CANDIDATE_SHA" HEAD
+      - name: Prove source run qualified the exact candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${SOURCE_RUN_ID}" > source-run.json
+          check() {
+            local field="$1" expected="$2" actual
+            actual="$(jq -r "$field" source-run.json)"
+            if [[ "$actual" != "$expected" ]]; then
+              echo "::error::Source run $field is '$actual'; expected '$expected'."
+              exit 2
+            fi
+          }
+          check .head_sha "$CANDIDATE_SHA"
+          check .head_branch main
+          check .event push
+          check .status completed
+          check .conclusion success
+          check .path "$SOURCE_WORKFLOW_PATH"
+      - name: Download the signed AAB from the source run
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$SOURCE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "$SOURCE_ARTIFACT_NAME" --dir candidate
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Verify the downloaded AAB is the qualified signed candidate
+        shell: bash
+        working-directory: candidate
+        run: |
+          test "$(tr -d '[:space:]' < RELEASE-CANDIDATE-SHA.txt)" = "$CANDIDATE_SHA"
+          grep -Fxq "SHA=${CANDIDATE_SHA}" android-store-state.txt
+          grep -Fxq "versionName=${EXPECTED_VERSION_NAME}" android-store-state.txt
+          grep -Fxq "versionCode=${EXPECTED_VERSION_CODE}" android-store-state.txt
+          grep -Fxq "signing_available=true" android-store-state.txt
+          sha256sum -c AAB-SHA256.txt
+          jarsigner -verify android/app/build/outputs/bundle/release/app-release.aab
+      - name: Setup Node 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Authenticate keylessly to Google Cloud for Play publishing
+        id: google_auth
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ env.GOOGLE_PLAY_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GOOGLE_PLAY_PUBLISHER_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+          create_credentials_file: false
+      - name: Upload to Google Play closed testing
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.google_auth.outputs.access_token }}
+          AAB_PATH: candidate/android/app/build/outputs/bundle/release/app-release.aab
+          RECEIPT_PATH: google-play-closed-testing-receipt.json
+        run: node scripts/publish-play-closed-testing.mjs
+      - name: Summarize provider receipt
+        if: always()
+        shell: bash
+        run: |
+          if [[ -s google-play-closed-testing-receipt.json ]]; then
+            {
+              echo "### Google Play closed testing receipt"
+              echo '```json'
+              jq '{outcome, mode, track, packageName, candidateSha, sourceRunId, expectedVersionCode, aabSha256, editId, committed, productionTouched, billingCatalogTouched, error}' google-play-closed-testing-receipt.json
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No provider receipt was produced; Google Play was not contacted." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve provider receipt
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: soulcodex-${{ env.EXPECTED_VERSION_NAME }}-google-play-closed-testing-receipt-${{ inputs.mode }}-${{ github.run_id }}
+          path: |
+            google-play-closed-testing-receipt.json
+            source-run.json
+          if-no-files-found: warn
+          retention-days: 90
