@@ -37,9 +37,28 @@ function placementFromProfile(profile: any, key: "sun" | "moon" | "rising"): Pla
   );
 }
 
+function unresolvedAstrology(): VerifiedAstrology {
+  return { sun: undefined, moon: undefined, rising: undefined, unresolved: ["Sun", "Moon", "Ascendant"] };
+}
+
+export function extractVerifiedAstrologyFromBoundData(astrologyData: any): VerifiedAstrology {
+  if (!astrologyData || typeof astrologyData !== "object" || !astrologyData.birthEvidenceInput) {
+    return unresolvedAstrology();
+  }
+  const sun = verifiedSign(astrologyData.sun);
+  const moon = verifiedSign(astrologyData.moon);
+  const rising = verifiedSign(astrologyData.rising);
+  const unresolved = [
+    !sun ? "Sun" : null,
+    !moon ? "Moon" : null,
+    !rising ? "Ascendant" : null,
+  ].filter((value): value is string => Boolean(value));
+  return { sun, moon, rising, unresolved };
+}
+
 export function extractVerifiedAstrology(profile: any): VerifiedAstrology {
   if (!hasMatchingStoredEvidenceBinding(profile, "astrology")) {
-    return { sun: undefined, moon: undefined, rising: undefined, unresolved: ["Sun", "Moon", "Ascendant"] };
+    return unresolvedAstrology();
   }
   const sun = verifiedSign(placementFromProfile(profile, "sun"));
   const moon = verifiedSign(placementFromProfile(profile, "moon"));
