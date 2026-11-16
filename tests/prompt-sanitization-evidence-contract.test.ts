@@ -4,6 +4,7 @@ import { sanitizeInput } from "../services/ai-router";
 import { narratorPrompt } from "../soulcodex/codex30/prompts/narrator";
 import { buildPromptForType } from "../routes/ai-respond";
 import { buildProfileContextPrompt } from "../routes/chat";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 
 test("AI prompt sanitation preserves evidence-bearing language", async (suite) => {
   await suite.test("unknown remains explicit so uncertainty instructions survive routing", () => {
@@ -47,6 +48,29 @@ test("AI prompt sanitation preserves evidence-bearing language", async (suite) =
 });
 
 
+const trustedBirth = {
+  birthDate: "1990-09-17",
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: 40.8448,
+  longitude: -73.8648,
+};
+
+const verifiedHd = bindStoredEvidence({
+  status: "verified",
+  type: "Reflector",
+  strategy: "To Wait a Lunar Cycle",
+  authority: "Lunar Authority",
+  profile: "2/5",
+  engine: "soulcodex-hd-geocentric-v1",
+  source: "Soul Codex deterministic Human Design core engine",
+  calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestampUtc: "1990-09-17T15:11:00.000Z",
+  verificationReceiptId: "35474994858:human-design-repair-audit",
+  independentSource: "free-human-design@1.0.1 differential verifier",
+  verifiedAt: "2026-09-19T23:03:08.000Z",
+}, trustedBirth);
+
 test("AI profile prompt withholds unverified Human Design and admits only approved trust", () => {
   const statusOnly = buildPromptForType("codex_reading", "", {
     humanDesignData: {
@@ -60,23 +84,11 @@ test("AI profile prompt withholds unverified Human Design and admits only approv
   assert.doesNotMatch(statusOnly.prompt, /Human Design: Reflector/i);
 
   const verified = buildPromptForType("codex_reading", "", {
-    humanDesignData: {
-      status: "verified",
-      type: "Reflector",
-      strategy: "Wait a lunar cycle",
-      authority: "Lunar Authority",
-      profile: "2/5",
-      engine: "soulcodex-hd-geocentric-v1",
-      source: "Soul Codex deterministic Human Design core engine",
-      calculatedAt: "2026-09-26T18:00:00.000Z",
-      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
-      verificationReceiptId: "35474994858:human-design-repair-audit",
-      independentSource: "free-human-design@1.0.1 differential verifier",
-      verifiedAt: "2026-09-19T23:03:08.000Z",
-    },
+    ...trustedBirth,
+    humanDesignData: verifiedHd,
   });
   assert.match(verified.prompt, /Human Design: Reflector/i);
-  assert.match(verified.prompt, /Strategy: Wait a lunar cycle/i);
+  assert.match(verified.prompt, /Strategy: To Wait a Lunar Cycle/i);
 });
 
 
@@ -91,20 +103,8 @@ test("Soul Guide client profile context ignores legacy hdType without approved t
 
   const verified = buildProfileContextPrompt({
     name: "Context Test",
-    humanDesignData: {
-      status: "verified",
-      type: "Reflector",
-      strategy: "Wait a lunar cycle",
-      authority: "Lunar Authority",
-      profile: "2/5",
-      engine: "soulcodex-hd-geocentric-v1",
-      source: "Soul Codex deterministic Human Design core engine",
-      calculatedAt: "2026-09-26T18:00:00.000Z",
-      inputTimestampUtc: "1990-09-17T15:11:00.000Z",
-      verificationReceiptId: "35474994858:human-design-repair-audit",
-      independentSource: "free-human-design@1.0.1 differential verifier",
-      verifiedAt: "2026-09-19T23:03:08.000Z",
-    },
+    ...trustedBirth,
+    humanDesignData: verifiedHd,
   });
   assert.match(verified, /Human Design: Reflector/i);
 });
