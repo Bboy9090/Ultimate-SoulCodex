@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildPublicProfileProjection } from "../server/lib/public-profile-projection";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 import type { Profile } from "@shared/schema";
 
 const verified = (sign: string) => ({
@@ -14,24 +15,28 @@ const verified = (sign: string) => ({
   },
 });
 
+const birthInputs = {
+  birthDate: new Date("1990-09-17T00:00:00.000Z"),
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: "40.8448",
+  longitude: "-73.8648",
+};
+
 const profile = {
   id: "private-profile-id",
   userId: "private-user-id",
   sessionId: "private-session-id",
   name: "Private Legal Name",
-  birthDate: new Date("1990-09-17T00:00:00.000Z"),
-  birthTime: "11:11",
+  ...birthInputs,
   birthLocation: "Bronx, New York",
-  timezone: "America/New_York",
-  latitude: "40.8448",
-  longitude: "-73.8648",
   isPremium: true,
-  astrologyData: {
+  astrologyData: bindStoredEvidence({
     sun: verified("Virgo"),
     moon: verified("Virgo"),
     rising: verified("Scorpio"),
     rawEvidence: { secret: "must never escape" },
-  },
+  }, birthInputs),
   numerologyData: { lifePath: 9, expression: 7, soulUrge: 4 },
   personalityData: { mbti: { type: "INTJ", responses: ["private"] } },
   archetypeData: { title: "The Builder", privatePrompt: "hidden" },
@@ -107,11 +112,11 @@ test("public projection structurally excludes private profile material", () => {
 test("unverified astrology never enters a public projection", () => {
   const unsafe = {
     ...profile,
-    astrologyData: {
+    astrologyData: bindStoredEvidence({
       sun: { sign: "Aries", verificationStatus: "unverified" },
       moon: { sign: "Taurus", verificationStatus: "verified", provenance: { source: "", engine: "", calculatedAt: "" } },
       rising: verified("Scorpio"),
-    },
+    }, birthInputs),
   } satisfies Profile;
 
   assert.deepEqual(
@@ -123,7 +128,7 @@ test("unverified astrology never enters a public projection", () => {
 test("comparison chart shares only verified sign-and-house rows selected by the owner", () => {
   const comparisonProfile = {
     ...profile,
-    astrologyData: {
+    astrologyData: bindStoredEvidence({
       ...profile.astrologyData,
       planets: {
         sun: verified("Virgo"),
@@ -145,7 +150,7 @@ test("comparison chart shares only verified sign-and-house rows selected by the 
         policyId: "ASTRO-CHIRON-v1", evidenceArtifactId: "chiron-receipt",
         qualificationMethod: "live-jpl-qualified-against-swiss",
       },
-    },
+    }, birthInputs),
   } satisfies Profile;
 
   const projection = buildPublicProfileProjection(comparisonProfile, { fields: ["comparisonChart"] });
@@ -184,4 +189,20 @@ test("share modal exposes the core archetype title without an interpretation-dep
   const shareModal = readFileSync(new URL("../client/src/components/ShareModal.tsx", import.meta.url), "utf8");
   assert.match(shareModal, /id: "archetypeTitle"/);
   assert.doesNotMatch(shareModal, /canShareArchetypeTitle|interpretation_depth/);
+});
+
+
+test("unbound verified-looking astrology cannot enter a public share", () => {
+  const legacy = {
+    ...profile,
+    astrologyData: {
+      sun: verified("Virgo"),
+      moon: verified("Virgo"),
+      rising: verified("Scorpio"),
+    },
+  } satisfies Profile;
+  assert.deepEqual(
+    buildPublicProfileProjection(legacy, { fields: ["sunSign", "moonSign", "risingSign"] }),
+    { version: 1, fields: {} },
+  );
 });
