@@ -131,4 +131,9 @@ test("unbound legacy server evidence is quarantined from profile responses", () 
   const out = projectProfileResponseForTier(legacy, "plus");
   assert.deepEqual(out.astrologyData, {});
   assert.deepEqual(out.humanDesignData, {});
+  assert.equal(out.depthInterpretation, null);
+  assert.equal(out.synthesis, null);
+  assert.notEqual(out.biography, profile.biography);
+  assert.notEqual(out.dailyGuidance, profile.dailyGuidance);
+  assert.doesNotMatch(JSON.stringify(out.archetypeData), /Stored Plus Archetype|stored shadow/);
 });
