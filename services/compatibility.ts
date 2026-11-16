@@ -5,6 +5,7 @@ import {
   calcPersonality,
 } from "@soulcodex/core";
 import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
+import { boundHumanDesignForStoredProfile } from "../server/lib/profile-birth-evidence-integrity";
 import { calculateDetailedSynastry } from './synastry';
 
 const COMPAT_ZODIAC_SIGNS = new Set([
@@ -98,7 +99,7 @@ function compatibilityNumerology(profile: any): any | null {
 }
 
 function compatibilityHumanDesign(profile: any): any | null {
-  const raw = profile?.humanDesignData;
+  const raw = boundHumanDesignForStoredProfile(profile);
   if (!raw || !hasApprovedVerifiedHumanDesignTrust(raw)) return null;
   return raw.candidate && typeof raw.candidate === "object"
     ? { ...raw, ...raw.candidate }
