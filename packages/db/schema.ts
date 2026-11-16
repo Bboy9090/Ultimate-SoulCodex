@@ -104,11 +104,24 @@ const birthTimeSchema = z.union([
   z.string().regex(/^\d{2}:\d{2}$/, "Birth time must use HH:MM when provided"),
 ]);
 
+function isValidDateOnly(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (month < 1 || month > 12) return false;
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day >= 1 && day <= daysInMonth[month - 1];
+}
+
 // Additional schemas for API requests
 export const birthDataSchema = z.object({
   name: z.string().min(1, "Name is required"),
   fullBirthName: z.string().optional(),
-  birthDate: z.string().min(1, "Birth date is required"),
+  birthDate: z.string().min(1, "Birth date is required").refine(isValidDateOnly, "Birth date must be a real calendar date in YYYY-MM-DD format"),
   // Empty string represents an explicitly unknown birth time.
   birthTime: birthTimeSchema,
   birthLocation: z.string().min(1, "Birth location is required"),
