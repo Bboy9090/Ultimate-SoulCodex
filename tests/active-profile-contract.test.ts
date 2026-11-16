@@ -236,7 +236,7 @@ test("canonical active Soul Profile contract", async (t) => {
 
     const restored = loadActiveProfile();
     assert.equal(restored?.astrologyData?.sun, undefined);
-    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+    assert.equal(restored?.humanDesignData, undefined);
   });
 
   await t.test("canonical save preserves verified astrology when provenance is complete", () => {
