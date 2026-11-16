@@ -68,5 +68,11 @@ test("interactive shared orbit is evidence-bounded and keyboard accessible", asy
   assert.match(orbitSource, /supported = pairs\.filter/);
   assert.doesNotMatch(orbitSource, /Math\.random|Date\.now|fetch\(/);
   assert.match(css, /\.sc-orbit-body:focus-visible/);
+  assert.match(orbitSource, /sc-orbit-mobile-picker/);
+  assert.match(orbitSource, /sc-orbit-mobile-option/);
+  assert.match(css, /@media \(max-width: 639px\)/);
+  assert.match(css, /\.sc-orbit-mobile-option\[aria-pressed="true"\]/);
+  assert.match(css, /min-height: 48px/);
+  assert.match(css, /\.sc-orbit-stage \{ display: none; \}/);
   assert.match(css, /data-cosmic-motion="still"/);
 });
