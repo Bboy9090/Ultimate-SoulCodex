@@ -17,8 +17,8 @@ test("Soul Codex platform release identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000016/);
-  assert.match(android, /versionName\s+"4\.1\.0"/);
+  assert.match(android, /versionCode\s+4000017/);
+  assert.match(android, /versionName\s+"4\.1\.1"/);
   assert.match(android, /applicationId\s+"soulcodex\.app"/);
   assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
   assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.1<\/string>/);
@@ -30,7 +30,7 @@ test("Soul Codex platform release identities are aligned", async () => {
   assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.1\.0/);
   assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.1\.0"/);
   assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.1\.0"/);
-  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.1\.0"/);
+  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.1\.1"/);
   assert.match(envExample, /VITE_RELEASE_VERSION=4\.1\.0/);
   assert.match(envExample, /SOUL_CODEX_RELEASE_VERSION=4\.1\.0/);
 
@@ -81,7 +81,7 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.match(workflow, /submission is deferred until the owner authorizes and completes a separate store-launch process/);
   assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
   assert.doesNotMatch(workflow, /track:\s*production/);
-  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.0/);
+  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.1/);
   assert.match(workflow, /iOS marketingVersion=4\.1\.1/);
   assert.match(workflow, /iOS build=4000015/);
   assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
@@ -91,7 +91,7 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /platform === "ios" && releaseVersion !== "4\.1\.1"/);
   assert.match(validator, /android\/app\/build\.gradle/);
-  assert.match(validator, /versionCode\\s\+4000016/);
+  assert.match(validator, /versionCode\\s\+4000017/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000015/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
@@ -111,7 +111,7 @@ test("store metadata points at the verified public legal host and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.0 \/ versionCode 4000016/);
+  assert.match(packet, /4\.1\.1 \/ versionCode 4000017/);
   assert.match(packet, /4\.1\.1 \/ build 4000015/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
