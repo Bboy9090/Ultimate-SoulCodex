@@ -1,6 +1,6 @@
 # Soul Codex Store Submission Packet
 
-Maintained for Soul Codex 4.1.0. Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
+Maintained for Soul Codex 4.1.1 mobile update candidates (current web/backend release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
 
 Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
@@ -14,8 +14,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release | 4.1.0 / versionCode 4000016 |
-| iOS source project release | 4.1.0 / build 4000014 (source setting) |
+| Android release candidate | 4.1.1 / versionCode 4000017 (new cosmic update; not yet uploaded) |
+| iOS source project release | 4.1.1 / build 4000015 (source setting) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -221,7 +221,7 @@ These are outstanding qualification steps, **not instructions to recreate the ap
 5. Maintain the verified GitHub Pages privacy, support and account-deletion URLs. Backend/runtime qualification remains independent of the legal-host status.
 6. Complete the Play Console production-access qualification required for this account through genuine opted-in participation and qualifying duration. The latest provider-confirmed count on November 8 was **1 opted-in tester**; a configured tester email list is not an opt-in count. This external gate must not block independent code/metadata/QA improvements.
 7. Apply for production access and obtain an explicit production release approval only after the Console eligibility and native payment/device gates are satisfied; do not let CI auto-promote an Alpha build.
-8. For Apple, reconcile live App Store Connect privacy, age-rating, support URL, EULA and subscription metadata using the exact iOS submission candidate; retain screenshots/receipts. Use its Apple-managed Xcode Cloud archive and record the actual App Store Connect build counter separately from the checked-in `4000014` setting.
+8. For Apple, reconcile live App Store Connect privacy, age-rating, support URL, EULA and subscription metadata using the exact iOS submission candidate; retain screenshots/receipts. Use its Apple-managed Xcode Cloud archive and record the actual App Store Connect build counter separately from the checked-in `4000015` setting for iOS 4.1.1.
 9. Preserve exact release-candidate SHA, signed binary checksum, provider upload ID, track, and store acceptance in the release ledger whenever a *new* candidate is intentionally submitted.
 
 

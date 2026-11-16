@@ -6,8 +6,8 @@ const workflow = readFileSync(".github/workflows/android-billing-qualification-p
 
 test("Android qualification artifact is a dedicated Play test build, not a production release", () => {
   assert.match(workflow, /VITE_BILLING_QUALIFICATION_MODE: "true"/);
-  assert.match(workflow, /QUALIFICATION_VERSION_CODE: "4000017"/);
-  assert.match(workflow, /versionCode 4000017/);
+  assert.match(workflow, /QUALIFICATION_VERSION_CODE: "4000018"/);
+  assert.match(workflow, /versionCode 4000018/);
   assert.match(workflow, /production_billing_enabled=false/);
   assert.match(workflow, /production_publish_attempted=false/);
   assert.match(workflow, /play_upload_attempted=false/);
