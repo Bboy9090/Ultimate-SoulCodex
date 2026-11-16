@@ -4,6 +4,7 @@
  */
 import type { PlacementEvidence, PlacementLike } from '@soulcodex/core';
 import { canonicalSignPattern } from "@shared/symbolic-vocabulary";
+import { hasMatchingStoredEvidenceBinding } from "./profile-birth-evidence-integrity";
 
 export type { PlacementEvidence, PlacementLike };
 
@@ -37,6 +38,9 @@ function placementFromProfile(profile: any, key: "sun" | "moon" | "rising"): Pla
 }
 
 export function extractVerifiedAstrology(profile: any): VerifiedAstrology {
+  if (!hasMatchingStoredEvidenceBinding(profile, "astrology")) {
+    return { sun: undefined, moon: undefined, rising: undefined, unresolved: ["Sun", "Moon", "Ascendant"] };
+  }
   const sun = verifiedSign(placementFromProfile(profile, "sun"));
   const moon = verifiedSign(placementFromProfile(profile, "moon"));
   const rising = verifiedSign(placementFromProfile(profile, "rising"));
