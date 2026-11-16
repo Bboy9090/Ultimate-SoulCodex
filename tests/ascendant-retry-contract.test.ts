@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { birthEvidenceInput } from "../client/src/lib/profileBirthEvidence";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
@@ -39,6 +40,7 @@ function exactProfile(): ReconciledOfflineProfile {
 
   return {
     ...local,
+    birthEvidenceInput: birthEvidenceInput(local) ?? undefined,
     verifiedAstrologyData: {
       sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
       moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
@@ -191,5 +193,6 @@ test("missing exact Ascendant coordinates do not create an endless retry loop", 
   const profile = exactProfile();
   profile.latitude = null;
   profile.longitude = null;
+  profile.birthEvidenceInput = birthEvidenceInput(profile) ?? undefined;
   assert.equal(profileNeedsOnlineVerification(profile), false);
 });

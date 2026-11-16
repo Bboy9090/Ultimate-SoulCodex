@@ -1,4 +1,4 @@
-name: Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.0
+name: Soul Codex Store Candidate — Android 4.1.1 / iOS 4.1.1
 
 on:
   push:
@@ -26,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.0
+  VITE_RELEASE_VERSION: 4.1.1
   VITE_API_CONTRACT: foundation-v4
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -55,7 +55,7 @@ jobs:
         run: npm run check
       - name: Qualified astrology, differentiation, privacy, and Human Design gates
         run: |
-          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/personal-chart-release-integrity.test.ts             tests/planetary-free-plus-boundary.test.ts             tests/owner-complimentary-access.test.ts             tests/clarity-reading-model-evidence.test.ts             tests/clarity-reading-entitlement-boundary.test.ts             tests/jpl-horizons-reference.test.ts             tests/interactive-planetary-experience-contract.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts             tests/astrology-atlas.test.ts             tests/birth-date-exploration.test.ts             tests/personal-astrology-atlas.test.ts             tests/connection-repository.test.ts             tests/runtime-esm-import-contract.test.ts             tests/aspect-interpretation-fallback-contract.test.ts             tests/soul-profile-behavioral-evidence-contract.test.ts             tests/compatibility-evidence-authority.test.ts             tests/deterministic-fallback-evidence-contract.test.ts             tests/prompt-sanitization-evidence-contract.test.ts             tests/daily-horoscope-evidence-contract.test.ts             tests/daily-insight-system-eligibility.test.ts             tests/daily-guidance-differentiation-corpus.test.ts             tests/daily-context-authority.test.ts             tests/ai-structure-repetition.test.ts             packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts             packages/core/__tests__/personal-numbers.test.ts
+          node --import tsx --test             tests/bobby-big-three-golden.test.ts             tests/personal-chart-release-integrity.test.ts             tests/planetary-free-plus-boundary.test.ts             tests/owner-complimentary-access.test.ts             tests/clarity-reading-model-evidence.test.ts             tests/clarity-reading-entitlement-boundary.test.ts             tests/jpl-horizons-reference.test.ts             tests/interactive-planetary-experience-contract.test.ts             tests/ascendant-retry-contract.test.ts             tests/astrology-planetary-candidates.test.ts             tests/astrology-production-verification.test.ts             tests/full-chart-production-wiring.test.ts             tests/house-production.test.ts             tests/aspect-engine.test.ts             tests/lunar-node-evidence.test.ts             tests/lunar-node-production.test.ts             tests/chiron-horizons-reference.test.ts             tests/chiron-production.test.ts             tests/profile-verification-reconciliation.test.ts             tests/profile-birth-evidence-integrity.test.ts             tests/primary-synthesis-system-policy.test.ts             tests/verified-profile-differentiation.test.ts             tests/offline-synthesis-evidence-boundary.test.ts             tests/verified-profile-differentiation-corpus.test.ts             tests/local-first-privacy-contract.test.ts             tests/human-design-differential-contract.test.ts             tests/human-design-trust.test.ts             tests/astrology-atlas.test.ts             tests/birth-date-exploration.test.ts             tests/personal-astrology-atlas.test.ts             tests/connection-repository.test.ts             tests/runtime-esm-import-contract.test.ts             tests/aspect-interpretation-fallback-contract.test.ts             tests/soul-profile-behavioral-evidence-contract.test.ts             tests/compatibility-evidence-authority.test.ts             tests/deterministic-fallback-evidence-contract.test.ts             tests/prompt-sanitization-evidence-contract.test.ts             tests/daily-horoscope-evidence-contract.test.ts             tests/daily-insight-system-eligibility.test.ts             tests/daily-guidance-differentiation-corpus.test.ts             tests/daily-context-authority.test.ts             tests/ai-structure-repetition.test.ts             packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts             packages/core/__tests__/personal-numbers.test.ts
       - name: Store release candidate and Android qualification contracts
         run: node --import tsx --test tests/store-release-candidate-contract.test.ts tests/android-billing-qualification-build-contract.test.ts
       - name: Build production Capacitor payload
@@ -75,7 +75,7 @@ jobs:
         run: npm run mobile:validate:android
       - name: Validate iOS release metadata
         env:
-          VITE_RELEASE_VERSION: 4.1.0
+          VITE_RELEASE_VERSION: 4.1.1
           VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run mobile:validate:ios
       - name: Generate release receipt
@@ -83,19 +83,19 @@ jobs:
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
           Soul Codex store candidate
           SHA=${CANDIDATE_SHA}
-          Android versionName=4.1.0
+          Android versionName=4.1.1
           Android applicationId=soulcodex.app
-          Android versionCode=4000016
-          iOS marketingVersion=4.1.0
+          Android versionCode=4000018
+          iOS marketingVersion=4.1.1
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000014
+          iOS build=4000015
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
       - name: Upload release-gate receipt
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-release-gate
+          name: soulcodex-4.1.1-release-gate
           path: STORE-CANDIDATE-RECEIPT.txt
           retention-days: 90
 
@@ -228,8 +228,8 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "versionName=4.1.0"
-            echo "versionCode=4000016"
+            echo "versionName=4.1.1"
+            echo "versionCode=4000018"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
             echo "play_credentials_mode=${{ steps.play.outputs.mode }}"
@@ -237,7 +237,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-android
+          name: soulcodex-4.1.1-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
@@ -273,7 +273,7 @@ jobs:
       - name: Upload Google Play production handoff receipt
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-google-play-production-handoff
+          name: soulcodex-4.1.1-google-play-production-handoff
           path: google-play-production-handoff.txt
           retention-days: 90
 
@@ -282,7 +282,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     env:
-      VITE_RELEASE_VERSION: 4.1.0
+      VITE_RELEASE_VERSION: 4.1.1
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v7
@@ -318,14 +318,14 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000014"
+            echo "marketingVersion=4.1.1"
+            echo "buildNumber=4000015"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
       - name: Upload iOS qualification receipt
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-ios-qualification
+          name: soulcodex-4.1.1-ios-qualification
           path: ios-store-state.txt
           retention-days: 90

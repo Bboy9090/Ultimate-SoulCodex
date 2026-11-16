@@ -72,6 +72,65 @@ test("Project Clarity reuses one saved profile across home, identity, timeline, 
   await expect(page.locator("body")).not.toContainText(/overall score|soulmate percentage/i);
 });
 
+test("an old saved Rising chart is cleared locally and the same profile can be explicitly reverified", async ({ page }) => {
+  test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
+  const errors = [];
+  const verificationRequests = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("request", request => {
+    if (request.method() === "POST" && request.url().includes("/api/verification/profile")) verificationRequests.push(request.url());
+  });
+  const profilePath = await createProfile(page, "10:10");
+  const original = await page.evaluate(async () => {
+    const key = "soulcodex.activeProfile.v1";
+    const active = JSON.parse(localStorage.getItem(key));
+    const evidence = { source: "synthetic legacy browser fixture", engine: "test-only", calculatedAt: "2026-11-16T12:00:00Z", inputTimestamp: "1990-09-17T14:10:00Z" };
+    const staleChart = { rising: { sign: "Aries", verificationStatus: "verified", evidence }, houses: [{ house: 1, longitude: 0 }], aspects: [] };
+    const patch = value => {
+      const legacy = { ...value, astrologyData: staleChart, verifiedAstrologyData: staleChart, risingSign: "Aries", biography: "STALE_ARIES_STORY", dailyGuidance: "STALE_ARIES_STORY" };
+      delete legacy.birthEvidenceInput;
+      return legacy;
+    };
+    localStorage.setItem(key, JSON.stringify(patch(active)));
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open("soulcodex-offline", 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction("profiles", "readwrite");
+      const store = transaction.objectStore("profiles");
+      const request = store.get(active.id);
+      request.onsuccess = () => store.put(patch(request.result));
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+    return { id: active.id, birthDate: active.birthDate, birthTime: active.birthTime, timezone: active.timezone, latitude: active.latitude, longitude: active.longitude };
+  });
+  await page.reload();
+  await expect(page.getByRole("status").filter({ hasText: "Your saved chart could not be tied to these birth details" })).toBeVisible();
+  await expect(page.locator("body")).not.toContainText("STALE_ARIES_STORY");
+  await expect(page.getByTestId("verified-natal-chart")).toHaveCount(0);
+  expect(verificationRequests).toEqual([]);
+  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem("soulcodex.activeProfile.v1")));
+  for (const [key, value] of Object.entries(original)) expect(restored[key]).toBe(value);
+  expect(restored.risingSign).toBeNull();
+  await page.getByRole("button", { name: "Verify complete profile systems", exact: true }).click();
+  await expect(page.getByTestId("verified-natal-chart")).toBeVisible();
+  await expect(page.locator("body")).toContainText("Scorpio");
+  await expect(page.locator("body")).not.toContainText("STALE_ARIES_STORY");
+  expect(verificationRequests).toHaveLength(1);
+  await page.reload();
+  await expect(page.getByTestId("verified-natal-chart")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Your saved chart could not be tied to these birth details" })).toHaveCount(0);
+  await page.goto("/timeline");
+  await expect(page.locator("body")).not.toContainText("STALE_ARIES_STORY");
+  await page.goto(profilePath);
+  await expect(page.getByTestId("verified-natal-chart")).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test("a partial verified chart keeps its wheel, personal planet meanings and Free reading available", async ({ page, browserName }, testInfo) => {
   test.skip(process.env.SOUL_CODEX_TEST_PARTIAL_CHART !== "1", "Requires the explicit test-only verification backend fixture.");
   const runtimeErrors = [];

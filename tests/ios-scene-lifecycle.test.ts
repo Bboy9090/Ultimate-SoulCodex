@@ -29,10 +29,11 @@ test("scene startup preserves the custom native bridge and forwards cold and war
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, willConnectTo: session, options: connectionOptions\)/);
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, openURLContexts: URLContexts\)/);
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, continue: userActivity\)/);
-  const packages = JSON.parse(read("package.json")).dependencies;
-  for (const name of ["@capacitor/core", "@capacitor/ios", "@capacitor/android", "@capacitor/cli"]) {
-    assert.equal(packages[name], "8.6.0");
+  const packageJson = JSON.parse(read("package.json"));
+  for (const name of ["@capacitor/core", "@capacitor/ios", "@capacitor/android"]) {
+    assert.equal(packageJson.dependencies[name], "8.6.0");
   }
+  assert.equal(packageJson.devDependencies["@capacitor/cli"], "8.6.0");
   for (const path of ["ios/App/CapApp-SPM/Package.swift", "ios/App/Vendor/CapacitorSplashScreen/Package.swift", "ios/App/Vendor/CapacitorStatusBar/Package.swift", "ios/App/Vendor/CapawesomeCapacitorAppleSignIn/Package.swift"]) {
     assert.match(read(path), /exact: "8\.6\.0"/);
   }
@@ -59,5 +60,5 @@ test("launch qualification covers iPhone and iPad on the reviewed OS and rejects
   assert.doesNotMatch(workflow, /"launchctl", "list"/);
   assert.match(workflow, /NO_AVAILABLE_IOS27_SIMULATOR_FOR_REQUESTED_FAMILY/);
   assert.match(workflow, /SIGTRAP\|NoSceneLifecycleAdoption\|UIScene life cycle is required/);
-  assert.match(workflow, /soulcodex-4\.1\.0-ios-launch-proof-\$\{\{ matrix\.device \}\}/);
+  assert.match(workflow, /soulcodex-4\.1\.1-ios-launch-proof-\$\{\{ matrix\.device \}\}/);
 });

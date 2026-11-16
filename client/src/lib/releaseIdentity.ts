@@ -1,7 +1,7 @@
 import { resolveApiUrl } from "./queryClient";
 
 export const CLIENT_API_CONTRACT = "foundation-v4";
-export const DEFAULT_CLIENT_RELEASE_VERSION = "4.1.0";
+export const DEFAULT_CLIENT_RELEASE_VERSION = "4.1.1";
 
 export type ClientReleaseIdentity = {
   appVersion: string;

@@ -1,4 +1,4 @@
-name: Soul Codex iOS 4.1.0 Native Load Hotfix
+name: Soul Codex iOS 4.1.1 Native Load Hotfix
 
 on:
   push:
@@ -19,7 +19,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.0
+  VITE_RELEASE_VERSION: 4.1.1
   VITE_API_CONTRACT: foundation-v4
 
 jobs:
@@ -216,7 +216,7 @@ jobs:
               raise SystemExit("APP_PROCESS_DID_NOT_SURVIVE_LAUNCH")
           pathlib.Path("simulator-process.txt").write_text(process.stdout, encoding="utf-8")
 
-          screenshot = pathlib.Path("ios-4.1.0-launch.png")
+          screenshot = pathlib.Path("ios-4.1.1-launch.png")
           run(["xcrun", "simctl", "io", udid, "screenshot", str(screenshot)], timeout=120)
           if not screenshot.exists() or screenshot.stat().st_size < 10000:
               raise SystemExit("SIMULATOR_SCREENSHOT_MISSING_OR_EMPTY")
@@ -231,7 +231,7 @@ jobs:
               check=False,
           )
           runtime_log = logs.stdout + logs.stderr
-          pathlib.Path("ios-4.1.0-runtime.log").write_text(runtime_log, encoding="utf-8")
+          pathlib.Path("ios-4.1.1-runtime.log").write_text(runtime_log, encoding="utf-8")
           if re.search(r"Terminated due to|uncaught exception|fatal error|SIGABRT|SIGTRAP|NoSceneLifecycleAdoption|UIScene life cycle is required|dyld.*Library not loaded", runtime_log, re.I):
               raise SystemExit("FATAL_NATIVE_LAUNCH_SIGNATURE_DETECTED")
           prepaint_blank = re.search(
@@ -260,7 +260,7 @@ jobs:
           import ImageIO
           import CoreGraphics
 
-          let url = URL(fileURLWithPath: "ios-4.1.0-launch.png") as CFURL
+          let url = URL(fileURLWithPath: "ios-4.1.1-launch.png") as CFURL
           guard let source = CGImageSourceCreateWithURL(url, nil),
                 let image = CGImageSourceCreateImageAtIndex(source, 0, nil),
                 let provider = image.dataProvider,
@@ -303,27 +303,27 @@ jobs:
           APP_PATH=$(cat simulator-app-path.txt)
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000014"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000015"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
-            echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000014"
+            echo "marketingVersion=4.1.1"
+            echo "buildNumber=4000015"
             echo "native_pwa_service_worker_registration=disabled"
             echo "simulator_launch=passed"
-          } > IOS-4.1.0-HOTFIX-RECEIPT.txt
+          } > IOS-4.1.1-HOTFIX-RECEIPT.txt
 
       - name: Upload launch proof and failure diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-ios-launch-proof-${{ matrix.device }}
+          name: soulcodex-4.1.1-ios-launch-proof-${{ matrix.device }}
           path: |
-            ios-4.1.0-launch.png
-            ios-4.1.0-runtime.log
+            ios-4.1.1-launch.png
+            ios-4.1.1-runtime.log
             simulator-launch.txt
             simulator-process.txt
             simulator-build.log
@@ -331,7 +331,7 @@ jobs:
             simulator-install-diagnostics.log
             simulator-app-path.txt
             native-web-payload.txt
-            IOS-4.1.0-HOTFIX-RECEIPT.txt
+            IOS-4.1.1-HOTFIX-RECEIPT.txt
           if-no-files-found: warn
           retention-days: 90
 
@@ -524,29 +524,29 @@ jobs:
           codesign --verify --deep --strict "$APP_PATH"
           PLIST="$APP_PATH/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$PLIST")" = "app.soulcodex.ios"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000014"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PLIST")" = "4.1.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$PLIST")" = "4000015"
           test -s "$APP_PATH/public/index.html"
           test -d "$APP_PATH/public/assets"
           {
             echo "SHA=${GITHUB_SHA}"
             echo "bundleId=app.soulcodex.ios"
-            echo "marketingVersion=4.1.0"
-            echo "buildNumber=4000014"
+            echo "marketingVersion=4.1.1"
+            echo "buildNumber=4000015"
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"
-          } > build/export/IOS-4.1.0-SIGNED-RECEIPT.txt
+          } > build/export/IOS-4.1.1-SIGNED-RECEIPT.txt
 
       - name: Upload signed IPA
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-signed-app-store-ipa
+          name: soulcodex-4.1.1-signed-app-store-ipa
           path: |
             build/export/*.ipa
             build/export/IPA-SHA256.txt
             build/export/RELEASE-CANDIDATE-SHA.txt
-            build/export/IOS-4.1.0-SIGNED-RECEIPT.txt
+            build/export/IOS-4.1.1-SIGNED-RECEIPT.txt
           if-no-files-found: error
           retention-days: 90
 
@@ -554,7 +554,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-signing-diagnostics
+          name: soulcodex-4.1.1-signing-diagnostics
           path: |
             release-candidate-sha.txt
             archive.log

@@ -20,6 +20,7 @@ import { maySystemInfluenceSynthesis } from "@shared/system-visibility";
 import { canonicalNumberPattern, canonicalSignPattern, type CanonicalSymbolicPattern } from "@shared/symbolic-vocabulary";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 import { humanDesignChannelLabel, humanDesignDefinedChannels, normalizeHumanDesignCenters } from "./humanDesignDisplay";
+import { staleBirthEvidenceReason } from "./profileBirthEvidence";
 
 type Pattern = CanonicalSymbolicPattern;
 
@@ -1500,6 +1501,72 @@ const LEGACY_FOUNDATION_ARCHETYPE_TITLES = new Set([
   "Depth Navigator",
 ]);
 
+/** Discard an explicitly mismatched saved calculation as one unit. Rebuilding
+ * only the Rising badge would leave old houses and Aries-derived prose behind.
+ * This repair is entirely local and preserves the entered birth details.
+ */
+export function repairStaleBirthEvidence<T extends Record<string, any>>(profile: T): T {
+  const reason = staleBirthEvidenceReason(profile, true);
+  if (!reason) return profile;
+  const repairedAt = new Date().toISOString();
+  const text = (value: unknown): string => typeof value === "string" ? value : "";
+  const invalidInputsMessage = "Your saved birth details need correction before a chart can be calculated. The previous chart and related reading are no longer used.";
+  const unresolvedDepth = synthesizeDepthInterpretationV1({ version: 1, generatedAt: repairedAt,
+    birthTimeStatus: "unknown", seeds: [], missingData: [invalidInputsMessage] });
+  // A malformed legacy field must not make the preserved record inaccessible.
+  // This fallback reports missing calculations; it supplies no birth defaults.
+  let baseline: Pick<OfflineCodexProfile, "astrologyData" | "archetypeData" | "biography" | "dailyGuidance" | "depthInterpretation"> = {
+    astrologyData: { sunSign: "", moonSign: "", risingSign: "", planets: {}, houses: [], aspects: [], northNode: null, southNode: null, chiron: null },
+    archetypeData: { title: "Birth details need correction", description: invalidInputsMessage,
+      strengths: [], shadows: [], themes: [], guidance: "Review your saved birth details before verifying this profile.",
+      tarotCards: { card1: "", card2: "", interpretation: "" } },
+    biography: invalidInputsMessage,
+    dailyGuidance: "Review your saved birth details before verifying this profile.",
+    depthInterpretation: unresolvedDepth,
+  };
+  try {
+    baseline = generateFoundationOfflineCodexProfile({
+      name: text(profile.name).trim() || text(profile.codename).trim() || "Your Codex",
+      fullBirthName: text(profile.fullBirthName) || undefined,
+      birthDate: text(profile.birthDate).slice(0, 10),
+      birthTime: profile.birthTimeStatus === "unknown" ? "" : text(profile.birthTime),
+      birthLocation: text(profile.birthLocation),
+      timezone: text(profile.timezone),
+      latitude: typeof profile.latitude === "number" ? profile.latitude : text(profile.latitude),
+      longitude: typeof profile.longitude === "number" ? profile.longitude : text(profile.longitude),
+    }, { id: typeof profile.id === "string" ? profile.id : undefined, generatedAt: repairedAt, includeNameNumerology: false });
+  } catch {
+    // Keep the explicit unavailable baseline and all original raw inputs below.
+  }
+  return {
+    ...profile,
+    astrologyData: baseline.astrologyData,
+    verifiedAstrologyData: undefined,
+    astrology: undefined,
+    natalChart: undefined,
+    chart: undefined,
+    sunSign: null,
+    moonSign: null,
+    risingSign: null,
+    humanDesignData: null,
+    humanDesignType: undefined,
+    humanDesignVerificationDiagnostic: undefined,
+    elements: undefined,
+    archetype: baseline.archetypeData.title,
+    archetypeData: baseline.archetypeData,
+    biography: baseline.biography,
+    dailyGuidance: baseline.dailyGuidance,
+    depthInterpretation: baseline.depthInterpretation,
+    synthesis: baseline.depthInterpretation,
+    confidence: { ...profile.confidence, astrologyVerification: null, astrologyVerificationVersion: 0 },
+    remoteSync: undefined,
+    birthEvidenceInput: undefined,
+    birthEvidenceInvalidation: { reason, repairedAt },
+    foundationNarrativeRevision: FOUNDATION_NARRATIVE_REVISION,
+    updatedAt: repairedAt,
+  };
+}
+
 /**
  * Repair deterministic local synthesis created by the former timezone-sensitive
  * date parser and migrate the former four-title preliminary archetype scheme.
@@ -1510,6 +1577,8 @@ export function repairFoundationOfflineCodexProfile<T extends OfflineCodexProfil
   profile: T,
   options: { repairedAt?: string; currentYear?: number } = {},
 ): T {
+  const inputRepaired = repairStaleBirthEvidence(profile);
+  if (inputRepaired !== profile) return repairFoundationOfflineCodexProfile(inputRepaired, options);
   let expectedLifePath: number;
   try {
     expectedLifePath = calcLifePath(profile.birthDate);

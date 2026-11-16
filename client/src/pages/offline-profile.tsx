@@ -87,13 +87,15 @@ export default function OfflineProfilePage() {
       }
       const verification = await response.json();
       const syncedAt = verification.updatedAt || new Date().toISOString();
-      const hydrated = reconcileOfflineProfile(currentProfile, verification, syncedAt);
-      await saveOfflineProfile(hydrated);
+      const latestLocal = await loadOfflineProfile(currentProfile.id);
+      if (!latestLocal) throw new Error("This local profile was removed during verification.");
+      const hydrated = reconcileOfflineProfile(latestLocal, verification, syncedAt, currentProfile);
       const active = loadActiveProfile().profile;
       if (active?.id === currentProfile.id) {
-        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt));
+        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt, currentProfile));
         if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed");
       }
+      await saveOfflineProfile(hydrated);
       queryClient.setQueryData(["offline-profile", id], hydrated);
       setVerificationAttempt(verificationOutcome(profileNeedsOnlineVerification(hydrated)));
     } catch (cause) {
@@ -253,6 +255,7 @@ export default function OfflineProfilePage() {
         {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
+        {reconciledProfile.birthEvidenceInvalidation && <p role="status" className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Your saved chart could not be tied to these birth details. Its old placements and related reading were cleared. Your profile and birth details are preserved. Choose Verify complete profile systems to calculate this same profile again.</p>}
         {!verifiedHumanDesign && !rangeHumanDesign && <section className="sc-panel mb-6 p-5" data-testid="human-design-availability"><p className="sc-eyebrow">Human Design</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{humanDesignState.message}</p></section>}
         {verificationFailure?.profileId === reconciledProfile.id && <p role="alert" className="mb-6 text-sm text-[var(--sc-stone)]">{verificationFailure.message}</p>}
 

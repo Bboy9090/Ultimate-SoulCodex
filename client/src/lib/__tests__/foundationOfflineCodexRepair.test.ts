@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { birthEvidenceInput } from "../profileBirthEvidence";
 import {
   generateFoundationOfflineCodexProfile,
   repairFoundationOfflineCodexProfile,
@@ -63,7 +64,7 @@ describe("repairFoundationOfflineCodexProfile", () => {
     const repaired = repairFoundationOfflineCodexProfile(stale);
     assert.equal(repaired.depthInterpretation.evidence.some((entry) => entry.system === "astrology"), false);
     assert.doesNotMatch(repaired.biography, /Leo Rising|verified Codex/);
-    assert.deepEqual(repaired.verifiedAstrologyData, stale.verifiedAstrologyData);
+    assert.equal(repaired.verifiedAstrologyData, undefined);
     assert.equal(repaired.birthTimeStatus, "unknown");
     assert.equal(repairFoundationOfflineCodexProfile(repaired), repaired);
   });
@@ -83,6 +84,7 @@ describe("repairFoundationOfflineCodexProfile", () => {
     );
     const stale = {
       ...correct,
+      birthEvidenceInput: birthEvidenceInput(correct) ?? undefined,
       numerologyData: { ...correct.numerologyData, lifePath: 8 },
       biography: correct.biography.replace("Life Path 9", "Life Path 8"),
       verifiedAstrologyData: {

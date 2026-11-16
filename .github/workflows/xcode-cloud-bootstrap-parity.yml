@@ -26,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.0
+  VITE_RELEASE_VERSION: 4.1.1
   VITE_API_CONTRACT: foundation-v4
   VITE_RELEASE_SHA: ${{ github.sha }}
   VITE_BILLING_QUALIFICATION_MODE: "false"
@@ -66,7 +66,7 @@ jobs:
       - name: Validate final iOS release metadata
         run: npm run mobile:validate:ios
 
-      - name: Verify signing and final 4.1.0 iOS release contracts after bootstrap
+      - name: Verify signing and final 4.1.1 iOS release contracts after bootstrap
         run: |
           node --import tsx --test \
             tests/xcode-cloud-scheme-contract.test.ts \
@@ -110,7 +110,7 @@ jobs:
         run: |
           {
             echo "SHA=${GITHUB_SHA}"
-            echo "release=4.1.0"
+            echo "release=4.1.1"
             echo "scheme=Ultimate Soul Codex"
             echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
             echo "purpose=separate repository/bootstrap failures from Apple-managed signing failures"
@@ -120,6 +120,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.0-xcode-cloud-parity
+          name: soulcodex-4.1.1-xcode-cloud-parity
           path: xcode-cloud-parity-receipt.txt
           retention-days: 90

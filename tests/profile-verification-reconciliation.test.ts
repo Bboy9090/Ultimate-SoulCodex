@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { birthEvidenceInput } from "../client/src/lib/profileBirthEvidence.ts";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
@@ -535,7 +536,8 @@ test("missing exact Ascendant inputs do not create an endless migration loop", (
   } satisfies ReconciledOfflineProfile;
 
   assert.equal(hasVerifiedSunAndMoon(legacyWithoutCoordinates.verifiedAstrologyData), true);
-  assert.equal(profileNeedsOnlineVerification(legacyWithoutCoordinates), false);
+  const boundWithoutCoordinates = { ...legacyWithoutCoordinates, birthEvidenceInput: birthEvidenceInput(legacyWithoutCoordinates) ?? undefined };
+  assert.equal(profileNeedsOnlineVerification(boundWithoutCoordinates), false);
 });
 
 test("verified Human Design is reconciled into active and offline profiles", () => {
@@ -635,7 +637,8 @@ test("partial verification preserves local metadata but never promotes legacy al
   assert.equal(active.astrologyData?.sunSign, null);
   assert.equal(active.astrologyData?.moonSign, null);
   assert.equal(active.astrologyData?.risingSign, null);
-  assert.equal(active.astrologyData?.localCandidateNote, "preserve-me");
+  // An unbound old candidate bundle must not silently acquire the new request's binding.
+  assert.equal(active.astrologyData?.localCandidateNote, undefined);
 });
 
 
@@ -697,7 +700,8 @@ test("completed unknown-time range analysis is terminal even when Moon remains c
     },
   } satisfies ReconciledOfflineProfile;
 
-  assert.equal(profileNeedsOnlineVerification(unknownLocal), false);
+  const boundRange = { ...unknownLocal, birthEvidenceInput: birthEvidenceInput(unknownLocal) ?? undefined };
+  assert.equal(profileNeedsOnlineVerification(boundRange), false);
 });
 
 test("complete range-analyzed Human Design survives offline reconciliation without becoming verified", () => {
@@ -750,7 +754,8 @@ test("exact birth instant without coordinates stops retrying after planetary cor
       moon: verifiedRemote.astrologyData.moon,
     },
   } satisfies ReconciledOfflineProfile;
-  assert.equal(profileNeedsOnlineVerification(noLocation), false);
+  const boundNoLocation = { ...noLocation, birthEvidenceInput: birthEvidenceInput(noLocation) ?? undefined };
+  assert.equal(profileNeedsOnlineVerification(boundNoLocation), false);
 });
 
 test("complete exact profile keeps retry available when natal evidence exists but HD is missing", () => {

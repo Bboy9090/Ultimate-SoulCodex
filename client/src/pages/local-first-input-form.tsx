@@ -11,7 +11,7 @@ import {
 import type { OfflineCodexProfile } from "@soulcodex/core";
 import { generateFoundationOfflineCodexProfile } from "@/lib/foundationOfflineCodex";
 import { apiRequest } from "@/lib/queryClient";
-import { saveOfflineProfile } from "@/lib/offlineProfileStore";
+import { loadOfflineProfile, saveOfflineProfile } from "@/lib/offlineProfileStore";
 import { loadActiveProfile, saveActiveProfile } from "@/lib/ActiveProfileRepository";
 import {
   reconcileActiveProfile,
@@ -115,11 +115,14 @@ async function requestVerificationWhenOnline(
     });
     const verification = await response.json();
     const syncedAt = verification.updatedAt || new Date().toISOString();
+    const latestLocal = await loadOfflineProfile(localProfile.id);
+    if (!latestLocal) throw new Error("This local profile was removed during verification.");
+    const hydrated = reconcileOfflineProfile(latestLocal, verification, syncedAt, localProfile);
 
     const currentActive = loadActiveProfile().profile;
     if (currentActive?.id === localProfile.id) {
       const activeSave = saveActiveProfile(
-        reconcileActiveProfile(currentActive, verification, syncedAt),
+        reconcileActiveProfile(currentActive, verification, syncedAt, localProfile),
       );
       if (!activeSave.success) {
         throw new Error(
@@ -128,7 +131,6 @@ async function requestVerificationWhenOnline(
       }
     }
 
-    const hydrated = reconcileOfflineProfile(localProfile, verification, syncedAt);
     await saveOfflineProfile(hydrated);
 
     if (typeof window !== "undefined") {
@@ -268,6 +270,7 @@ export default function LocalFirstInputForm() {
         fullBirthName: profile.fullBirthName ?? undefined,
         birthDate: profile.birthDate,
         birthTime: profile.birthTime ?? undefined,
+        birthTimeStatus: profile.birthTimeStatus,
         birthLocation: profile.birthLocation,
         timezone: profile.timezone,
         latitude: profile.latitude ?? undefined,
