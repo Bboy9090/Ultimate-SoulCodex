@@ -178,3 +178,92 @@ test("Navigation and planetary browser acceptance: 320px and 375px touch precisi
     await assertNoOverflow(page, `narrow planetary preview ${width}px`);
   }
 });
+
+
+test("Navigation and planetary browser acceptance: cosmic motion preference and accessible routes", async ({ page }) => {
+  const exceptions = [];
+  page.on("pageerror", error => exceptions.push(error.message));
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 820, height: 1180 },
+    { width: 1365, height: 850 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/settings", { waitUntil: "domcontentloaded" });
+    const atmosphere = page.getByTestId("cosmic-atmosphere");
+    await expect(atmosphere).toHaveCount(1);
+    await expect(page.getByRole("radiogroup", { name: "Celestial motion intensity" })).toBeVisible();
+    const initialMode = await page.evaluate(() => localStorage.getItem("soulcodex.cosmic-motion.v1"));
+    if (initialMode === null) {
+      await expect(page.getByTestId("cosmic-motion-ambient")).toHaveAttribute("aria-checked", "true");
+    }
+    for (const mode of ["still", "full", "ambient"]) {
+      await page.getByTestId(`cosmic-motion-${mode}`).click();
+      await expect(page.getByTestId(`cosmic-motion-${mode}`)).toHaveAttribute("aria-checked", "true");
+      await expect.poll(() => page.evaluate(() => document.documentElement.dataset.cosmicMotion)).toBe(mode);
+      await expect.poll(() => page.evaluate(() => localStorage.getItem("soulcodex.cosmic-motion.v1"))).toBe(mode);
+      await assertNoOverflow(page, `cosmic motion ${mode} / ${viewport.width}`);
+    }
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("cosmic-motion-ambient")).toHaveAttribute("aria-checked", "true");
+    await page.getByTestId("cosmic-motion-still").click();
+    await expect.poll(() => page.evaluate(() => {
+      const target = document.querySelector(".sc-cosmic-stars--near");
+      return target ? getComputedStyle(target).transform : "missing";
+    })).toBe("none");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.getByTestId("cosmic-motion-full").click();
+    await expect.poll(() => page.evaluate(() => {
+      const route = document.querySelector(".sc-cosmic-route");
+      return route ? getComputedStyle(route).animationName : "missing";
+    })).toBe("none");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+  expect(exceptions).toEqual([]);
+});
+
+test("Navigation and planetary browser acceptance: cosmic shared-chart orbit responsive controls", async ({ page }) => {
+  const keys = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
+  const signs = ["Virgo", "Cancer", "Libra", "Leo", "Aries", "Sagittarius", "Capricorn", "Aquarius", "Pisces", "Scorpio"];
+  await page.addInitScript(({ keys, signs }) => {
+    const stamp = "2026-11-01T00:00:00.000Z";
+    const planets = Object.fromEntries(keys.map((key, i) => [key, {
+      sign: signs[i], verificationStatus: "verified",
+      provenance: { source: "browser-fixture", engine: "browser-fixture", calculatedAt: stamp },
+    }]));
+    const planetaryHouses = Object.fromEntries(keys.map((key, i) => [key, i + 1]));
+    const houses = Array.from({ length: 12 }, (_, i) => ({
+      house: i + 1, sign: signs[i % 10], verificationStatus: "verified",
+      policyId: "ASTRO-EQUAL-HOUSE-v1", evidenceArtifactId: "test-house-" + (i + 1),
+    }));
+    localStorage.setItem("soulcodex.activeProfile.v1", JSON.stringify({
+      id: "browser-fixture", schemaVersion: 1, birthDate: "1990-09-17", name: "Test Profile",
+      astrologyData: { houseSystem: "equal", houses, planetaryHouses, planets },
+    }));
+    localStorage.setItem("soulcodex.connections.v1", JSON.stringify({
+      version: 1, connections: [{
+        id: "test-friend", name: "Test Friend", sunSign: "Leo", relationship: "friend",
+        createdAt: stamp, updatedAt: stamp,
+        placements: keys.map((key, i) => ({ key, sign: signs[(i + 1) % 10], house: i + 1 })),
+      }],
+    }));
+  }, { keys, signs });
+  for (const width of [375, 390, 820, 1365]) {
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto("/compatibility/compare?connection=test-friend", { waitUntil: "domcontentloaded" });
+    const orbit = page.getByTestId("cosmic-comparison-orbit");
+    await expect(orbit).toBeVisible();
+    if (width < 640) {
+      await expect(orbit.locator(".sc-orbit-mobile-option")).toHaveCount(10);
+      await expect(orbit.locator(".sc-orbit-stage")).toBeHidden();
+      await orbit.locator(".sc-orbit-mobile-option").nth(4).click();
+      await expect(orbit.locator(".sc-orbit-inspector")).toContainText("Mars");
+    } else {
+      await expect(orbit.locator(".sc-orbit-mobile-picker")).toBeHidden();
+      await expect(orbit.locator(".sc-orbit-stage button")).toHaveCount(10);
+      await orbit.locator(".sc-orbit-stage button").nth(3).click();
+      await expect(orbit.locator(".sc-orbit-inspector")).toContainText("Venus");
+    }
+    await assertNoOverflow(page, "populated orbit " + width);
+  }
+});

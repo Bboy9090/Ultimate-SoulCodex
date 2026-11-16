@@ -1,4 +1,5 @@
 import AureonAvatar, { type AureonState } from "@/components/AureonAvatar";
+import CosmicComparisonOrbit from "@/components/CosmicComparisonOrbit";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { FormEvent, useMemo, useState } from "react";
 import { Link } from "wouter";
@@ -431,6 +432,11 @@ export default function CompatibilityPersonPage() {
                 <p className="text-xs leading-5 text-[var(--sc-stone)]">
                   Scoring key: same sign = 100; same element = 78; same mode = 65; other sign pattern = 48; same house adds 8 points, capped at 100. Exact degree-based aspects are not inferred from this privacy-limited saved-chart data.
                 </p>
+                <CosmicComparisonOrbit pairs={placementComparisons.map(({ yours, theirs }) => ({
+                  key: yours.key, label: placementLabel(theirs.key),
+                  yours: { sign: yours.sign, house: yours.house },
+                  theirs: { sign: theirs.sign, house: theirs.house },
+                }))} />
                 {placementComparisons.map(({ yours, theirs }) => {
                   const yourMeaning = personalPlacementMeaning(yours.key, yours.sign, yours.house!);
                   const theirMeaning = personalPlacementMeaning(theirs.key, theirs.sign, theirs.house);

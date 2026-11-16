@@ -6,6 +6,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Navigation from "@/components/navigation";
+import CosmicAtmosphere from "@/components/CosmicAtmosphere";
 import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
 import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
 import NotFound from "./pages/not-found";
@@ -141,6 +142,7 @@ function Router() {
         Skip to main content
       </a>
       <RouteErrorBoundary key={pathname}>
+      <div className="sc-cosmic-route">
       <Suspense fallback={<RouteLoadingFallback />}>
         <div id="main-content" tabIndex={-1}>
           <Switch>
@@ -173,6 +175,7 @@ function Router() {
           </Switch>
         </div>
       </Suspense>
+      </div>
       </RouteErrorBoundary>
     </>
   );
@@ -204,7 +207,7 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider><Toaster /><Router /></TooltipProvider>
+        <TooltipProvider><Toaster /><div className="sc-cosmic-root"><CosmicAtmosphere /><div className="sc-cosmic-content"><Router /></div></div></TooltipProvider>
       </QueryClientProvider>
     </MotionConfig>
   );

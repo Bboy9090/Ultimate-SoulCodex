@@ -445,3 +445,268 @@
     animation-iteration-count: 1 !important;
   }
 }
+
+
+/* Cosmic Instrument v1: restrained nebula depth, low-cost compositor movement. */
+.sc-cosmic-root { position: relative; min-height: 100vh; isolation: isolate; background: #070610; }
+.sc-cosmic-content { position: relative; z-index: 1; min-height: 100vh; }
+.sc-cosmic-root .sc-app-shell {
+  background: linear-gradient(180deg, rgba(7,6,13,.18), rgba(7,6,13,.68));
+}
+.sc-cosmic-atmosphere {
+  --cosmic-drift-x: 0px;
+  --cosmic-drift-y: 0px;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+  background: radial-gradient(ellipse at 50% 110%, #161128 0%, transparent 64%),
+    linear-gradient(150deg, #060611, #0b0820 47%, #060711);
+}
+.sc-cosmic-nebula, .sc-cosmic-stars, .sc-cosmic-horizon {
+  position: absolute; inset: -14%;
+  pointer-events: none;
+}
+.sc-cosmic-nebula--far {
+  opacity: .72;
+  background:
+    radial-gradient(ellipse 40% 34% at 18% 23%, rgba(102,62,186,.30), transparent 78%),
+    radial-gradient(ellipse 35% 31% at 84% 36%, rgba(32,105,172,.25), transparent 76%),
+    radial-gradient(ellipse 46% 36% at 58% 90%, rgba(126,57,169,.18), transparent 76%);
+  filter: blur(28px);
+  transform: translate3d(var(--cosmic-far-x, 0px),var(--cosmic-far-y, 0px),0);
+}
+.sc-cosmic-nebula--near {
+  opacity: .55;
+  background:
+    radial-gradient(ellipse 25% 45% at 69% 16%, rgba(141,77,203,.22), transparent 76%),
+    radial-gradient(ellipse 39% 27% at 11% 76%, rgba(35,118,153,.18), transparent 75%);
+  filter: blur(42px);
+  transform: translate3d(var(--cosmic-near-x, 0px),var(--cosmic-near-y, 0px),0);
+}
+.sc-cosmic-stars {
+  background-repeat: repeat;
+  transform: translate3d(var(--cosmic-stars-x, 0px),var(--cosmic-stars-y, 0px),0);
+}
+.sc-cosmic-stars--far {
+  opacity: .36;
+  background-image:
+    radial-gradient(circle, rgba(236,222,255,.78) 0 1px, transparent 1.4px),
+    radial-gradient(circle, rgba(195,220,255,.60) 0 .7px, transparent 1.2px);
+  background-size: 223px 227px, 311px 283px;
+  background-position: 13px 19px, 111px 72px;
+}
+.sc-cosmic-stars--near {
+  opacity: .52;
+  background-image:
+    radial-gradient(circle, rgba(244,216,157,.9) 0 1.15px, transparent 1.65px),
+    radial-gradient(circle, rgba(207,204,255,.8) 0 .85px, transparent 1.35px);
+  background-size: 397px 359px, 463px 431px;
+  background-position: 77px 86px, 180px 33px;
+  transform: translate3d(var(--cosmic-near-stars-x, 0px),var(--cosmic-near-stars-y, 0px),0);
+}
+.sc-cosmic-horizon {
+  inset: 0;
+  background: radial-gradient(ellipse 80% 20% at 50% 109%, rgba(202,151,239,.12), transparent 80%);
+  opacity: .85;
+}
+.sc-cosmic-root .sc-panel {
+  border-color: rgba(205,187,255,.14);
+  background: linear-gradient(142deg, rgba(33,24,53,.82), rgba(11,10,25,.91));
+  box-shadow: 0 22px 64px rgba(0,0,0,.35), inset 0 1px 0 rgba(233,218,255,.055);
+}
+.sc-cosmic-root .sc-panel-gold { border-color: rgba(239,208,141,.32); }
+.sc-cosmic-root :is(.sc-button-primary, .sc-button-secondary, .sc-card-link, .feature-card, .sc-panel) {
+  transition-timing-function: cubic-bezier(.22,1,.36,1);
+}
+.sc-cosmic-root :is(.sc-button-primary, .sc-button-secondary) {
+  position: relative;
+  transition-property: transform, background-color, box-shadow, border-color, filter;
+  transition-duration: 240ms;
+}
+.sc-cosmic-root :is(.sc-button-primary, .sc-button-secondary):active { transform: translateY(1px) scale(.985); }
+.sc-cosmic-root .sc-button-primary:hover {
+  box-shadow: 0 0 0 1px rgba(255,233,185,.22), 0 16px 45px rgba(217,182,111,.29), 0 0 40px rgba(147,101,207,.14);
+}
+.sc-cosmic-root :is(.sc-card-link, .feature-card):hover {
+  border-color: rgba(182,152,244,.34);
+  box-shadow: 0 28px 72px rgba(0,0,0,.4), 0 0 34px rgba(124,90,208,.14);
+}
+.sc-cosmic-root :is(button,a,input,select,textarea):focus-visible {
+  outline: 2px solid #efd08d;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(239,208,141,.13);
+}
+.sc-cosmic-root :is(input,select,textarea) {
+  transition: border-color .24s cubic-bezier(.22,1,.36,1), box-shadow .24s cubic-bezier(.22,1,.36,1);
+}
+.sc-cosmic-root :is(input,select,textarea):focus-visible {
+  border-color: rgba(239,208,141,.55);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sc-cosmic-root .sc-orbital-seal::before { animation: sc-cosmic-ring-breathe 8s ease-in-out infinite; }
+  .sc-cosmic-root .sc-orbital-seal::after { animation: sc-cosmic-core-breathe 6s ease-in-out infinite; }
+  @keyframes sc-cosmic-ring-breathe {
+    0%, 100% { opacity: .72; box-shadow: 0 0 0 26px rgba(154,116,220,.025), 0 0 0 27px rgba(154,116,220,.11), 0 0 65px rgba(154,116,220,.13); }
+    50% { opacity: 1; box-shadow: 0 0 0 26px rgba(154,116,220,.025), 0 0 0 27px rgba(154,116,220,.18), 0 0 95px rgba(154,116,220,.25); }
+  }
+  @keyframes sc-cosmic-core-breathe {
+    0%, 100% { opacity: .74; }
+    50% { opacity: 1; }
+  }
+}
+@media (max-width: 767px), (hover: none) {
+  .sc-cosmic-nebula { filter: blur(18px); }
+  .sc-cosmic-root .sc-panel { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .sc-cosmic-stars--near { opacity: .28; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-cosmic-nebula, .sc-cosmic-stars { transform: none !important; }
+  .sc-cosmic-root .sc-orbital-seal::before,
+  .sc-cosmic-root .sc-orbital-seal::after { animation: none !important; }
+}
+@media (prefers-contrast: more) {
+  .sc-cosmic-root .sc-panel { background: #130f20; border-color: #8a82a3; }
+  .sc-cosmic-stars, .sc-cosmic-nebula { opacity: .1; }
+}
+
+/* Device-local cosmic motion modes: system accessibility always overrides. */
+html[data-cosmic-motion="still"] .sc-cosmic-nebula,
+html[data-cosmic-motion="still"] .sc-cosmic-stars {
+  transform: none !important;
+}
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal::before,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbital-seal::after,
+html[data-cosmic-motion="still"] .sc-cosmic-root .sc-orbit-dot {
+  animation: none !important;
+}
+html[data-cosmic-motion="still"] .sc-cosmic-root :is(.sc-card-link, .feature-card, .sc-button-primary, .sc-button-secondary) {
+  transition-duration: 0.01ms !important;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-cosmic-motion="still"]) .sc-cosmic-route {
+    animation: sc-cosmic-arrival .38s cubic-bezier(.22,1,.36,1) both;
+  }
+  @keyframes sc-cosmic-arrival {
+    from { opacity: .65; transform: translate3d(0, 8px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-cosmic-route { animation: none !important; }
+}
+
+/* Shared-planet inspector: intentionally schematic, not astronomical geometry. */
+.sc-orbit-stage {
+  position: relative;
+  width: min(100%, 460px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  isolation: isolate;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(119,79,192,.16), rgba(26,24,60,.09) 48%, transparent 76%);
+}
+.sc-orbit-track {
+  position: absolute;
+  inset: 11%;
+  border: 1px solid rgba(191,161,248,.29);
+  border-radius: 50%;
+  box-shadow: inset 0 0 32px rgba(115,87,189,.06), 0 0 30px rgba(103,88,190,.06);
+  pointer-events: none;
+}
+.sc-orbit-track--inner { inset: 29%; border-style: dashed; border-color: rgba(239,208,141,.18); }
+.sc-orbit-core {
+  position: absolute;
+  inset: 38%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 2px;
+  border: 1px solid rgba(217,182,111,.26);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 25%, rgba(188,152,245,.30),rgba(24,17,48,.96) 68%);
+  box-shadow: 0 0 44px rgba(111,77,205,.24);
+  color: var(--sc-gold-bright);
+  font-size: clamp(.46rem, 1.2vw, .72rem);
+  font-weight: 800;
+  letter-spacing: .17em;
+  pointer-events: none;
+}
+.sc-orbit-body {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: clamp(56px, 15%, 78px);
+  min-height: 48px;
+  padding: 7px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(189,165,255,.34);
+  border-radius: 999px;
+  background: linear-gradient(145deg,#2a2349,#111629);
+  box-shadow: 0 5px 18px rgba(0,0,0,.36);
+  color: var(--sc-ivory);
+  cursor: pointer;
+  transition: border-color .24s, box-shadow .24s, background-color .24s;
+}
+.sc-orbit-body-label { font-size: clamp(.55rem, 1.45vw, .75rem); font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; text-align: center; }
+.sc-orbit-body:hover, .sc-orbit-body[aria-pressed="true"] {
+  border-color: var(--sc-gold-bright);
+  background: linear-gradient(145deg,#554173,#222248);
+  box-shadow: 0 0 0 3px rgba(239,208,141,.12), 0 0 28px rgba(170,125,242,.27);
+}
+.sc-orbit-body:focus-visible { outline: 3px solid var(--sc-gold-bright); outline-offset: 3px; }
+.sc-orbit-inspector {
+  border: 1px solid rgba(186,158,242,.22);
+  border-radius: 1.2rem;
+  background: rgba(14,12,34,.64);
+  padding: clamp(1rem,2vw,1.5rem);
+}
+.sc-orbit-fact { display:flex; flex-direction:column; gap:5px; min-width:0; padding:12px; border:1px solid rgba(223,209,255,.13); border-radius:14px; }
+.sc-orbit-fact span { color:var(--sc-stone); font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; }
+.sc-orbit-fact strong { font-family:var(--font-serif); font-size:clamp(1.1rem,2.1vw,1.5rem); overflow-wrap:anywhere; }
+.sc-orbit-fact small { color:var(--sc-stone); font-size:.7rem; }
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-cosmic-motion="still"]) .sc-orbit-inspector { animation: sc-cosmic-arrival .3s cubic-bezier(.22,1,.36,1) both; }
+}
+@media (max-width: 440px) {
+  .sc-orbit-body { width: clamp(47px, 15%, 62px); min-height: 44px; padding: 5px; }
+  .sc-orbit-body-label { font-size: .59rem; }
+}
+
+/* Wave 4: replace crowded orbital targets with ergonomic touch controls on phones. */
+.sc-orbit-mobile-picker { display: none; }
+@media (max-width: 639px) {
+  .sc-orbit-stage { display: none; }
+  .sc-orbit-mobile-picker {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: .65rem;
+  }
+  .sc-orbit-mobile-option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 48px;
+    min-width: 0;
+    padding: .65rem .5rem;
+    border: 1px solid rgba(189,165,255,.34);
+    border-radius: .9rem;
+    color: var(--sc-ivory);
+    font-size: .88rem;
+    font-weight: 650;
+    background: linear-gradient(145deg,rgba(42,35,73,.87),rgba(17,22,41,.96));
+    overflow-wrap: anywhere;
+    transition: border-color .22s ease, background-color .22s ease;
+  }
+  .sc-orbit-mobile-option[aria-pressed="true"] {
+    border-color: var(--sc-gold-bright);
+    background: rgba(126,87,176,.33);
+  }
+  .sc-orbit-mobile-option:focus-visible {
+    outline: 3px solid var(--sc-gold-bright);
+    outline-offset: 3px;
+  }
+}

@@ -9,6 +9,13 @@ on:
       - "client/src/components/InteractivePlanetaryPreview.tsx"
       - "client/src/components/InteractivePlanetarySystem.tsx"
       - "client/src/pages/ConnectionsPage.tsx"
+      - "client/src/pages/CompatibilityPersonPage.tsx"
+      - "client/src/components/CosmicAtmosphere.tsx"
+      - "client/src/components/CosmicComparisonOrbit.tsx"
+      - "client/src/lib/cosmicMotionPreference.ts"
+      - "client/src/pages/SettingsPage.tsx"
+      - "client/src/index.css"
+      - "tests/cosmic-instrument-ui.test.ts"
       - "client/src/pages/CodexToolsPage.tsx"
       - "client/src/pages/SystemsDetailsPage.tsx"
       - "tests/pwa/**"
@@ -50,6 +57,9 @@ jobs:
 
       - name: Verify planetary interaction source contract
         run: node --import tsx --test tests/planetary-orbit-touch-target-contract.test.ts
+
+      - name: Verify cosmic UI source and accessibility contracts
+        run: node --import tsx --test tests/cosmic-instrument-ui.test.ts
 
       - name: Install pinned existing browser test runner
         run: npm install --no-save --package-lock=false @playwright/test@1.54.1
