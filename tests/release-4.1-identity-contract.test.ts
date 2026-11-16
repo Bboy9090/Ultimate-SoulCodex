@@ -20,7 +20,8 @@ test("active release surfaces use 4.1.0 with platform-specific store build numbe
   assert.match(files.iosInfo, /<string>4000015<\/string>/);
   assert.match(files.iosProject, /MARKETING_VERSION = 4\.1\.1;/);
   assert.match(files.iosProject, /CURRENT_PROJECT_VERSION = 4000015;/);
-  assert.match(files.validator, /releaseVersion !== "4\.1\.0"/);
+  assert.match(files.validator, /platform === "ios" && releaseVersion !== "4\.1\.1"/);
+  assert.match(files.validator, /platform === "android" && releaseVersion !== "4\.1\.0"/);
   assert.match(files.storeWorkflow, /Android versionName=4\.1\.0/);
   assert.match(files.storeWorkflow, /Android versionCode=4000016/);
   assert.match(files.storeWorkflow, /iOS marketingVersion=4\.1\.1/);
