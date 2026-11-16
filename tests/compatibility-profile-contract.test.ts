@@ -8,12 +8,23 @@ import {
   deterministicLifePath,
   symbolicSunSign,
 } from "../routes/compatibility";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 
 const evidence = {
   source: "independent ephemeris comparison",
   engine: "engine-a+engine-b",
   calculatedAt: "2026-08-02T17:00:00Z",
 };
+const trustedBirth = {
+  birthDate: "1990-09-17",
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: 40.8448,
+  longitude: -73.8648,
+};
+const verifiedAstrology = (sign = "Virgo") => bindStoredEvidence({
+  sun: { sign, verificationStatus: "verified", evidence },
+}, trustedBirth);
 
 describe("compatibility saved-profile contract", () => {
   it("rejects naked legacy astrology strings from the verified input path", () => {
@@ -45,14 +56,8 @@ describe("compatibility saved-profile contract", () => {
 
   it("accepts an evidence-complete verified Sun placement", () => {
     const input = buildCompatibilityProfileInput({
-      astrologyData: {
-        sun: {
-          sign: "Virgo",
-          verificationStatus: "verified",
-          evidence,
-        },
-      },
-      birthDate: "1990-09-17",
+      ...trustedBirth,
+      astrologyData: verifiedAstrology(),
       numerologyData: { lifePath: 4 },
     });
 
@@ -181,11 +186,9 @@ describe("compatibility saved-profile contract", () => {
 
   it("prefers the verified Sun over a conflicting symbolic alias", () => {
     const result = buildMatchResponse({
+      ...trustedBirth,
       sunSign: "Leo",
-      astrologyData: {
-        sunSign: "Leo",
-        sun: { sign: "Virgo", verificationStatus: "verified", evidence },
-      },
+      astrologyData: { ...verifiedAstrology(), sunSign: "Leo" },
     });
 
     assert.equal(result.available, true);
@@ -205,10 +208,8 @@ describe("compatibility saved-profile contract", () => {
   it("compares one person by dimensions without inventing a universal relationship score", () => {
     const result = buildPersonComparisonResponse(
       {
-        astrologyData: {
-          sun: { sign: "Virgo", verificationStatus: "verified", evidence },
-        },
-        birthDate: "1990-09-17",
+        ...trustedBirth,
+        astrologyData: verifiedAstrology(),
         numerologyData: { lifePath: 4 },
         humanDesignType: "Reflector",
       },
@@ -230,3 +231,16 @@ describe("compatibility saved-profile contract", () => {
     assert.match(result.formula.layers.join(" "), /user-supplied symbolic data/);
   });
 });
+
+
+  it("does not treat an unbound verified-looking Sun as verified compatibility evidence", () => {
+    const result = buildMatchResponse({
+      ...trustedBirth,
+      astrologyData: {
+        sunSign: "Leo",
+        sun: { sign: "Virgo", verificationStatus: "verified", evidence },
+      },
+    });
+    assert.equal(result.evidenceMode, "symbolic");
+    assert.equal(result.formula.inputs.sunSign, "Leo");
+  });
