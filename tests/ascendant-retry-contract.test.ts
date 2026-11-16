@@ -12,6 +12,7 @@ const placementEvidence = {
   source: "independent ephemeris comparison",
   engine: "ascendant-retry-test-reference@1",
   calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 const humanDesignTrust = {
