@@ -78,8 +78,13 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
   tier: SoulCodexTier,
 ): T {
   const projected: AnyRecord = { ...profile };
+  const rawAstrology = cloneRecord(profile.astrologyData);
+  const rawHumanDesign = cloneRecord(profile.humanDesignData);
   const boundAstrology = boundAstrologyForStoredProfile(profile);
   const boundHumanDesign = boundHumanDesignForStoredProfile(profile);
+  const evidenceWasWithheld =
+    (Object.keys(rawAstrology).length > 0 && Object.keys(boundAstrology).length === 0) ||
+    (Object.keys(rawHumanDesign).length > 0 && Object.keys(boundHumanDesign).length === 0);
   projected.astrologyData = boundAstrology;
 
   projected.numerologyData = tierAllowsCapability(tier, "full_name_numerology")
@@ -92,19 +97,19 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
       ? hdCoreView(boundHumanDesign)
       : hdEvidenceOnly(boundHumanDesign);
 
-  if (!tierAllowsCapability(tier, "interpretation_depth")) {
-    const freeArchetype = synthesizeArchetype(
+  if (!tierAllowsCapability(tier, "interpretation_depth") || evidenceWasWithheld) {
+    const safeArchetype = synthesizeArchetype(
       boundAstrology,
       projected.numerologyData,
       profile.personalityData,
       projected.humanDesignData,
     );
     projected.archetypeData = {
-      ...freeArchetype,
-      shadows: [],
+      ...safeArchetype,
+      shadows: tierAllowsCapability(tier, "interpretation_depth") ? safeArchetype.shadows : [],
     };
-    projected.biography = freeArchetype.description;
-    projected.dailyGuidance = freeArchetype.guidance;
+    projected.biography = safeArchetype.description;
+    projected.dailyGuidance = safeArchetype.guidance;
     projected.depthInterpretation = null;
     projected.synthesis = null;
   }
