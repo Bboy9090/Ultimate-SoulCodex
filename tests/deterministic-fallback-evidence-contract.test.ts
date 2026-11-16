@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { deterministicFallback } from "../services/deterministic-fallback";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity";
 
+const trustedBirth = {
+  birthDate: "1990-09-17",
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: 40.8448,
+  longitude: -73.8648,
+};
 const evidence = {
   source: "independent ephemeris comparison",
   engine: "test-reference@1",
   calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 const verifiedHumanDesignTrust = {
@@ -50,10 +59,11 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
       prompt: "",
       promptType: "daily_horoscope",
       profile: {
-        astrologyData: {
+        ...trustedBirth,
+        astrologyData: bindStoredEvidence({
           sun: { sign: "Virgo", verificationStatus: "verified", evidence },
           moon: { sign: "Cancer", verificationStatus: "verified", evidence },
-        },
+        }, trustedBirth),
       },
     } as any);
 
@@ -107,14 +117,15 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
       prompt: "",
       promptType: "codex_reading",
       profile: {
-        humanDesignData: {
+        ...trustedBirth,
+        humanDesignData: bindStoredEvidence({
           status: "verified",
           type: "Reflector",
-          strategy: "Wait a lunar cycle",
+          strategy: "To Wait a Lunar Cycle",
           authority: "Lunar Authority",
           profile: "2/5",
           ...verifiedHumanDesignTrust,
-        },
+        }, trustedBirth),
       },
     } as any);
 
@@ -129,10 +140,11 @@ test("deterministic AI fallback evidence boundary", async (suite) => {
       prompt: "",
       promptType: "soul_guide",
       profile: {
-        astrologyData: {
+        ...trustedBirth,
+        astrologyData: bindStoredEvidence({
           sun: { sign: "Virgo", verificationStatus: "verified", evidence },
           moon: { sign: "Cancer", verificationStatus: "verified", evidence },
-        },
+        }, trustedBirth),
         archetypeData: { themes: ["precision", "service"] },
       },
       dailyCard: { focus: "Finish one bounded task" },
