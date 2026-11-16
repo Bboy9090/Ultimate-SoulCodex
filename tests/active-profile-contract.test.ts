@@ -30,6 +30,7 @@ const evidence = {
   source: "independent ephemeris comparison",
   engine: "engine-a+engine-b",
   calculatedAt: "2026-08-02T20:15:00Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 test("local active snapshot refreshes stale prose and retains assessments while invalidating unbound evidence", () => {
@@ -328,6 +329,7 @@ test("canonical active Soul Profile contract", async (t) => {
       source: "independent ephemeris comparison",
       engine: "engine-a+engine-b",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithEvidence = {
@@ -369,6 +371,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const numerologyEvidence = {
       source: "deterministic birth-date calculation",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithNumerology = {
@@ -409,6 +412,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const hdEvidence = {
       source: "user-submitted chart",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithHD = {
@@ -451,10 +455,12 @@ test("canonical active Soul Profile contract", async (t) => {
     const sunEvidence = {
       source: "sun-specific ephemeris",
       calculatedAt: "2026-08-02T20:00:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
     const moonEvidence = {
       source: "moon-specific ephemeris",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithDistinctEvidence = {
@@ -499,6 +505,7 @@ test("canonical active Soul Profile contract", async (t) => {
             source: "independent ephemeris comparison",
             engine: "engine-a+engine-b",
             calculatedAt: "2026-08-02T20:15:00Z",
+            inputTimestamp: "1990-09-17T15:11:00.000Z",
           },
         },
       },
@@ -520,6 +527,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const evidence = {
       source: "independent verification",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const multiSystemProfile = {
