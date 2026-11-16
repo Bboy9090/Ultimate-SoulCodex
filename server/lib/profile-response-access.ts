@@ -1,5 +1,6 @@
 import { tierAllowsCapability, type SoulCodexTier } from "@shared/product-access";
 import { synthesizeArchetype } from "../services/archetype";
+import { boundAstrologyForStoredProfile, boundHumanDesignForStoredProfile } from "./profile-birth-evidence-integrity";
 
 type AnyRecord = Record<string, any>;
 
@@ -77,20 +78,23 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
   tier: SoulCodexTier,
 ): T {
   const projected: AnyRecord = { ...profile };
+  const boundAstrology = boundAstrologyForStoredProfile(profile);
+  const boundHumanDesign = boundHumanDesignForStoredProfile(profile);
+  projected.astrologyData = boundAstrology;
 
   projected.numerologyData = tierAllowsCapability(tier, "full_name_numerology")
     ? cloneRecord(profile.numerologyData)
     : numerologyFreeView(profile.numerologyData);
 
   projected.humanDesignData = tierAllowsCapability(tier, "human_design_depth")
-    ? cloneRecord(profile.humanDesignData)
+    ? cloneRecord(boundHumanDesign)
     : tierAllowsCapability(tier, "human_design_core")
-      ? hdCoreView(profile.humanDesignData)
-      : hdEvidenceOnly(profile.humanDesignData);
+      ? hdCoreView(boundHumanDesign)
+      : hdEvidenceOnly(boundHumanDesign);
 
   if (!tierAllowsCapability(tier, "interpretation_depth")) {
     const freeArchetype = synthesizeArchetype(
-      profile.astrologyData,
+      boundAstrology,
       projected.numerologyData,
       profile.personalityData,
       projected.humanDesignData,
