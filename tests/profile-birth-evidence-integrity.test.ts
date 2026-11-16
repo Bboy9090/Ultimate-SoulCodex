@@ -170,4 +170,6 @@ test("malformed legacy fields stay accessible and unchanged while old chart evid
   }
   assert.equal(birthEvidenceInput({ ...input, birthTime: 123 }), null);
   assert.equal(birthEvidenceInput({ ...input, latitude: { toString: 123 } }), null);
+  assert.equal(birthEvidenceInput({ ...input, birthTime: "", birthTimeStatus: "unknown", birthDate: "2026-02-31" }), null);
+  assert.equal(birthEvidenceInput({ ...input, birthTime: "", birthTimeStatus: "unknown", timezone: "Not/A_Real_Zone" }), null);
 });
