@@ -40,8 +40,8 @@ if (!releaseVersion) {
   failures.push("VITE_RELEASE_VERSION is required for a native release build.");
 } else if (platform === "ios" && releaseVersion !== "4.1.1") {
   failures.push("VITE_RELEASE_VERSION must be exactly 4.1.1 for the iOS update candidate.");
-} else if (platform === "android" && releaseVersion !== "4.1.0") {
-  failures.push("VITE_RELEASE_VERSION must be exactly 4.1.0 for the Soul Codex+ release candidate.");
+} else if (platform === "android" && releaseVersion !== "4.1.1") {
+  failures.push("VITE_RELEASE_VERSION must be exactly 4.1.1 for the Android update candidate.");
 }
 if (!releaseSha) {
   failures.push("VITE_RELEASE_SHA is required for a native release build.");
@@ -80,8 +80,8 @@ if (platform === "ios") {
 if (platform === "android") {
   requireMatch("android/app/build.gradle", /applicationId\s+["']soulcodex\.app["']/, "The Android application ID must match Play Console: soulcodex.app.");
   requireMatch("android/variables.gradle", /targetSdkVersion\s*=\s*36/, "Android targetSdkVersion must be 36.");
-  requireMatch("android/app/build.gradle", /versionCode\s+4000016/, "The Android versionCode must be 4000016 for the 4.1.0 Play release.");
-  requireMatch("android/app/build.gradle", /versionName\s+["']4\.1\.0["']/, "The Android versionName must be 4.1.0 for the store release.");
+  requireMatch("android/app/build.gradle", /versionCode\s+4000017/, "The Android versionCode must be 4000017 for the 4.1.1 Play release.");
+  requireMatch("android/app/build.gradle", /versionName\s+["']4\.1\.1["']/, "The Android versionName must be 4.1.1 for the store release.");
 }
 
 if (failures.length) {
