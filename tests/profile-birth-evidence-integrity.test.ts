@@ -131,6 +131,50 @@ test("unknown-time range evidence is bound to the day and never keeps exact-time
   assert.equal(repairStaleBirthEvidence(baseline()).birthEvidenceInvalidation, undefined);
 });
 
+
+
+test("verified timed evidence without a source instant fails closed", () => {
+  const noAstrologyInstant = {
+    astrologyData: {
+      ...remote.astrologyData,
+      rising: {
+        sign: "Aries",
+        verificationStatus: "verified",
+        evidence: {
+          source: "test fixture only",
+          engine: "test-reference",
+          calculatedAt: "2026-11-16T12:00:00Z",
+        },
+      },
+    },
+  };
+  assert.throws(
+    () => reconcileOfflineProfile(baseline(), noAstrologyInstant, undefined, input),
+    /does not match/,
+  );
+
+  const noHdInstant = {
+    ...remote,
+    humanDesignData: {
+      status: "verified",
+      type: "Reflector",
+      strategy: "To Wait a Lunar Cycle",
+      authority: "Lunar Authority",
+      profile: "2/5",
+      engine: "test-hd",
+      source: "test",
+      calculatedAt: "2026-11-16T12:00:00Z",
+      verificationReceiptId: "test",
+      independentSource: "test-reference",
+      verifiedAt: "2026-11-16T12:00:00Z",
+    },
+  };
+  assert.throws(
+    () => reconcileOfflineProfile(baseline(), noHdInstant, undefined, input),
+    /does not match/,
+  );
+});
+
 test("numeric coordinate serialization does not invalidate matching evidence", () => {
   const saved = { ...current(), latitude: "40.7000", longitude: "-74" };
   assert.deepEqual(birthEvidenceInput(saved), birthEvidenceInput(input));
