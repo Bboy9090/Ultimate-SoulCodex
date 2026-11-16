@@ -95,9 +95,9 @@ jobs:
         run: |
           set -euo pipefail
           test "$QUALIFICATION_VERSION_CODE" = "4000018"
-          test "$(grep -Ec 'versionCode 4000018' android/app/build.gradle)" -eq 1
-          sed -i 's/versionCode 4000016/versionCode 4000017/' android/app/build.gradle
-          grep -F 'versionCode 4000017' android/app/build.gradle
+          test "$(grep -Ec 'versionCode 4000017' android/app/build.gradle)" -eq 1
+          sed -i 's/versionCode 4000017/versionCode 4000018/' android/app/build.gradle
+          grep -F 'versionCode 4000018' android/app/build.gradle
           test "$(git diff --numstat -- android/app/build.gradle | awk '{print $1 ":" $2}')" = "1:1"
 
       - name: Require release signing credentials
