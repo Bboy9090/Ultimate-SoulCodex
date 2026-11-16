@@ -1,5 +1,5 @@
 import { generateText, isGeminiAvailable } from "../../gemini";
-import { extractVerifiedAstrology } from "../lib/verified-astrology";
+import { extractVerifiedAstrologyFromBoundData } from "../lib/verified-astrology";
 import { canonicalNumberPattern, canonicalSignPattern, type CanonicalSymbolicPattern } from "@shared/symbolic-vocabulary";
 import { verifiedProfileHumanDesignSummary } from "./profile-human-design";
 
@@ -14,7 +14,7 @@ export interface BiographyRequest {
 }
 
 function verifiedAstrologyFor(data: BiographyRequest) {
-  return extractVerifiedAstrology({ astrologyData: data.astrologyData });
+  return extractVerifiedAstrologyFromBoundData(data.astrologyData);
 }
 
 function astrologyPromptLines(data: BiographyRequest): string[] {
