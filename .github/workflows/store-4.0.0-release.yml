@@ -1,4 +1,4 @@
-name: Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.0
+name: Soul Codex Store Candidate — Android 4.1.0 / iOS 4.1.1
 
 on:
   push:
@@ -75,7 +75,7 @@ jobs:
         run: npm run mobile:validate:android
       - name: Validate iOS release metadata
         env:
-          VITE_RELEASE_VERSION: 4.1.0
+          VITE_RELEASE_VERSION: 4.1.1
           VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run mobile:validate:ios
       - name: Generate release receipt
@@ -86,7 +86,7 @@ jobs:
           Android versionName=4.1.0
           Android applicationId=soulcodex.app
           Android versionCode=4000016
-          iOS marketingVersion=4.1.0
+          iOS marketingVersion=4.1.1
           iOS bundleId=app.soulcodex.ios
           iOS build=4000015
           API=https://soulcodex.up.railway.app
@@ -282,7 +282,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     env:
-      VITE_RELEASE_VERSION: 4.1.0
+      VITE_RELEASE_VERSION: 4.1.1
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v7
@@ -318,7 +318,7 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "marketingVersion=4.1.0"
+            echo "marketingVersion=4.1.1"
             echo "buildNumber=4000015"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
