@@ -88,9 +88,18 @@ describe("repairFoundationOfflineCodexProfile", () => {
       numerologyData: { ...correct.numerologyData, lifePath: 8 },
       biography: correct.biography.replace("Life Path 9", "Life Path 8"),
       verifiedAstrologyData: {
-        sun: { verificationStatus: "verified", sign: "Virgo" },
-        moon: { verificationStatus: "verified", sign: "Virgo" },
-        rising: { verificationStatus: "verified", sign: "Scorpio" },
+        sun: { verificationStatus: "verified", sign: "Virgo", evidence: {
+          source: "independent ephemeris", engine: "test-reference@1",
+          calculatedAt: "2026-08-21T12:30:00.000Z", inputTimestamp: "1990-09-17T15:11:00.000Z",
+        } },
+        moon: { verificationStatus: "verified", sign: "Virgo", evidence: {
+          source: "independent ephemeris", engine: "test-reference@1",
+          calculatedAt: "2026-08-21T12:30:00.000Z", inputTimestamp: "1990-09-17T15:11:00.000Z",
+        } },
+        rising: { verificationStatus: "verified", sign: "Scorpio", evidence: {
+          source: "independent ascendant reference", engine: "test-ascendant@1",
+          calculatedAt: "2026-08-21T12:30:00.000Z", inputTimestamp: "1990-09-17T15:11:00.000Z",
+        } },
       },
     };
 
