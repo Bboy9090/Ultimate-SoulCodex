@@ -50,3 +50,19 @@ test("a provided birth time must use HH:MM instead of accepting arbitrary text",
   assert.throws(() => birthDataSchema.parse({ ...base, birthTime: "not-a-time" }), /Birth time must use HH:MM/);
   assert.equal(birthDataSchema.parse({ ...base, birthTime: "11:11" }).birthTime, "11:11");
 });
+
+
+test("birth date must be a real calendar date before any math runs", () => {
+  assert.throws(
+    () => birthDataSchema.parse({ ...base, birthDate: "2026-02-31", birthTime: "" }),
+    /real calendar date/,
+  );
+  assert.throws(
+    () => birthDataSchema.parse({ ...base, birthDate: "2025-02-29", birthTime: "" }),
+    /real calendar date/,
+  );
+  assert.equal(
+    birthDataSchema.parse({ ...base, birthDate: "2024-02-29", birthTime: "" }).birthDate,
+    "2024-02-29",
+  );
+});
