@@ -178,3 +178,46 @@ test("Navigation and planetary browser acceptance: 320px and 375px touch precisi
     await assertNoOverflow(page, `narrow planetary preview ${width}px`);
   }
 });
+
+
+test("Navigation and planetary browser acceptance: cosmic motion preference and accessible routes", async ({ page }) => {
+  const exceptions = [];
+  page.on("pageerror", error => exceptions.push(error.message));
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 820, height: 1180 },
+    { width: 1365, height: 850 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto("/settings", { waitUntil: "domcontentloaded" });
+    const atmosphere = page.getByTestId("cosmic-atmosphere");
+    await expect(atmosphere).toHaveCount(1);
+    await expect(page.getByRole("radiogroup", { name: "Celestial motion intensity" })).toBeVisible();
+    const initialMode = await page.evaluate(() => localStorage.getItem("soulcodex.cosmic-motion.v1"));
+    if (initialMode === null) {
+      await expect(page.getByTestId("cosmic-motion-ambient")).toHaveAttribute("aria-checked", "true");
+    }
+    for (const mode of ["still", "full", "ambient"]) {
+      await page.getByTestId(`cosmic-motion-${mode}`).click();
+      await expect(page.getByTestId(`cosmic-motion-${mode}`)).toHaveAttribute("aria-checked", "true");
+      await expect.poll(() => page.evaluate(() => document.documentElement.dataset.cosmicMotion)).toBe(mode);
+      await expect.poll(() => page.evaluate(() => localStorage.getItem("soulcodex.cosmic-motion.v1"))).toBe(mode);
+      await assertNoOverflow(page, `cosmic motion ${mode} / ${viewport.width}`);
+    }
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("cosmic-motion-ambient")).toHaveAttribute("aria-checked", "true");
+    await page.getByTestId("cosmic-motion-still").click();
+    await expect.poll(() => page.evaluate(() => {
+      const target = document.querySelector(".sc-cosmic-stars--near");
+      return target ? getComputedStyle(target).transform : "missing";
+    })).toBe("none");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.getByTestId("cosmic-motion-full").click();
+    await expect.poll(() => page.evaluate(() => {
+      const route = document.querySelector(".sc-cosmic-route");
+      return route ? getComputedStyle(route).animationName : "missing";
+    })).toBe("none");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+  }
+  expect(exceptions).toEqual([]);
+});
