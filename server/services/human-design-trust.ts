@@ -249,12 +249,24 @@ export function hasApprovedVerifiedHumanDesignTrust(
 ): value is HumanDesignVerifiedEvidence {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
-  const candidate = completeVerifiedCandidate(
-    (record.candidate && typeof record.candidate === "object" && !Array.isArray(record.candidate))
+  const nestedCandidate =
+    record.candidate && typeof record.candidate === "object" && !Array.isArray(record.candidate)
       ? record.candidate as HumanDesignCandidateFields
-      : record as HumanDesignCandidateFields,
-  );
+      : null;
+  const candidate = completeVerifiedCandidate(nestedCandidate ?? record as HumanDesignCandidateFields);
   if (!candidate) return false;
+
+  // Production records may carry the same core fields both at the top level
+  // and inside the approved trust candidate. Any disagreement means the saved
+  // object was mutated or assembled inconsistently and must fail closed.
+  if (nestedCandidate) {
+    for (const field of ["type", "strategy", "authority", "profile"] as const) {
+      const topLevel = record[field];
+      if (typeof topLevel === "string" && topLevel.trim() && topLevel.trim() !== candidate[field]) {
+        return false;
+      }
+    }
+  }
 
   return Boolean(
     record.status === "verified" &&
