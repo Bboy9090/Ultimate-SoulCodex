@@ -79,14 +79,20 @@ export function staleBirthEvidenceReason(profile: any, requireStoredBinding = fa
     if ((placement?.verificationStatus ?? placement?.status) !== "verified") continue;
     if (current.mode === "unknown") return "exact_evidence_for_unknown_birth_time";
     const timestamp = placement?.provenance?.inputTimestamp ?? placement?.evidence?.inputTimestamp ?? placement?.internalCandidate?.inputTimestamp;
-    if (typeof timestamp === "string" && new Date(timestamp).getTime() !== new Date(current.utc!).getTime()) {
+    if (typeof timestamp !== "string" || Number.isNaN(new Date(timestamp).getTime())) {
+      return "astrology_birth_instant_missing";
+    }
+    if (new Date(timestamp).getTime() !== new Date(current.utc!).getTime()) {
       return "astrology_birth_instant_mismatch";
     }
   }
   const hd = profile.humanDesignData;
   if (hd?.status === "verified") {
     if (current.mode === "unknown") return "exact_evidence_for_unknown_birth_time";
-    if (typeof hd.inputTimestampUtc === "string" && new Date(hd.inputTimestampUtc).getTime() !== new Date(current.utc!).getTime()) {
+    if (typeof hd.inputTimestampUtc !== "string" || Number.isNaN(new Date(hd.inputTimestampUtc).getTime())) {
+      return "human_design_birth_instant_missing";
+    }
+    if (new Date(hd.inputTimestampUtc).getTime() !== new Date(current.utc!).getTime()) {
       return "human_design_birth_instant_mismatch";
     }
   }
