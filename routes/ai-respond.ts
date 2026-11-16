@@ -11,6 +11,7 @@ import { buildSoulCodexSystemPrompt } from "../src/ai/soulCodexEngine";
 import type { AIPromptType } from "../src/types/ai";
 import { extractVerifiedAstrology } from "../server/lib/verified-astrology";
 import { hasApprovedVerifiedHumanDesignTrust } from "../server/services/human-design-trust";
+import { boundHumanDesignForStoredProfile } from "../server/lib/profile-birth-evidence-integrity";
 
 export function buildPromptForType(
   type: AIPromptType,
@@ -20,7 +21,7 @@ export function buildPromptForType(
   dailyCard?: any
 ): { prompt: string; systemPrompt?: string } {
   const numData = profile?.numerologyData || {};
-  const hdData = profile?.humanDesignData || {};
+  const hdData = boundHumanDesignForStoredProfile(profile);
   const verifiedHumanDesign = hasApprovedVerifiedHumanDesignTrust(hdData) ? hdData : null;
   const elemData = profile?.elementalMedicineData || {};
   const archData = profile?.archetypeData || profile?.archetype || {};
