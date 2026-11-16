@@ -6,11 +6,21 @@ import {
   buildNatalReportInput,
   natalReportFilename,
 } from "../server/lib/natal-report-contract.ts";
+import { bindStoredEvidence } from "../server/lib/profile-birth-evidence-integrity.ts";
+
+const exactBirth = {
+  birthDate: new Date("1990-09-17T00:00:00.000Z"),
+  birthTime: "11:11",
+  timezone: "America/New_York",
+  latitude: "40.8448",
+  longitude: "-73.8648",
+};
 
 const placementEvidence = {
   source: "independent ephemeris comparison",
   engine: "test-reference@1",
   calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 const humanDesignTrust = {
@@ -33,11 +43,10 @@ const verifiedSun = {
 function evidenceProfile() {
   return {
     name: "Evidence Test",
-    birthDate: new Date("1990-09-17T00:00:00.000Z"),
-    birthTime: "",
+    ...exactBirth,
     birthLocation: "Bronx, NY",
     isPremium: true,
-    astrologyData: {
+    astrologyData: bindStoredEvidence({
       sun: verifiedSun,
       moon: {
         sign: null,
@@ -59,7 +68,7 @@ function evidenceProfile() {
       aspects: [{ planet1: "sun", planet2: "moon", aspect: "trine", orb: 1 }],
       northNode: { sign: "Fake Node", degree: 10, house: 3 },
       chiron: { sign: "Fake Chiron", degree: 2, house: 8 },
-    },
+    }, exactBirth),
     numerologyData: { lifePath: 9 },
     humanDesignData: {
       status: "calculated_unverified",
@@ -94,31 +103,30 @@ test("truth-safe premium payload renders real PDF bytes", async () => {
 test("verified Human Design exposes only verified core fields", () => {
   const report = buildNatalReportInput({
     name: "HD Test",
-    birthDate: new Date("1990-09-17T00:00:00.000Z"),
-    birthTime: "11:11",
+    ...exactBirth,
     birthLocation: "Bronx, NY",
-    astrologyData: {
+    astrologyData: bindStoredEvidence({
       sun: verifiedSun,
       moon: { sign: "Leo", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 128.5 } },
       rising: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 220 } },
-    },
-    humanDesignData: {
+    }, exactBirth),
+    humanDesignData: bindStoredEvidence({
       status: "verified",
       ...humanDesignTrust,
       candidate: {
         type: "Reflector",
-        strategy: "Wait a lunar cycle",
-        authority: "Lunar",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
         profile: "2/5",
         incarnationCross: "must-not-pass-through",
       },
-    },
+    }, exactBirth),
   });
 
   assert.deepEqual(report.humanDesign, {
     type: "Reflector",
-    strategy: "Wait a lunar cycle",
-    authority: "Lunar",
+    strategy: "To Wait a Lunar Cycle",
+    authority: "Lunar Authority",
     profile: "2/5",
   });
   assert.match(report.aiText.hdInterpretation, /verified trust record/i);
@@ -171,6 +179,30 @@ test("production profile UI and endpoint are wired to the canonical report path"
 });
 
 
+function verifiedProfile() {
+  return {
+    name: "Verified Profile",
+    ...exactBirth,
+    birthLocation: "Bronx, NY",
+    astrologyData: bindStoredEvidence({
+      sun: verifiedSun,
+      moon: { sign: "Leo", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 128.5 } },
+      rising: { sign: "Scorpio", verificationStatus: "verified", evidence: placementEvidence, internalCandidate: { longitude: 220 } },
+    }, exactBirth),
+    humanDesignData: bindStoredEvidence({
+      status: "verified",
+      ...humanDesignTrust,
+      candidate: {
+        type: "Reflector",
+        strategy: "To Wait a Lunar Cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    }, exactBirth),
+    numerologyData: { lifePath: 9 },
+  } as any;
+}
+
 test("natal report withholds Human Design when verification identity is forged", () => {
   const profile = verifiedProfile();
   profile.humanDesignData = {
@@ -206,4 +238,20 @@ test("legacy profile premium flag cannot authorize report premium mode", () => {
 
   assert.equal(freeReport.isPremium, false);
   assert.equal(plusReport.isPremium, true);
+});
+
+
+test("natal report withholds verified-looking legacy chart data without a birth binding", () => {
+  const legacy: any = {
+    name: "Legacy",
+    ...exactBirth,
+    birthLocation: "Bronx, NY",
+    astrologyData: { sun: verifiedSun },
+    humanDesignData: { status: "verified", ...humanDesignTrust, candidate: {
+      type: "Reflector", strategy: "To Wait a Lunar Cycle", authority: "Lunar Authority", profile: "2/5",
+    } },
+  };
+  const report = buildNatalReportInput(legacy);
+  assert.equal((report.astrology as any).sunSign, null);
+  assert.deepEqual(report.humanDesign, {});
 });
