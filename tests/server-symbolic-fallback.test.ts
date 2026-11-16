@@ -53,7 +53,7 @@ test("forged Human Design status cannot enter deterministic fallback words", () 
 
 test("qualified Human Design contributes Strategy and Authority only as a symbolic decision experiment", () => {
   const input = profile("Virgo", 9);
-  input.humanDesignData = calculateProfileHumanDesign({ birthDate: "1990-09-17", birthTime: "11:11", timezone: "America/New_York", latitude: 40.8448, longitude: -73.8648 });
+  input.humanDesignData = bindStoredEvidence(calculateProfileHumanDesign({ birthDate: "1990-09-17", birthTime: "11:11", timezone: "America/New_York", latitude: 40.8448, longitude: -73.8648 }), birthInputs);
   const guidance = generateFallbackGuidance(input);
   const hd = input.humanDesignData as Record<string, unknown>;
   assert.ok(guidance.includes(String(hd.strategy)));
