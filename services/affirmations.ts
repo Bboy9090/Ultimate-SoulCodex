@@ -1,6 +1,7 @@
 import type { Profile } from '../shared/schema';
 import { extractVerifiedAstrology } from '../server/lib/verified-astrology';
 import { hasApprovedVerifiedHumanDesignTrust } from '../server/services/human-design-trust';
+import { boundHumanDesignForStoredProfile } from '../server/lib/profile-birth-evidence-integrity';
 
 export interface Affirmation {
   text: string;
@@ -239,7 +240,7 @@ function generateSeed(profileId: string, date: string = new Date().toISOString()
 
 export function generateDailyAffirmations(profile: Profile, count: number = 3, date?: string): Affirmation[] {
   const verifiedAstrology = extractVerifiedAstrology(profile);
-  const hdData = profile.humanDesignData as any;
+  const hdData = boundHumanDesignForStoredProfile(profile) as any;
   const numData = profile.numerologyData as any;
   const lifePath = Number(numData?.lifePath ?? numData?.lifePathNumber);
   const validLifePath = [1,2,3,4,5,6,7,8,9,11,22,33].includes(lifePath);
