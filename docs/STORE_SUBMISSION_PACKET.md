@@ -1,6 +1,6 @@
 # Soul Codex Store Submission Packet
 
-Maintained for Soul Codex 4.1.0. Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
+Maintained for Soul Codex 4.1.1 mobile update candidates (current web/backend release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
 
 Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
@@ -14,7 +14,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release | 4.1.0 / versionCode 4000016 |
+| Android release candidate | 4.1.1 / versionCode 4000017 (new cosmic update; not yet uploaded) |
 | iOS source project release | 4.1.1 / build 4000015 (source setting) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
