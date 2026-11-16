@@ -25,7 +25,7 @@ Last verified pre-status-update checkpoint:
 - Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
   - Android: `4.1.0` / versionCode `4000016` / package `soulcodex.app`
-  - iOS source project: `4.1.0` / build `4000014` / bundle `app.soulcodex.ios`
+  - iOS source project (Cosmic post-merge candidate): `4.1.0` / build `4000015` / bundle `app.soulcodex.ios`; submission and signed Apple-managed archive remain unverified.
 - Latest qualified source artifacts:
   - release-gate artifact ID: `13585158689`
   - iOS qualification artifact ID: `13585159197`
