@@ -10,6 +10,7 @@ import { buildSafeDiagnosticBundle } from "../lib/safeDiagnosticBundle";
 import { useProductAccess } from "../hooks/useProductAccess";
 import {
   loadNativeBillingCatalog,
+  loadNativeBillingSandboxStatus,
   loadNativeBillingProducts,
   type NativeBillingProduct,
 } from "../lib/nativeBilling";
@@ -46,6 +47,7 @@ type BillingDiagnosticState = {
   annualDisplayPrice: string | null;
   reason: string | null;
   qualificationMode: boolean;
+  sandboxAccess: { tier: "free" | "plus"; plan: "monthly" | "annual" | null; status: string | null; lastVerifiedAt: string | null } | null;
 };
 
 function shortSha(value?: string) {
@@ -81,6 +83,7 @@ export default function DiagnosticsPage() {
     annualDisplayPrice: null,
     reason: null,
     qualificationMode: false,
+    sandboxAccess: null,
   });
 
   useEffect(() => {
@@ -139,6 +142,7 @@ export default function DiagnosticsPage() {
             products = await loadNativeBillingProducts(catalog);
           }
 
+          const sandbox = catalog.qualificationMode ? await loadNativeBillingSandboxStatus() : null;
           const monthly = products.find((product) => product.id === catalog.monthlyProductId) ?? null;
           const annual = products.find((product) => product.id === catalog.annualProductId) ?? null;
           if (!cancelled) {
@@ -154,6 +158,7 @@ export default function DiagnosticsPage() {
               annualDisplayPrice: annual?.displayPrice ?? null,
               reason: catalog.reason,
               qualificationMode: Boolean(catalog.qualificationMode),
+              sandboxAccess: sandbox?.sandboxAccess ?? null,
             });
           }
           return;
@@ -175,6 +180,7 @@ export default function DiagnosticsPage() {
             annualDisplayPrice: null,
             reason: typeof payload.reason === "string" ? payload.reason : null,
             qualificationMode: false,
+            sandboxAccess: null,
           });
         }
       } catch (error) {
@@ -361,6 +367,29 @@ export default function DiagnosticsPage() {
             <StatusCard ok={access.source !== "free"} label="Entitlement source" detail={access.source} />
             <StatusCard ok={Boolean(access.lastVerifiedAt)} label="Last verification" detail={access.lastVerifiedAt ?? "none"} />
           </div>
+          {billing.qualificationMode && (billing.platform === "ios" || billing.platform === "android") ? (
+            <div className="mt-4 rounded-xl border border-white/10 p-4" data-testid="sandbox-billing-recovery-status">
+              <h3 className="font-semibold">Sandbox subscription recovery · test account only</h3>
+              <p className="mt-2 text-sm text-[var(--sc-stone)]">
+                This reads a persisted sandbox verification result after relaunch or restore.
+                It is not a production Plus entitlement and does not unlock paid features.
+              </p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <StatusCard
+                  ok={billing.sandboxAccess?.tier === "plus"}
+                  label="Sandbox verified tier"
+                  detail={billing.sandboxAccess
+                    ? `${billing.sandboxAccess.tier} · ${billing.sandboxAccess.plan ?? "no plan"} · ${billing.sandboxAccess.status ?? "unknown"}`
+                    : "No authorized sandbox receipt available"}
+                />
+                <StatusCard
+                  ok={Boolean(billing.sandboxAccess?.lastVerifiedAt)}
+                  label="Sandbox verification retained"
+                  detail={billing.sandboxAccess?.lastVerifiedAt ?? "none"}
+                />
+              </div>
+            </div>
+          ) : null}
           <p className="mb-0 mt-4 text-xs leading-5 text-[var(--sc-stone)]">
             A green catalog/verifier card is configuration evidence only. Provider purchase, restore, lifecycle, reinstall, second-device, cancellation/expiry, and revocation still require real sandbox/TestFlight/internal-test evidence before production activation.
           </p>

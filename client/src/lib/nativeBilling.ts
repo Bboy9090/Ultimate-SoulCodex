@@ -78,6 +78,38 @@ export async function loadNativeBillingCatalog(): Promise<NativeBillingCatalog |
   return response.json();
 }
 
+/**
+ * Only a dedicated native qualification build can query persisted sandbox
+ * evidence. This result is read-only diagnostic evidence, not an app access
+ * entitlement; ordinary /api/access remains production-only.
+ */
+export type NativeBillingSandboxStatus = {
+  qualification: true;
+  platform: NativeBillingPlatform;
+  sandboxAccess: {
+    tier: "free" | "plus";
+    source: "free" | "apple" | "google_play" | "stripe";
+    plan: "monthly" | "annual" | null;
+    status: string | null;
+    expiresAt: string | null;
+    lastVerifiedAt: string | null;
+  };
+};
+
+export async function loadNativeBillingSandboxStatus(): Promise<NativeBillingSandboxStatus | null> {
+  if (!qualificationMode) return null;
+  const platform = currentNativeBillingPlatform();
+  if (!platform) return null;
+  const response = await apiFetch(`/api/billing/native/qualification-access?platform=${platform}`, {
+    cache: "no-store",
+    headers: qualificationHeaders(),
+  });
+  if (!response.ok) return null;
+  const result = await response.json();
+  if (result?.qualification !== true || result.platform !== platform) return null;
+  return result as NativeBillingSandboxStatus;
+}
+
 export async function loadNativeBillingProducts(catalog: NativeBillingCatalog) {
   if (!catalog.enabled || !catalog.monthlyProductId || !catalog.annualProductId) {
     return [];
