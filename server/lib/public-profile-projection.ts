@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Profile } from "@shared/schema";
 import type { SoulCodexTier } from "@shared/product-access";
+import { quarantineStoredProfileEvidence } from "./profile-birth-evidence-integrity";
 
 export type PublicShareField =
   | "displayName"
@@ -120,6 +121,7 @@ export function buildPublicProfileProjection(
   selection: PublicShareSelection,
   _tier: SoulCodexTier = "free",
 ): PublicProfileProjection {
+  const trusted = quarantineStoredProfileEvidence(profile);
   const requested = new Set(selection.fields);
   const fields: PublicProfileProjection["fields"] = {};
 
@@ -128,7 +130,7 @@ export function buildPublicProfileProjection(
     if (displayName) fields.displayName = displayName;
   }
 
-  const astrology = profile.astrologyData;
+  const astrology = trusted.astrologyData;
   if (requested.has("sunSign")) {
     const value = verifiedSign(astrology, "sun");
     if (value) fields.sunSign = value;
@@ -143,12 +145,12 @@ export function buildPublicProfileProjection(
   }
 
   if (requested.has("lifePath")) {
-    const value = safeLifePath(profile);
+    const value = safeLifePath(trusted);
     if (value !== undefined) fields.lifePath = value;
   }
 
   if (requested.has("archetypeTitle")) {
-    const value = safeArchetypeTitle(profile);
+    const value = safeArchetypeTitle(trusted);
     if (value) fields.archetypeTitle = value;
   }
 
