@@ -468,17 +468,11 @@ function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: nu
     sourceCoverage.numerology === 'complete' ? 1 : 0,
   ].reduce((a, b) => a + b);
 
-  const hasBehavior = sourceCoverage.behavioralTraitCount >= 5;
-
-  // High coverage: at least 2 of the 3 governed identity systems are complete,
-  // plus enough assessed behavioral context. No one system is privileged here.
-  if (completeCount >= 2 && hasBehavior) {
-    return 'high';
-  }
-
-  // High/Partial boundary: at least 2 complete systems but insufficient behavioral traits
+  // High coverage is driven only by governed stable identity systems.
+  // User-assessed behavior remains inspectable supporting context until its
+  // normalized evidence schema is explicitly promoted by the registry.
   if (completeCount >= 2) {
-    return 'partial';
+    return 'high';
   }
 
   // Partial coverage: 2+ systems present, even if not complete
