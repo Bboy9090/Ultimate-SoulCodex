@@ -38,7 +38,7 @@ const profile = {
   numerologyData: { lifePath: 9, expression: 7, soulUrge: 4 },
   personalityData: { mbti: { type: "INTJ", responses: ["private"] } },
   archetypeData: { title: "The Builder", privatePrompt: "hidden" },
-  humanDesignData: { type: "Reflector", rawActivations: ["private"] },
+  humanDesignData: { type: "Reflector", birthEvidenceInput: binding, rawActivations: ["private"] },
   vedicAstrologyData: null,
   geneKeysData: null,
   iChingData: null,
