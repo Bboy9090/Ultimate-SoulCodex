@@ -25,7 +25,7 @@ function event(userId: string, overrides: Record<string, unknown> = {}) {
     providerTransactionId: "sub_1",
     productId: "soul_codex_plus_monthly",
     plan: "monthly" as const,
-    environment: "sandbox" as const,
+    environment: "production" as const,
     eventType: "subscription_created",
     occurredAt: new Date("2026-10-01T12:00:00Z"),
     verificationState: "verified" as const,
