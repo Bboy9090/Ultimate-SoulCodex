@@ -66,6 +66,9 @@ export async function trustedGalacticInputFromProfile(
   const moon = verifiedSign(astrology.moon);
   const hasBirthTime = Boolean(profile.birthTime?.trim());
   const rising = hasBirthTime ? verifiedSign(astrology.rising) : undefined;
+  const mercury = verifiedSign(record(astrology.planets).mercury);
+  const venus = verifiedSign(record(astrology.planets).venus);
+  const mars = verifiedSign(record(astrology.planets).mars);
 
   // Recompute HD from the same current birth fields as the profile, not
   // from persisted user-editable JSON or a stale verification receipt.
@@ -96,14 +99,22 @@ export async function trustedGalacticInputFromProfile(
     profileId: profile.id,
     birthDate,
     astrology: {
-      evidenceState: sun || moon || rising ? "verified" : "unavailable",
+      evidenceState: sun || moon || rising || mercury || venus || mars ? "verified" : "unavailable",
+      fieldEvidence: {
+        sun: sun ? "verified" : "unavailable",
+        moon: moon ? "verified" : "unavailable",
+        rising: rising ? "verified" : "unavailable",
+        mercury: mercury ? "verified" : "unavailable",
+        venus: venus ? "verified" : "unavailable",
+        mars: mars ? "verified" : "unavailable",
+      },
       coverage: sun || moon || rising ? "partial" : "missing",
       sun,
       moon,
       rising,
-      mercury: verifiedSign(record(astrology.planets).mercury),
-      venus: verifiedSign(record(astrology.planets).venus),
-      mars: verifiedSign(record(astrology.planets).mars),
+      mercury,
+      venus,
+      mars,
     },
     humanDesign: verifiedHd
       ? {
