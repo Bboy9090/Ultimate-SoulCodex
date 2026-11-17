@@ -4,8 +4,17 @@ import {
   clearActiveProfile,
   deriveConfidenceState,
   loadActiveProfile,
-  saveActiveProfile,
+  saveActiveProfile as persistCurrentProfile,
 } from "../client/src/lib/profileStorage";
+import { birthEvidenceInput } from "../client/src/lib/profileBirthEvidence";
+import type { StoredProfile } from "../client/src/lib/ActiveProfileRepository";
+
+// These persistence/provenance fixtures represent newly verified current inputs.
+// Legacy snapshots without this binding are covered by profile-birth-evidence-integrity.
+function saveActiveProfile(profile: StoredProfile): void {
+  const current = { birthTime: "11:11", timezone: "America/New_York", ...profile };
+  persistCurrentProfile({ ...current, birthEvidenceInput: birthEvidenceInput(current) ?? undefined });
+}
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -21,9 +30,10 @@ const evidence = {
   source: "independent ephemeris comparison",
   engine: "engine-a+engine-b",
   calculatedAt: "2026-08-02T20:15:00Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
-test("local active snapshot refreshes stale prose while preserving chart aliases and assessments", () => {
+test("local active snapshot refreshes stale prose and retains assessments while invalidating unbound evidence", () => {
   Object.defineProperty(globalThis, "localStorage", { value: new MemoryStorage(), configurable: true });
   const astrologyData = { sunSign: "Capricorn", planets: { sun: { sign: "Capricorn", verificationStatus: "verified", evidence } } };
   const assessmentMetadata = { answers: ["a private answer"] };
@@ -39,12 +49,13 @@ test("local active snapshot refreshes stale prose while preserving chart aliases
   assert.notEqual(refreshed.biography, "Everyone has discernment and Life Path 9.");
   assert.notEqual(refreshed.numerologyData.lifePath, 9);
   assert.equal(refreshed.birthTimeStatus, "unknown");
-  assert.deepEqual(refreshed.astrologyData, astrologyData);
+  assert.deepEqual(refreshed.astrologyData.planets, {});
+  assert.equal(refreshed.birthEvidenceInvalidation.reason, "legacy_evidence_requires_birth_input_verification");
   assert.deepEqual(refreshed.assessmentMetadata, assessmentMetadata);
   assert.equal(refreshed.createdAt, "2026-09-01T00:00:00Z");
   assert.equal(refreshed.fullBirthName, "Avery Cole");
   assert.deepEqual(refreshed.synthesis, refreshed.depthInterpretation);
-  assert.deepEqual(loadActiveProfile(), refreshed);
+  assert.deepEqual(loadActiveProfile(), JSON.parse(JSON.stringify(refreshed)));
 });
 
 test("server active snapshots never enter the local narrative migration", () => {
@@ -122,7 +133,7 @@ test("canonical active Soul Profile contract", async (t) => {
     }), "partial");
   });
 
-  await t.test("canonical save downgrades verified astrology labels that lack provenance", () => {
+  await t.test("canonical save clears verified astrology labels that lack provenance", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
       configurable: true,
@@ -141,10 +152,10 @@ test("canonical active Soul Profile contract", async (t) => {
     });
 
     const restored = loadActiveProfile();
-    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
-    assert.strictEqual(restored?.astrologyData?.moon?.status, "pending_independent_verification");
-    assert.strictEqual(restored?.astrologyData?.rising?.verificationStatus, "unresolved");
-    assert.strictEqual(restored?.astrologyData?.planets?.mercury?.verificationStatus, "pending_independent_verification");
+    assert.equal(restored?.astrologyData?.sun, undefined);
+    assert.equal(restored?.astrologyData?.moon, undefined);
+    assert.equal(restored?.astrologyData?.rising, undefined);
+    assert.equal(restored?.astrologyData?.planets?.mercury, undefined);
   });
 
   await t.test("canonical save downgrades Human Design verified status without trust receipt", () => {
@@ -195,7 +206,7 @@ test("canonical active Soul Profile contract", async (t) => {
     assert.strictEqual(restored?.humanDesignData?.verificationReceiptId, humanDesignData.verificationReceiptId);
   });
 
-  await t.test("canonical save rejects malformed verification timestamps", () => {
+  await t.test("canonical save clears evidence with malformed verification timestamps", () => {
     Object.defineProperty(globalThis, "localStorage", {
       value: new MemoryStorage(),
       configurable: true,
@@ -224,8 +235,8 @@ test("canonical active Soul Profile contract", async (t) => {
     });
 
     const restored = loadActiveProfile();
-    assert.strictEqual(restored?.astrologyData?.sun?.verificationStatus, "pending_independent_verification");
-    assert.strictEqual(restored?.humanDesignData?.status, "calculated_unverified");
+    assert.equal(restored?.astrologyData?.sun, undefined);
+    assert.equal(restored?.humanDesignData, undefined);
   });
 
   await t.test("canonical save preserves verified astrology when provenance is complete", () => {
@@ -318,6 +329,7 @@ test("canonical active Soul Profile contract", async (t) => {
       source: "independent ephemeris comparison",
       engine: "engine-a+engine-b",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithEvidence = {
@@ -359,6 +371,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const numerologyEvidence = {
       source: "deterministic birth-date calculation",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithNumerology = {
@@ -399,6 +412,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const hdEvidence = {
       source: "user-submitted chart",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithHD = {
@@ -441,10 +455,12 @@ test("canonical active Soul Profile contract", async (t) => {
     const sunEvidence = {
       source: "sun-specific ephemeris",
       calculatedAt: "2026-08-02T20:00:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
     const moonEvidence = {
       source: "moon-specific ephemeris",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const profileWithDistinctEvidence = {
@@ -489,6 +505,7 @@ test("canonical active Soul Profile contract", async (t) => {
             source: "independent ephemeris comparison",
             engine: "engine-a+engine-b",
             calculatedAt: "2026-08-02T20:15:00Z",
+            inputTimestamp: "1990-09-17T15:11:00.000Z",
           },
         },
       },
@@ -510,6 +527,7 @@ test("canonical active Soul Profile contract", async (t) => {
     const evidence = {
       source: "independent verification",
       calculatedAt: "2026-08-02T20:15:00Z",
+      inputTimestamp: "1990-09-17T15:11:00.000Z",
     };
 
     const multiSystemProfile = {
