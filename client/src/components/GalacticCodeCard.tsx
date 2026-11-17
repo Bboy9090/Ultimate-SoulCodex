@@ -64,14 +64,17 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
           <p className="text-xs text-slate-400 mt-1">Uniqueness: {code.uniquenessKey}</p>
         </div>
 
-        {/* Frequency */}
+        {/* Symbolic fingerprint-derived display token */}
         <div className="rounded-lg bg-purple-900/30 border border-purple-500/30 p-3">
           <p className="text-xs text-purple-300/70 uppercase tracking-wider">Soul Codex Symbolic Frequency</p>
           <p className="text-lg text-purple-200 font-semibold mt-1">{code.frequency}</p>
+          <p className="mt-1 text-[11px] leading-5 text-purple-200/60">
+            A non-reversible symbolic token derived from the governed fingerprint — not a measured physical or spiritual frequency.
+          </p>
         </div>
 
-        {/* Source Coverage */}
-        <div className="grid grid-cols-4 gap-2 pt-2 text-center text-xs">
+        {/* Governed stable source coverage */}
+        <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
           <div className="rounded bg-slate-800/50 p-2">
             <p className="text-slate-400">Astrology</p>
             <p className={`font-semibold ${code.sourceCoverage.astrology === 'complete' ? 'text-emerald-300' : code.sourceCoverage.astrology === 'partial' ? 'text-amber-300' : 'text-slate-400'}`}>
@@ -90,13 +93,10 @@ export function GalacticCodeCard({ code }: GalacticCodeCardProps) {
               {code.sourceCoverage.numerology}
             </p>
           </div>
-          <div className="rounded bg-slate-800/50 p-2">
-            <p className="text-slate-400">Traits</p>
-            <p className={`font-semibold ${code.sourceCoverage.behavioralTraitCount >= 5 ? 'text-emerald-300' : 'text-amber-300'}`}>
-              {code.sourceCoverage.behavioralTraitCount}
-            </p>
-          </div>
         </div>
+        <p className="text-[11px] leading-5 text-slate-400">
+          User-assessed personality context remains supporting reflection only and is excluded from this stable coverage score.
+        </p>
       </div>
     </div>
   );
