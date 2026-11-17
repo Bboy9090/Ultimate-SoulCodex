@@ -410,6 +410,24 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
     assert.deepStrictEqual(deterministic.axes, verified.axes);
   });
 
+  await t.test('raw birth metadata cannot split identical governed identity evidence', () => {
+    const baseline = generateGalacticCode(testInput);
+    const changedSourceMetadata = generateGalacticCode({
+      ...testInput,
+      birthDate: '2001-01-01',
+      birthTime: '23:59',
+      birthLocation: 'Different source location',
+    });
+
+    assert.strictEqual(baseline.fingerprint, changedSourceMetadata.fingerprint);
+    assert.deepStrictEqual(baseline.axes, changedSourceMetadata.axes);
+    assert.notStrictEqual(
+      baseline.frequency,
+      changedSourceMetadata.frequency,
+      'display frequency may reflect source metadata without changing stable identity fingerprint',
+    );
+  });
+
   await t.test('changed Authority produces different fingerprint', () => {
     const changedInput: GalacticCodeInput = {
       ...testInput,
