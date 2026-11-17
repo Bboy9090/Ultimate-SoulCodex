@@ -47,7 +47,6 @@ const HD_WEIGHTS = {
   authority: 7,
   profile: 6,
   definedCenter: 2,
-  channel: 3,
   incarnationCross: 5,
 };
 
@@ -296,9 +295,10 @@ export function scoreAxes(normalized: NormalizedGalacticInput): GalacticAxisScor
   for (const center of normalized.humanDesign.definedCenters) {
     applyWeighted(axes, CENTER_TO_AXES[center], HD_WEIGHTS.definedCenter, `Defined center: ${center}`);
   }
-  for (const channel of normalized.humanDesign.channels) {
-    applyBehaviorText(axes, channel, HD_WEIGHTS.channel, 'HD channel');
-  }
+  // Verified channel identifiers remain part of the deterministic fingerprint,
+  // but they do not receive axis weights until a governed channel-to-axis
+  // interpretation policy exists. Numeric bodygraph IDs must never be treated
+  // as free-form behavioral prose.
 
   // Numerology: all governed core values score independently instead of Life Path carrying the whole system.
   applyNumber(axes, normalized.numerology.lifePath, NUMEROLOGY_WEIGHTS.lifePath, 'Life Path');
