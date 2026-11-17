@@ -50,6 +50,7 @@ jobs:
           tests/google-play-credential-readiness.test.ts
           tests/native-billing-qualification-accounts.test.ts
           tests/sandbox-production-entitlement-isolation.test.ts
+          tests/native-sandbox-recovery-contract.test.ts
           tests/native-session-fetch.test.ts
           tests/native-billing-session-recovery-contract.test.ts
           tests/ios-billing-qualification-build-contract.test.ts
