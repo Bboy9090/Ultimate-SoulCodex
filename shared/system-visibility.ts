@@ -69,9 +69,9 @@ export const SOUL_CODEX_SYSTEM_POLICIES = {
     label: "Personality assessments",
     visibility: "supporting",
     evidenceRequirement: "user-assessment",
-    mayInfluencePrimarySynthesis: true,
+    mayInfluencePrimarySynthesis: false,
     inspectableWhenUnverified: true,
-    rule: "Assessment results may support reflection when based on explicit user responses; they are tendencies within a model, not diagnoses.",
+    rule: "Assessment results may be inspected as user-supplied supporting context, but they do not enter the stable primary synthesis until a normalized assessment-evidence contract is promoted.",
   },
   housesMidheaven: {
     id: "houses-midheaven",
