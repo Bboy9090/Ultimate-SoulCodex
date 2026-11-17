@@ -248,7 +248,14 @@ export function buildDepthChapters(
   const seeds = buildChapterSeeds(model);
 
   return seeds.map((seed, index) => {
-    const built = chapter(seed, model.groundedAction);
+    const chapterActions: Record<string, string> = {
+      "visible-pattern": model.groundedAction,
+      "protective-function": "Write down one boundary this pattern may protect, then check whether the facts still justify it.",
+      "gift": "Apply the named strength to one small task, define completion, and stop when the result is sufficient.",
+      "cost": "Set a specific stopping condition before repeating the pattern and compare the outcome afterward.",
+      "relationships": "Make one explicit, answerable request and listen to the other person's actual response.",
+    };
+    const built = chapter(seed, chapterActions[seed.id] ?? model.groundedAction);
     const priorFits = seeds
       .slice(0, index)
       .map((priorSeed) => fits[priorSeed.id])
