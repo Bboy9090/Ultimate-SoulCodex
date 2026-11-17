@@ -85,7 +85,7 @@ jobs:
           SHA=${CANDIDATE_SHA}
           Android versionName=4.1.2
           Android applicationId=soulcodex.app
-          Android versionCode=4000018
+          Android versionCode=4000019
           iOS marketingVersion=4.1.2
           iOS bundleId=app.soulcodex.ios
           iOS build=4000016
@@ -229,7 +229,7 @@ jobs:
           {
             echo "SHA=${CANDIDATE_SHA}"
             echo "versionName=4.1.2"
-            echo "versionCode=4000018"
+            echo "versionCode=4000019"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
             echo "play_credentials_mode=${{ steps.play.outputs.mode }}"

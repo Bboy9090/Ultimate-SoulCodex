@@ -8,7 +8,10 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 
 ## 4.1.2 Candidate Status
 
-The 4.1.2 candidate uses Android versionCode `4000018` and iOS build `4000016`. These are **new source/build identities only**, not evidence of a Google Play edit, Apple TestFlight processing, App Store approval, or public production availability. Do not assume previous `4.1.1` store upload receipts cover this candidate. For a claim of upload/publishing, preserve the exact commit SHA, bundle checksum, workflow source run, provider receipt, and active track.
+Google Play validation run `44015139712` rejected Android versionCode `4000018` with provider error `Version code 4000018 has already been used`. No 4.1.2 release was committed by that failed run. The current Android candidate advances to `4000019` and must independently pass provider validation and closed-testing commit. Historical 4.1.1 Play receipts remain unchanged.
+
+
+The 4.1.2 candidate uses Android versionCode `4000019` and iOS build `4000016`. These are **new source/build identities only**, not evidence of a Google Play edit, Apple TestFlight processing, App Store approval, or public production availability. Do not assume previous `4.1.1` store upload receipts cover this candidate. For a claim of upload/publishing, preserve the exact commit SHA, bundle checksum, workflow source run, provider receipt, and active track.
 
 ## Product Identity
 
@@ -18,7 +21,7 @@ The 4.1.2 candidate uses Android versionCode `4000018` and iOS build `4000016`. 
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release candidate | 4.1.2 / versionCode 4000018 (new candidate; provider upload not yet confirmed; earlier 4.1.1 / 4000017 Alpha upload retained in historical evidence) |
+| Android release candidate | 4.1.2 / versionCode 4000019 (new candidate; provider upload not yet confirmed; earlier 4.1.1 / 4000017 Alpha upload retained in historical evidence) |
 | iOS source project release | 4.1.2 / build 4000016 (source candidate; signed upload and App Store Connect processing not yet confirmed) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
