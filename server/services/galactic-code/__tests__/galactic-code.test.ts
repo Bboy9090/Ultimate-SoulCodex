@@ -165,30 +165,34 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
   await t.test('calculates coverage based on data completeness', () => {
     const result = generateGalacticCode(testInput);
 
-    assert.strictEqual(result.coverage, 'partial');
+    assert.strictEqual(result.coverage, 'high');
     assert.strictEqual(result.sourceCoverage.astrology, 'complete');
     assert.strictEqual(result.sourceCoverage.humanDesign, 'complete');
     assert.strictEqual(result.sourceCoverage.numerology, 'complete');
   });
 
-  await t.test('missing Human Design lowers coverage', () => {
-    const noHDInput: GalacticCodeInput = {
+  await t.test('one complete plus one partial governed system stays partial', () => {
+    const input: GalacticCodeInput = {
       ...testInput,
       humanDesign: { coverage: 'missing' } as any,
+      numerology: {
+        evidenceState: 'deterministic',
+        coverage: 'partial',
+        lifePath: testInput.numerology.lifePath,
+      },
     };
 
-    const result = generateGalacticCode(noHDInput);
-    assert.ok(['partial', 'insufficient'].includes(result.coverage));
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'complete');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'missing');
+    assert.strictEqual(result.sourceCoverage.numerology, 'partial');
+    assert.strictEqual(result.coverage, 'partial');
   });
 
   await t.test('complete astrology + numerology can reach high coverage without Human Design', () => {
     const input: GalacticCodeInput = {
       ...testInput,
       humanDesign: { coverage: 'missing' } as any,
-      behavior: {
-        ...testInput.behavior,
-        traits: [...testInput.behavior.traits, 'collaborative'],
-      },
     };
 
     const result = generateGalacticCode(input);
@@ -202,10 +206,6 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     const input: GalacticCodeInput = {
       ...testInput,
       astrology: { coverage: 'missing' } as any,
-      behavior: {
-        ...testInput.behavior,
-        traits: [...testInput.behavior.traits, 'collaborative'],
-      },
     };
 
     const result = generateGalacticCode(input);
@@ -353,10 +353,6 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       },
       {
         ...testInput,
-        behavior: { ...testInput.behavior, relationalPattern: 'Highly collaborative' },
-      },
-      {
-        ...testInput,
         astrology: { ...testInput.astrology, houseEmphasis: ['House 10'] },
       },
     ];
@@ -367,6 +363,51 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
         baseResult.fingerprint,
       );
     }
+  });
+
+  await t.test('assessed behavior remains outside the stable fingerprint until its schema is promoted', () => {
+    const first: GalacticCodeInput = {
+      ...testInput,
+      behavior: {
+        evidenceState: 'assessed',
+        traits: ['analytical', 'methodical', 'strategic'],
+        decisionStyle: 'Data-driven',
+        stressPattern: 'Over-analysis',
+        relationalPattern: 'Selective',
+        builderMode: 'Foundation-first',
+        moralCompass: 'Principle-based',
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...testInput,
+      behavior: {
+        evidenceState: 'assessed',
+        traits: ['social', 'spontaneous', 'expressive'],
+        decisionStyle: 'Instinctive',
+        stressPattern: 'Rapid action',
+        relationalPattern: 'Highly collaborative',
+        builderMode: 'Prototype-first',
+        moralCompass: 'Care-based',
+      },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
+    assert.strictEqual(a.sourceCoverage.behavioralTraitCount, 0);
+    assert.strictEqual(b.sourceCoverage.behavioralTraitCount, 0);
+  });
+
+  await t.test('verification metadata alone cannot change a stable fingerprint', () => {
+    const deterministic = generateGalacticCode(testInput);
+    const verified = generateGalacticCode({
+      ...testInput,
+      numerology: { ...testInput.numerology, evidenceState: 'verified' },
+    });
+    assert.strictEqual(deterministic.fingerprint, verified.fingerprint);
+    assert.deepStrictEqual(deterministic.axes, verified.axes);
   });
 
   await t.test('changed Authority produces different fingerprint', () => {
@@ -556,7 +597,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
 
     const result = generateGalacticCode(completeCoverageInput);
 
-    // Coverage is high (2+ complete systems + behavioral traits)
+    // Coverage is high when at least 2 governed identity systems are complete
     assert.strictEqual(result.coverage, 'high', 'complete coverage should produce high coverage state');
 
     // But coverage NEVER means the underlying placements are independently verified
