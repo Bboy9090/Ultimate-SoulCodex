@@ -104,8 +104,6 @@ export function normalizeGalacticInput(input: GalacticCodeInput): NormalizedGala
 
 export function extractHashableInput(normalized: NormalizedGalacticInput): unknown {
   return {
-    birthDate: normalized.birthDate,
-    birthTime: normalized.birthTime,
     astrology: {
       sun: normalized.astrology.sun,
       moon: normalized.astrology.moon,
