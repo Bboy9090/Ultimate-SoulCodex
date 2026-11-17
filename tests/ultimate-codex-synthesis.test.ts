@@ -252,6 +252,28 @@ test("verified Human Design gate-line activations alter the stable Codex fingerp
   assert.notEqual(a.codexNumber, b.codexNumber);
 });
 
+test("unqualified Human Design Definition cannot alter Ultimate Codex stable identity", () => {
+  const first = profile();
+  const second = profile();
+  second.humanDesignData.definition = "UNQUALIFIED-DEFINITION-SENTINEL";
+
+  const a = buildUltimateCodexSynthesis(first);
+  const b = buildUltimateCodexSynthesis(second);
+
+  assert.equal(a.fingerprint, b.fingerprint);
+  assert.equal(a.codexNumber, b.codexNumber);
+  assert.equal(a.codexId, b.codexId);
+  assert.deepEqual(a.evidenceSignature, b.evidenceSignature);
+  assert.equal(a.evidenceSignature.some((value) => value.includes(":definition:")), false);
+  assert.equal(b.evidenceSignature.some((value) => value.includes("UNQUALIFIED-DEFINITION-SENTINEL")), false);
+
+  const aHd = a.systemSummary.find((row) => row.system === "Human Design");
+  const bHd = b.systemSummary.find((row) => row.system === "Human Design");
+  assert.deepEqual(aHd, bHd);
+  assert.equal(String(aHd?.detail).includes("No Definition"), false);
+  assert.equal(String(bHd?.detail).includes("UNQUALIFIED-DEFINITION-SENTINEL"), false);
+});
+
 test("documented numerology aliases produce the same stable Codex identity", () => {
   const canonical = profile();
   const aliased = profile();
