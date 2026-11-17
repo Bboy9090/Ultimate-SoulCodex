@@ -59,6 +59,7 @@ jobs:
       - name: Diamond Way regression suite
         run: |
           node --import tsx --test \
+            server/services/galactic-code/__tests__/galactic-code.test.ts \
             tests/primary-synthesis-system-policy.test.ts \
             tests/profile-label-explanation.test.ts \
             tests/offline-synthesis-evidence-boundary.test.ts \

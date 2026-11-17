@@ -14,8 +14,21 @@ import type { SoulCodexEvidenceState } from '../system-visibility';
 export type SourceCoverageState = 'complete' | 'partial' | 'missing';
 export type GalacticCoverageState = 'high' | 'partial' | 'insufficient';
 
+export type GalacticAstrologyField =
+  | 'sun'
+  | 'moon'
+  | 'rising'
+  | 'mercury'
+  | 'venus'
+  | 'mars'
+  | 'dominantElements'
+  | 'dominantModalities'
+  | 'houseEmphasis'
+  | 'majorAspects';
+
 export interface GalacticAstrologyInput {
   evidenceState?: SoulCodexEvidenceState;
+  fieldEvidence?: Partial<Record<GalacticAstrologyField, SoulCodexEvidenceState>>;
   sun?: string;
   moon?: string;
   rising?: string;

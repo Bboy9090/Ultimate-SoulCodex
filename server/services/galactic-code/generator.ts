@@ -9,6 +9,7 @@ import type {
   GalacticCodeResult,
   GalacticCoverageState,
   SourceCoverageResult,
+  GalacticAstrologyField,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
@@ -16,6 +17,13 @@ import { scoreAxes, getTopAxes } from './scoring';
 import { createDeterministicInterpretation } from './prompts';
 import { maySystemInfluenceSynthesis } from '../../../shared/system-visibility';
 import { canonicalNumberPattern, canonicalSignPattern } from '../../../shared/symbolic-vocabulary';
+
+function verifiedAstrologyField(
+  input: GalacticCodeInput['astrology'],
+  field: GalacticAstrologyField,
+): boolean {
+  return input.fieldEvidence?.[field] === 'verified';
+}
 
 const HD_CORE = {
   manifestor: { strategies: ['to inform'], authorities: ['emotional', 'splenic', 'ego'] },
@@ -65,6 +73,10 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
     'personalityAssessments',
     input.behavior.evidenceState || 'candidate',
   );
+  const housesAllowed = maySystemInfluenceSynthesis(
+    'housesMidheaven',
+    input.astrology.fieldEvidence?.houseEmphasis || 'candidate',
+  );
 
   const governedHd = humanDesignAllowed ? governedHumanDesign(input.humanDesign) : null;
 
@@ -73,12 +85,25 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
     astrology: astrologyAllowed
       ? {
           ...input.astrology,
-          sun: governedSign(input.astrology.sun),
-          moon: governedSign(input.astrology.moon),
-          rising: governedSign(input.astrology.rising),
-          mercury: governedSign(input.astrology.mercury),
-          venus: governedSign(input.astrology.venus),
-          mars: governedSign(input.astrology.mars),
+          sun: verifiedAstrologyField(input.astrology, 'sun') ? governedSign(input.astrology.sun) : undefined,
+          moon: verifiedAstrologyField(input.astrology, 'moon') ? governedSign(input.astrology.moon) : undefined,
+          rising: verifiedAstrologyField(input.astrology, 'rising') ? governedSign(input.astrology.rising) : undefined,
+          mercury: verifiedAstrologyField(input.astrology, 'mercury') ? governedSign(input.astrology.mercury) : undefined,
+          venus: verifiedAstrologyField(input.astrology, 'venus') ? governedSign(input.astrology.venus) : undefined,
+          mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
+          dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements')
+            ? input.astrology.dominantElements
+            : undefined,
+          dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities')
+            ? input.astrology.dominantModalities
+            : undefined,
+          houseEmphasis:
+            housesAllowed && verifiedAstrologyField(input.astrology, 'houseEmphasis')
+              ? input.astrology.houseEmphasis
+              : undefined,
+          majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects')
+            ? input.astrology.majorAspects
+            : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
     humanDesign: governedHd
