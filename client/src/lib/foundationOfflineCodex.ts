@@ -1166,7 +1166,6 @@ export function synthesizeVerifiedFoundationProfile(
     const strategy = typeof humanDesign?.strategy === "string" ? humanDesign.strategy : null;
     const authority = typeof humanDesign?.authority === "string" ? humanDesign.authority : null;
     const profile = typeof humanDesign?.profile === "string" ? humanDesign.profile : null;
-    const definition = typeof humanDesign?.definition === "string" ? humanDesign.definition : null;
     const definedCenters = normalizeHumanDesignCenters(humanDesign?.centers).defined;
     const channels = humanDesignDefinedChannels(humanDesign?.channels).map(humanDesignChannelLabel);
     const activatedGates = Array.isArray(humanDesign?.activatedGates)
@@ -1178,12 +1177,13 @@ export function synthesizeVerifiedFoundationProfile(
           id: "verified.human-design.core",
           system: "human-design",
           field: "core",
-          value: [type, strategy, authority, `Profile ${profile}`, definition, definedCenters.length ? `${definedCenters.length} defined centers` : null, channels.length ? `${channels.length} channels` : null, activatedGates.length ? `${activatedGates.length} gates` : null].filter(Boolean).join(" · "),
+          value: [type, strategy, authority, `Profile ${profile}`, definedCenters.length ? `${definedCenters.length} defined centers` : null, channels.length ? `${channels.length} channels` : null, activatedGates.length ? `${activatedGates.length} gates` : null].filter(Boolean).join(" · "),
           confidence: "high",
           provenanceStatus: "externally-verified",
           timeSensitivity: "birth-time-required",
           notes: [
             "Core Human Design output passed the approved HUMAN-DESIGN-CORE-v1 differential verification contract.",
+            "Definition is calculated by the local engine but is not independently qualified under HUMAN-DESIGN-CORE-v1.",
             "Its interpretation is symbolic and non-diagnostic.",
           ],
         },
@@ -1192,7 +1192,7 @@ export function synthesizeVerifiedFoundationProfile(
         claimKind: "derived",
         facets: {
           claritySummary: `${type} with ${authority} and a ${profile} profile adds a verified Human Design decision-making lens to the chart and numerology synthesis.`,
-          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.${definition ? ` The calculated definition is ${definition}.` : ""}`,
+          innerExperience: `${type} symbolism frames how energy and attention may be experienced; the verified strategy is ${strategy}.`,
           hiddenNeed: `Decision-making may work best when there is room to follow ${strategy} and consult ${authority}.`,
           protectiveFunction: `Under pressure, this pattern may protect itself by moving away from ${strategy} or overriding ${authority}; use that as a reflection prompt, not a diagnosis.`,
           decisionImpact: `For important decisions, test the choice through ${authority} rather than treating immediate mental certainty as final.`,
@@ -1420,7 +1420,6 @@ export function synthesizeVerifiedFoundationProfile(
         typeof humanDesign?.strategy === "string" ? `Strategy ${humanDesign.strategy}` : null,
         typeof humanDesign?.authority === "string" ? `Authority ${humanDesign.authority}` : null,
         typeof humanDesign?.profile === "string" ? `Profile ${humanDesign.profile}` : null,
-        typeof humanDesign?.definition === "string" ? humanDesign.definition : null,
       ].filter((value): value is string => Boolean(value)).join("; ")
     : "";
 
