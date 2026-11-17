@@ -84,8 +84,8 @@ test("first verification POST calculates real HD and feeds the saved full synthe
       "unqualified Definition must not change synthesized biography",
     );
     assert.deepEqual(
-      changedDefinition.depthInterpretation,
-      reconciled.depthInterpretation,
+      { ...changedDefinition.depthInterpretation, generatedAt: "<normalized>" },
+      { ...reconciled.depthInterpretation, generatedAt: "<normalized>" },
       "unqualified Definition must not change depth synthesis",
     );
     assert.equal(snapshot.processing.persistedProfile, false);
