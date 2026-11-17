@@ -57,7 +57,16 @@ test("first verification POST calculates real HD and feeds the saved full synthe
       latitude: String(input.latitude), longitude: String(input.longitude),
     });
     const reconciled = reconcileOfflineProfile(saved, snapshot);
-    assert.ok(reconciled.depthInterpretation.evidence.some((entry) => entry.id === "verified.human-design.core"));
+    const verifiedHdEvidence = reconciled.depthInterpretation.evidence.find((entry) => entry.id === "verified.human-design.core");
+    assert.ok(verifiedHdEvidence);
+    assert.match((verifiedHdEvidence.notes ?? []).join(" "), /Definition is calculated .* not independently qualified/i);
+    if (snapshot.humanDesignData.definition) {
+      assert.equal(
+        String(verifiedHdEvidence.value).includes(String(snapshot.humanDesignData.definition)),
+        false,
+        "unqualified Definition must not be bundled into externally verified core evidence",
+      );
+    }
     assert.match(reconciled.biography, /Reflector/);
     assert.match(reconciled.biography, /Lunar Authority/);
     assert.match(reconciled.biography, /2\/5/);
