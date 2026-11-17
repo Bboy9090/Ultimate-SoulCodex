@@ -127,3 +127,37 @@ export function boundHumanDesignForStoredProfile<T extends BirthInputLike & { hu
     ? record(profile.humanDesignData)
     : {};
 }
+
+/**
+ * Fail-closed view for persisted profile evidence. A verified label alone is not
+ * proof that a legacy payload belongs to the current birth inputs.
+ * Never mutate storage or silently manufacture a binding for legacy claims.
+ */
+export function quarantineStoredProfileEvidence<T extends BirthInputLike & {
+  astrologyData?: unknown; humanDesignData?: unknown;
+} & Record<string, any>>(profile: T): T {
+  const astrologyValid = hasMatchingStoredEvidenceBinding(profile, "astrology");
+  const hdValid = hasMatchingStoredEvidenceBinding(profile, "humanDesign");
+  if (astrologyValid && hdValid) return profile;
+  const hasStaleClaims = Boolean(
+    (!astrologyValid && profile.astrologyData) ||
+    (!hdValid && profile.humanDesignData)
+  );
+  if (!hasStaleClaims) return profile;
+  const message = "Saved chart evidence needs re-verification for these birth details.";
+  return {
+    ...profile,
+    astrologyData: astrologyValid ? profile.astrologyData : {},
+    humanDesignData: hdValid ? profile.humanDesignData : { status: "unavailable", reason: "birth_evidence_unverified" },
+    // Stored prose, geometry, and derived badges may contain stale astrology.
+    archetypeData: { title: "Chart verification required", description: message, guidance: message, strengths: [], shadows: [], themes: [] },
+    biography: message,
+    dailyGuidance: message,
+    depthInterpretation: null,
+    synthesis: null,
+    sunSign: astrologyValid ? profile.sunSign : null,
+    moonSign: astrologyValid ? profile.moonSign : null,
+    risingSign: astrologyValid ? profile.risingSign : null,
+    birthEvidenceInvalidation: { reason: "stored_birth_evidence_unbound", requiresVerification: true },
+  } as T;
+}
