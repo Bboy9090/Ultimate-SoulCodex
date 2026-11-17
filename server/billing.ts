@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { storage } from "./storage";
 import { googlePlayCredentialReady } from "./lib/google-play-credential-readiness";
+import { nativeBillingQualificationAccountAllowed } from "./lib/native-billing-qualification-accounts";
 import {
   nativeBillingEvidenceSchema,
   verifyAppleBillingEvidence,
@@ -667,6 +668,7 @@ export function registerBillingRoutes(app: Express): void {
     const qualificationEnabled =
       !productionEnabled &&
       billingQualificationRequest(req) &&
+      nativeBillingQualificationAccountAllowed(req.session?.userId) &&
       (platform === "ios"
         ? iosQualificationFlagEnabled()
         : androidQualificationFlagEnabled());
@@ -745,6 +747,13 @@ export function registerBillingRoutes(app: Express): void {
       return res.status(401).json({
         message: "Your account session is no longer valid",
         code: "authentication_required",
+      });
+    }
+
+    if (qualificationEnabled && !nativeBillingQualificationAccountAllowed(userId)) {
+      return res.status(403).json({
+        message: "Sandbox subscription verification is restricted to authorized test accounts.",
+        code: "native_billing_qualification_account_not_allowed",
       });
     }
 
