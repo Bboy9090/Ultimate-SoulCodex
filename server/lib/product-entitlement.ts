@@ -4,6 +4,7 @@ export {
   grantAllowsPlus,
   recordVerifiedBillingEvent,
   resolveProductEntitlementForUser,
+  resolveSandboxBillingEntitlementForUser,
   verifiedBillingEventSchema,
   type ProductEntitlement,
   type ProductEntitlementSource,
