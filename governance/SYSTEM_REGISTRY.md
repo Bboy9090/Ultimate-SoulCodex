@@ -59,7 +59,7 @@ A complete governed timed profile should expose, when the evidence exists:
 4. Mean North/South Nodes and qualified Chiron.
 5. Governed major aspects.
 6. Sign and house concentration / stellium-style detection with the rule disclosed.
-7. Verified Human Design Type, Strategy, Authority, Profile, Definition, centers, channels, gates, and conscious/unconscious gate-line activations.
+7. Verified Human Design Type, Strategy, Authority, Profile, centers, channels, gates, and conscious/unconscious gate-line activations. Definition remains excluded until independently qualified.
 8. Governed numerology core.
 9. A deterministic Codex fingerprint / number / ID made only from allowed stable evidence.
 10. Cross-system resonance, tension, contradiction-integration guidance, and an unresolved/excluded ledger.
