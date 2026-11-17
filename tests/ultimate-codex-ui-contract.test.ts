@@ -9,6 +9,7 @@ const panel = readFileSync("client/src/components/UltimateCodexPanel.tsx", "utf8
 const systems = readFileSync("client/src/pages/SystemsDetailsPage.tsx", "utf8");
 const navigation = readFileSync("client/src/components/navigation.tsx", "utf8");
 const planetaryPreview = readFileSync("client/src/components/InteractivePlanetaryPreview.tsx", "utf8");
+const galacticCard = readFileSync("client/src/components/GalacticCodeCard.tsx", "utf8");
 
 test("Identity keeps governed natal evidence visible while technical fusion moves to Systems", () => {
   assert.match(offline, /VerifiedNatalChart/);
@@ -53,7 +54,9 @@ test("Human Design chart exposes verified centers channels gates and activations
   assert.match(bodygraph, /Conscious and unconscious activations/);
   assert.match(bodygraph, /What each center represents/);
   assert.match(bodygraph, /names, centers, and keywords/);
-  assert.match(bodygraph, /Variables and Incarnation Cross naming remain outside the verified core/);
+  assert.match(bodygraph, /Definition, Variables, and Incarnation Cross naming remain outside the independently verified core/);
+  assert.match(bodygraph, /Definition · calculated only/);
+  assert.doesNotMatch(bodygraph, /\["Definition", data\.definition\]/);
 });
 
 test("combined Codex separates cross-system reinforcement tension jobs and experiments", () => {
@@ -97,4 +100,13 @@ test("Systems and the planetary explorer remain discoverable without a profile",
   assert.match(planetaryPreview, /onKeyDown=/);
   assert.match(planetaryPreview, /href="\/create"/);
   assert.doesNotMatch(planetaryPreview, /birthTime|longitude|houseCusps|natalLongitude/);
+});
+
+
+test("Galactic card keeps symbolic frequency non-physical and stable coverage evidence-only", () => {
+  assert.match(galacticCard, /non-reversible symbolic token derived from the governed fingerprint/);
+  assert.match(galacticCard, /not a measured physical or spiritual frequency/);
+  assert.match(galacticCard, /grid grid-cols-3/);
+  assert.doesNotMatch(galacticCard, />Traits</);
+  assert.match(galacticCard, /personality context remains supporting reflection only and is excluded from this stable coverage score/);
 });
