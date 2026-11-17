@@ -11,8 +11,8 @@ const SHA = "75d6200dc96caa8ef394e9c842b23c412292ee24";
 function env(overrides: Record<string, string> = {}): Record<string, string> {
   return {
     PLAY_PUBLISH_MODE: "validate",
-    EXPECTED_VERSION_CODE: "4000017",
-    EXPECTED_VERSION_NAME: "4.1.1",
+    EXPECTED_VERSION_CODE: "4000018",
+    EXPECTED_VERSION_NAME: "4.1.2",
     CANDIDATE_SHA: SHA,
     SOURCE_RUN_ID: "43948457688",
     AAB_PATH: "app-release.aab",
@@ -38,7 +38,7 @@ function fakePlay(aab: Buffer, overrides: Record<string, { status: number; body:
     } else if (key.endsWith("/edits")) {
       body = { id: "edit-1" };
     } else if (key.endsWith("/bundles")) {
-      body = { versionCode: 4000017, sha256: createHash("sha256").update(aab).digest("hex") };
+      body = { versionCode: 4000018, sha256: createHash("sha256").update(aab).digest("hex") };
     } else if (init.method === "PUT") {
       body = JSON.parse(String(init.body));
     } else if (key.endsWith(":commit")) {
@@ -92,7 +92,7 @@ test("commit mode releases only the expected versionCode to the alpha track", as
   assert.match(trackCalls[0].url, /\/applications\/soulcodex\.app\/edits\/edit-1\/tracks\/alpha$/);
   assert.deepEqual(JSON.parse(String(trackCalls[0].body)), {
     track: "alpha",
-    releases: [{ name: "Soul Codex 4.1.1 (4000017) Closed Testing", versionCodes: ["4000017"], status: "completed" }],
+    releases: [{ name: "Soul Codex 4.1.2 (4000018) Closed Testing", versionCodes: ["4000018"], status: "completed" }],
   });
   assert.ok(!calls.some((call) => call.method === "DELETE"));
   const commitCalls = calls.filter((call) => call.url.includes(":commit"));
@@ -105,7 +105,7 @@ test("commit mode releases only the expected versionCode to the alpha track", as
 
 test("a bundle with an unexpected versionCode is never assigned to a track or committed", async () => {
   const aab = Buffer.from("signed-bundle");
-  const { calls, fetchImpl } = fakePlay(aab, { "/bundles": { status: 200, body: { versionCode: 4000018 } } });
+  const { calls, fetchImpl } = fakePlay(aab, { "/bundles": { status: 200, body: { versionCode: 4000019 } } });
   const receipt = await publishClosedTesting({
     plan: resolvePlan(env({ PLAY_PUBLISH_MODE: "commit" })),
     token: "t",
@@ -114,7 +114,7 @@ test("a bundle with an unexpected versionCode is never assigned to a track or co
   });
 
   assert.equal(receipt.outcome, "failed");
-  assert.match(receipt.error.message, /expected 4000017/);
+  assert.match(receipt.error.message, /expected 4000018/);
   assert.ok(!calls.some((call) => call.url.includes("/tracks/") || call.url.includes(":commit")));
   assert.equal(receipt.editDiscarded, true);
 });
