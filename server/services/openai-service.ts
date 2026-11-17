@@ -106,8 +106,46 @@ function supportedReflectionLayers(data: BiographyRequest) {
 export function generateFallbackBiography(data: BiographyRequest): string {
   const layers = supportedReflectionLayers(data);
   const humanDesign = verifiedProfileHumanDesignSummary(data.humanDesignData);
-  const reflections = layers.map(({ label, pattern }) =>
-    `${label} symbolism emphasizes ${pattern.drive}. Its constructive theme is ${pattern.gift}; its overuse risk is ${pattern.shadow}.`);
+  const reflections: string[] = [];
+
+  // Explain each supported sign once; multiple placements have different
+  // symbolic roles, not multiple copies of the same sign personality claim.
+  const astrology = verifiedAstrologyFor(data);
+  const signRoles = new Map<string, string[]>();
+  const roleLabels = {
+    sun: "identity and conscious direction",
+    moon: "emotional needs and instinctive responses",
+    rising: "approach and first impressions",
+  } as const;
+  for (const body of ["sun", "moon", "rising"] as const) {
+    const sign = astrology[body];
+    if (!sign || !canonicalSignPattern(sign)) continue;
+    signRoles.set(sign, [...(signRoles.get(sign) ?? []), roleLabels[body]]);
+  }
+  for (const [sign, roles] of signRoles) {
+    const pattern = canonicalSignPattern(sign)!;
+    const placements = roles.join("; ");
+    reflections.push(
+      `${sign} symbolism appears in ${placements}. Its central theme is ${pattern.drive}, with ${pattern.gift} as a constructive possibility and ${pattern.shadow} as a tension to examine.`,
+    );
+  }
+
+  // Retain the distinct meanings of numerology calculations without printing
+  // the same symbolic definition repeatedly for identical supported numbers.
+  const numberRoles = new Map<number, string[]>();
+  for (const [field, label] of [["lifePath", "Life Path"], ["expression", "Expression"], ["soulUrge", "Soul Urge"]] as const) {
+    const value = data.numerologyData?.[field];
+    if (typeof value !== "number" && typeof value !== "string") continue;
+    const parsed = Number(value);
+    if (!canonicalNumberPattern(parsed)) continue;
+    numberRoles.set(parsed, [...(numberRoles.get(parsed) ?? []), label]);
+  }
+  for (const [number, roles] of numberRoles) {
+    const pattern = canonicalNumberPattern(number)!;
+    reflections.push(
+      `${roles.join(" and ")} ${number} symbolism focuses on ${pattern.drive}. A strength to test is ${pattern.gift}; a potential overuse is ${pattern.shadow}.`,
+    );
+  }
   if (humanDesign) reflections.push(`Verified Human Design adds ${humanDesign}. Strategy and Authority offer an optional decision practice, not a demonstrated psychological trait.`);
   if (!reflections.length) {
     return `${data.name}'s profile has no governed layers available for a personalized interpretation. A supported calculation or assessment is needed before adding a source-specific reflection.`;
