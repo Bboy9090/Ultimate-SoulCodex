@@ -51,7 +51,7 @@ const testInput: GalacticCodeInput = {
       strategy: 'verified',
       authority: 'verified',
       profile: 'verified',
-      definition: 'verified',
+      definition: 'unavailable',
       centers: 'verified',
       channels: 'verified',
       gates: 'verified',
@@ -516,7 +516,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
           strategy: 'verified',
           authority: 'verified',
           profile: 'verified',
-          definition: 'verified',
+          definition: 'unavailable',
           centers: 'verified',
           channels: 'verified',
           gates: 'verified',
@@ -735,6 +735,27 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
     assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
     assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
+  });
+
+  await t.test('Human Design Definition remains excluded without independent qualification', () => {
+    const first: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        fieldEvidence: { ...testInput.humanDesign.fieldEvidence, definition: 'unavailable' },
+        definition: 'Single Definition',
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...first,
+      humanDesign: { ...first.humanDesign, definition: 'Quadruple Split Definition' },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
   });
 
   await t.test('unverified Human Design fields are fingerprint-inert inside a verified system envelope', () => {
