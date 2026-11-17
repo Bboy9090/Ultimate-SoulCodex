@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 import { z } from "zod";
 import { storage } from "./storage";
+import { googlePlayCredentialReady } from "./lib/google-play-credential-readiness";
 import {
   nativeBillingEvidenceSchema,
   verifyAppleBillingEvidence,
@@ -155,9 +156,8 @@ function appleNativeVerifierConfigured(): boolean {
 
 function googleNativeVerifierConfigured(): boolean {
   return Boolean(
-    process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_JSON?.trim() &&
-      process.env.GOOGLE_PLAY_VERIFIER_SERVICE_ACCOUNT_EMAIL?.trim() &&
-      process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim(),
+    process.env.GOOGLE_PLAY_PACKAGE_NAME?.trim() &&
+      googlePlayCredentialReady(),
   );
 }
 
