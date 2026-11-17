@@ -14,7 +14,7 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release candidate | 4.1.1 / versionCode 4000017 (new cosmic update; not yet uploaded) |
+| Android release candidate | 4.1.1 / versionCode 4000017 (new cosmic update; committed to Alpha closed testing through the Play API on 2026-11-16 — see Current Release Evidence) |
 | iOS source project release | 4.1.1 / build 4000015 (source setting) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
@@ -203,6 +203,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Railway production deployment: verify the live `/health` release SHA matches that exact candidate before submission.
 - Static store-review legal/support host: `bboy9090.github.io/Ultimate-SoulCodex` (GitHub Pages, HTTPS verified)
 - Android 4.1.0 / versionCode `4000016`: uploaded to Google Play **Alpha closed testing** on November 8, 2026, according to the release tracker and Play edit receipt. This is not a production release. New signed Store Candidate artifacts built from later commits do not automatically replace the uploaded closed-test binary.
+- Android 4.1.1 / versionCode `4000017`: committed to the Google Play **Alpha closed testing** track on November 16, 2026 through the Play Developer API (GitHub Actions run `43956396804`, receipt artifact ID `14272337326`, outcome `committed_to_closed_testing`). The uploaded file is the signed AAB built by Store Candidate run `43948457688` (Android artifact ID `14266711111`); the candidate SHA is recorded in that run and in `governance/PROJECT_STATUS.md`. This is not a production release. The receipt records that the API accepted the commit; Google's review state and tester availability have not been read from Play Console.
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android app-owned manifest requests `android.permission.INTERNET`; merged store builds also include framework/billing permissions such as network state, Play Billing/license, and an app-scoped dynamic-receiver permission. `READ_CONTACTS` and `WRITE_CONTACTS` are explicitly removed from the merged manifest; Android contact import falls back to manual entry.
 - iOS simulator Release and generic-device archive qualification: passed
@@ -216,7 +217,7 @@ These are outstanding qualification steps, **not instructions to recreate the ap
 
 1. Capture final Android phone screenshots from an actual approved build and verify the screenshot content matches the submitted binary.
 2. Complete physical-device Android onboarding, sign-in, offline, entitlement and navigation smoke tests. Native purchase/restore requires its own provider-backed qualification before enabling billing.
-3. In Play Console, verify the **existing** `soulcodex.app` Alpha closed-test release `4000016`, preserve its actual binary/track receipt and confirm the currently published test listing metadata. Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release.
+3. In Play Console, verify the **existing** `soulcodex.app` Alpha closed-test releases (`4000016`, and `4000017` committed through the API on November 16), confirm which one Play currently serves to testers, preserve its actual binary/track receipt and confirm the currently published test listing metadata. Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release.
 4. Reconcile Play Data Safety, app access, content rating, target audience, ads, and privacy declarations against the exact active release and provider contracts.
 5. Maintain the verified GitHub Pages privacy, support and account-deletion URLs. Backend/runtime qualification remains independent of the legal-host status.
 6. Complete the Play Console production-access qualification required for this account through genuine opted-in participation and qualifying duration. The latest provider-confirmed count on November 8 was **1 opted-in tester**; a configured tester email list is not an opt-in count. This external gate must not block independent code/metadata/QA improvements.
@@ -245,4 +246,11 @@ How to run it (Actions → "Soul Codex Google Play Closed Testing Upload" → Ru
 
 Each run preserves `google-play-closed-testing-receipt.json` (the Google Play API responses, or the provider error) as a 90-day artifact. Only that receipt, or the Play Console itself, is evidence of an upload. A passing unit test or a green Store Candidate run is not.
 
-Status as of 2026-11-16: the workflow has not yet been run against Google Play. Whether the publisher service account has release permission on `soulcodex.app` in Play Console is unverified until the first `validate` run.
+Status as of 2026-11-16: the workflow has run twice against Google Play for versionCode `4000017`, both dispatched from `main` using the Store Candidate run `43948457688` artifact.
+
+| Mode | Run | Receipt artifact | Outcome |
+|---|---|---|---|
+| `validate` | `43955967071` | `14269144571` | `validated_not_committed` |
+| `commit` | `43956396804` | `14272337326` | `committed_to_closed_testing` |
+
+This confirms the keyless publisher service account can create edits, upload bundles, and commit to the `alpha` track for `soulcodex.app`. It does not confirm Google's review outcome or that testers can install the build; read that from Play Console.
