@@ -22,6 +22,33 @@ function verifiedSign(value: unknown): string | undefined {
     ? placement.sign : undefined;
 }
 
+function verifiedCenters(value: unknown): { defined: string[]; undefined: string[] } | undefined {
+  const centers = record(value);
+  const entries = Object.entries(centers).filter(([, center]) =>
+    center !== null && typeof center === "object" && !Array.isArray(center),
+  );
+  if (entries.length === 0) return undefined;
+  return {
+    defined: entries.filter(([, center]) => record(center).defined === true).map(([name]) => name),
+    undefined: entries.filter(([, center]) => record(center).defined !== true).map(([name]) => name),
+  };
+}
+
+function verifiedStringList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const values = value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  return values.length > 0 ? values : undefined;
+}
+
+function verifiedGateList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const values = value
+    .filter((item) => typeof item === "number" || typeof item === "string")
+    .map((item) => String(item).trim())
+    .filter((item) => /^(?:[1-9]|[1-5]\d|6[0-4])$/.test(item));
+  return values.length > 0 ? values : undefined;
+}
+
 export async function trustedGalacticInputFromProfile(
   profile: Profile,
   actor: ProfileActor,
@@ -94,6 +121,12 @@ export async function trustedGalacticInputFromProfile(
     typeof hd.verificationReceiptId === "string" &&
     typeof hd.type === "string" && typeof hd.strategy === "string" &&
     typeof hd.authority === "string" && typeof hd.profile === "string";
+  const hdCenters = verifiedHd ? verifiedCenters(hd.centers) : undefined;
+  const hdChannels = verifiedHd ? verifiedStringList(hd.channels) : undefined;
+  const hdGates = verifiedHd ? verifiedGateList(hd.activatedGates) : undefined;
+  const hdDefinition = verifiedHd && typeof hd.definition === "string" && hd.definition.trim()
+    ? hd.definition
+    : undefined;
 
   return {
     profileId: profile.id,
@@ -118,8 +151,27 @@ export async function trustedGalacticInputFromProfile(
     },
     humanDesign: verifiedHd
       ? {
-          evidenceState: "verified", coverage: "partial",
-          type: hd.type, strategy: hd.strategy, authority: hd.authority, profile: hd.profile,
+          evidenceState: "verified",
+          fieldEvidence: {
+            type: "verified",
+            strategy: "verified",
+            authority: "verified",
+            profile: "verified",
+            definition: hdDefinition ? "verified" : "unavailable",
+            centers: hdCenters ? "verified" : "unavailable",
+            channels: hdChannels ? "verified" : "unavailable",
+            gates: hdGates ? "verified" : "unavailable",
+            incarnationCross: "unavailable",
+          },
+          coverage: "partial",
+          type: hd.type,
+          strategy: hd.strategy,
+          authority: hd.authority,
+          profile: hd.profile,
+          definition: hdDefinition,
+          centers: hdCenters,
+          channels: hdChannels,
+          gates: hdGates,
         }
       : { evidenceState: "unavailable", coverage: "missing" },
     numerology: {
