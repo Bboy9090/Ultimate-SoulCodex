@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { generateOfflineCodexProfile } from "../packages/core/offline-codex/index.ts";
+import { birthEvidenceInput } from "../client/src/lib/profileBirthEvidence.ts";
 import {
   CURRENT_ASTROLOGY_VERIFICATION_VERSION,
   profileNeedsOnlineVerification,
@@ -11,6 +12,7 @@ const placementEvidence = {
   source: "independent ephemeris comparison",
   engine: "ascendant-retry-test-reference@1",
   calculatedAt: "2026-09-26T18:00:00.000Z",
+  inputTimestamp: "1990-09-17T15:11:00.000Z",
 };
 
 const humanDesignTrust = {
@@ -39,6 +41,7 @@ function exactProfile(): ReconciledOfflineProfile {
 
   return {
     ...local,
+    birthEvidenceInput: birthEvidenceInput(local) ?? undefined,
     verifiedAstrologyData: {
       sun: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
       moon: { verificationStatus: "verified", sign: "Virgo", evidence: placementEvidence },
@@ -191,5 +194,22 @@ test("missing exact Ascendant coordinates do not create an endless retry loop", 
   const profile = exactProfile();
   profile.latitude = null;
   profile.longitude = null;
+  // This fixture represents a verification bound to the same no-coordinates input.
+  // A real coordinate edit without rebinding must still invalidate old evidence.
+  profile.birthEvidenceInput = birthEvidenceInput(profile) ?? undefined;
   assert.equal(profileNeedsOnlineVerification(profile), false);
+});
+
+
+test("legacy unbound chart evidence requires re-verification instead of claiming a complete chart", () => {
+  const profile = exactProfile();
+  profile.birthEvidenceInput = undefined;
+  assert.equal(profileNeedsOnlineVerification(profile), true);
+});
+
+test("coordinate edits invalidate even a formerly complete evidence binding", () => {
+  const profile = exactProfile();
+  profile.latitude = null;
+  profile.longitude = null;
+  assert.equal(profileNeedsOnlineVerification(profile), true);
 });

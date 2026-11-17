@@ -4,9 +4,11 @@ import type { StoredProfile } from "./ActiveProfileRepository";
 import {
   synthesizeRangeStableFoundationProfile,
   synthesizeVerifiedFoundationProfile,
+  repairStaleBirthEvidence,
   type VerifiedAstrologyForSynthesis,
 } from "./foundationOfflineCodex";
 import { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
+import { assertVerificationBirthInputs, birthEvidenceInput, staleBirthEvidenceReason, type BirthEvidenceInput } from "./profileBirthEvidence";
 export { hasVerifiedHumanDesignTrust } from "./humanDesignTrust";
 
 type PlacementRecord = {
@@ -139,6 +141,8 @@ export type RemoteProfileSnapshot = {
 };
 
 export type ReconciledOfflineProfile = OfflineCodexProfile & {
+  birthEvidenceInput?: BirthEvidenceInput;
+  birthEvidenceInvalidation?: { reason: string; repairedAt: string };
   birthTimeStatus?: "known" | "unknown";
   humanDesignVerificationDiagnostic?: { status: string; reason?: string };
   verifiedAstrologyData?: RemoteProfileSnapshot["astrologyData"];
@@ -433,7 +437,10 @@ export function reconcileActiveProfile(
   local: StoredProfile,
   remote: RemoteProfileSnapshot,
   syncedAt = new Date().toISOString(),
+  requestedInputs?: unknown,
 ): StoredProfile {
+  assertVerificationBirthInputs(local, remote, requestedInputs);
+  local = repairStaleBirthEvidence(local);
   const astrology = preserveVerifiedPlanetaryEvidence(local.astrologyData, remote.astrologyData, local);
   const sunSign = getSynthesisAstrologySign(astrology, "sun");
   const moonSign = getSynthesisAstrologySign(astrology, "moon");
@@ -454,6 +461,10 @@ export function reconcileActiveProfile(
 
   return {
     ...local,
+    ...(remote.astrologyData || remote.humanDesignData ? {
+      birthEvidenceInput: birthEvidenceInput(local) ?? undefined,
+      birthEvidenceInvalidation: undefined,
+    } : {}),
     id: local.id,
     remoteId: remote.id ?? local.remoteId,
     name: remote.name ?? local.name,
@@ -509,7 +520,10 @@ export function reconcileOfflineProfile(
   local: OfflineCodexProfile,
   remote: RemoteProfileSnapshot,
   syncedAt = new Date().toISOString(),
+  requestedInputs?: unknown,
 ): ReconciledOfflineProfile {
+  assertVerificationBirthInputs(local, remote, requestedInputs);
+  local = repairStaleBirthEvidence(local);
   remote = { ...remote, astrologyData: preserveVerifiedPlanetaryEvidence((local as ReconciledOfflineProfile).verifiedAstrologyData, remote.astrologyData, local) };
   const remoteId = remote.id ?? local.id;
   const numerologyData =
@@ -546,6 +560,8 @@ export function reconcileOfflineProfile(
 
   return {
     ...local,
+    birthEvidenceInput: birthEvidenceInput(local) ?? undefined,
+    birthEvidenceInvalidation: undefined,
     numerologyData,
     ...(remote.humanDesignData && !acceptedHumanDesignEvidence(remote.humanDesignData)
       ? { humanDesignVerificationDiagnostic: {
@@ -599,6 +615,7 @@ export function reconcileOfflineProfile(
 export function profileNeedsOnlineVerification(
   profile: ReconciledOfflineProfile,
 ): boolean {
+  if (staleBirthEvidenceReason(profile, true)) return true;
   // Unknown birth time: one complete minute-resolution range analysis is the
   // terminal astronomy state. Conditional Moon/Rising branches are not errors.
   if (!hasExactBirthInstant(profile)) {

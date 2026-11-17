@@ -1,5 +1,5 @@
 import type { OfflineCodexProfile } from "@soulcodex/core";
-import { repairFoundationOfflineCodexProfile } from "./foundationOfflineCodex";
+import { repairFoundationOfflineCodexProfile, repairStaleBirthEvidence } from "./foundationOfflineCodex";
 
 const DB_NAME = "soulcodex-offline";
 const DB_VERSION = 1;
@@ -65,6 +65,7 @@ function loadFallback(id: string): OfflineCodexProfile | null {
 }
 
 export async function saveOfflineProfile(profile: OfflineCodexProfile): Promise<void> {
+  profile = repairStaleBirthEvidence(profile);
   if (!hasIndexedDb()) {
     saveFallback(profile);
     return;

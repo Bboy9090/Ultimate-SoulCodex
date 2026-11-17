@@ -14,7 +14,8 @@
 
 import { calcLifePath } from "@soulcodex/core";
 import type { PlacementLike } from './placementVerification';
-import { FOUNDATION_NARRATIVE_REVISION, generateFoundationOfflineCodexProfile } from "./foundationOfflineCodex";
+import { FOUNDATION_NARRATIVE_REVISION, generateFoundationOfflineCodexProfile, repairStaleBirthEvidence } from "./foundationOfflineCodex";
+import type { BirthEvidenceInput } from "./profileBirthEvidence";
 import { reconcileOfflineProfile } from "./profileVerificationReconciliation";
 import { readBoundedOfflinePlus } from "./offlineEntitlementCache";
 
@@ -139,6 +140,8 @@ export interface StoredProfile {
   synthesis?: any;
   foundationNarrativeRevision?: number;
   birthTimeStatus?: "known" | "unknown";
+  birthEvidenceInput?: BirthEvidenceInput;
+  birthEvidenceInvalidation?: { reason: string; repairedAt: string };
   biography?: string;
   dailyGuidance?: string;
   archetypeData?: any;
@@ -201,7 +204,7 @@ export function loadActiveProfile(): ProfileLoadResult {
     if (canonical.status === "loaded") {
       const validation = validateProfile(canonical.profile);
       if (validation.valid) {
-        const repaired = repairLocalNarrative(repairStoredLifePath(canonical.profile));
+        const repaired = repairLocalNarrative(repairStoredLifePath(repairStaleBirthEvidence(canonical.profile)));
         if (repaired !== canonical.profile) saveToKey(CANONICAL_KEY, repaired);
         return { status: "loaded", profile: repaired };
       }
@@ -242,6 +245,7 @@ export function saveActiveProfile(profile: StoredProfile): {
   error?: string;
 } {
   try {
+    profile = repairStaleBirthEvidence(profile);
     const now = new Date().toISOString();
     const enriched: StoredProfile = {
       ...profile,
@@ -392,12 +396,12 @@ function migrateLegacyProfile(profile: StoredProfile): {
   if (!profile.birthDate) return { success: false };
 
   const now = new Date().toISOString();
-  const migrated: StoredProfile = repairStoredLifePath({
+  const migrated: StoredProfile = repairStoredLifePath(repairStaleBirthEvidence({
     ...profile,
     schemaVersion: SCHEMA_VERSION,
     createdAt: profile.createdAt ?? now,
     updatedAt: now,
-  });
+  }));
 
   saveToKey(CANONICAL_KEY, migrated);
   const readBack = readFromKey(CANONICAL_KEY);
@@ -411,10 +415,11 @@ function migrateLegacyProfile(profile: StoredProfile): {
 }
 
 function repairLocalNarrative(profile: StoredProfile): StoredProfile {
-  if (!profile.id?.startsWith("local-") ||
+  if (typeof profile.id !== "string" || !profile.id.startsWith("local-") ||
     profile.foundationNarrativeRevision === FOUNDATION_NARRATIVE_REVISION ||
-    !profile.name?.trim() || !profile.birthDate ||
-    !profile.birthLocation?.trim() || !profile.timezone?.trim()) return profile;
+    typeof profile.name !== "string" || !profile.name.trim() || !profile.birthDate ||
+    typeof profile.birthLocation !== "string" || !profile.birthLocation.trim() ||
+    typeof profile.timezone !== "string" || !profile.timezone.trim()) return profile;
 
   // Regenerating symbolic prose must not erase an observed/user-assessed reading.
   const existingDepth = profile.depthInterpretation ?? profile.synthesis;
