@@ -121,6 +121,24 @@ test('Galactic Code: Determinism', async (t) => {
     assert.strictEqual(result1.fingerprint, result2.fingerprint, 'fingerprint should be independent of array order');
   });
 
+  await t.test('equivalent channel and aspect orientation normalizes to one fingerprint', () => {
+    const input1: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['Channel 64-47'] },
+      astrology: { ...testInput.astrology, majorAspects: ['Sun square Moon'] },
+    };
+    const input2: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['47-64'] },
+      astrology: { ...testInput.astrology, majorAspects: ['Moon square Sun'] },
+    };
+
+    const result1 = generateGalacticCode(input1);
+    const result2 = generateGalacticCode(input2);
+    assert.strictEqual(result1.fingerprint, result2.fingerprint);
+    assert.deepStrictEqual(result1.axes, result2.axes);
+  });
+
   await t.test('prose changes do not change fingerprint', () => {
     const result1 = generateGalacticCode(testInput);
     const result2 = generateGalacticCode(testInput);
