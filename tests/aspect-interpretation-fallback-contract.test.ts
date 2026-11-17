@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { getAspectInterpretation as getServiceAspect } from "../services/interpretations";
 import { getAspectInterpretation as getPackageAspect } from "../packages/astrology/interpretations";
+import * as serviceInterpretations from "../services/interpretations";
+import * as canonicalInterpretations from "../packages/astrology/interpretations";
 
 const implementations = [
   ["service", getServiceAspect],
@@ -32,5 +34,23 @@ test("governed aspect fallback contract", async (suite) => {
       assert.doesNotMatch(result.description, /same angular zone|deeply unified|powerful blend/i);
       assert.equal(result.keywords.includes("quintile"), true);
     });
+  }
+});
+
+
+test("legacy service entrypoint exports one canonical implementation", () => {
+  // tsx's CommonJS interop may synthesize a `default` namespace export on
+  // the original module but not on an ESM `export *` compatibility shim.
+  // Compare the declared named API, not loader-generated default wrappers.
+  const namedExports = (value: Record<string, unknown>) => Object.keys(value).filter((key) => key !== "default").sort();
+  const serviceExports = namedExports(serviceInterpretations);
+  const canonicalExports = namedExports(canonicalInterpretations);
+  assert.deepEqual(serviceExports, canonicalExports);
+  for (const key of canonicalExports) {
+    assert.equal(
+      (serviceInterpretations as Record<string, unknown>)[key],
+      (canonicalInterpretations as Record<string, unknown>)[key],
+      `legacy export ${key} must be the canonical value or function`,
+    );
   }
 });
