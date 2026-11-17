@@ -70,7 +70,7 @@ export interface IStorage {
   createBillingTransactionEvent(event: InsertBillingTransactionEvent): Promise<BillingTransactionEvent>;
   createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt>;
   createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant>;
-  getLatestEntitlementGrant(userId: string, capability: string): Promise<EntitlementGrant | undefined>;
+  getLatestEntitlementGrant(userId: string, capability: string, environment?: "production" | "sandbox"): Promise<EntitlementGrant | undefined>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -388,11 +388,16 @@ export class MemStorage implements IStorage {
     this.entitlementRecords.set(record.id, record);
     return record;
   }
-  async getLatestEntitlementGrant(userId: string, capability: string) {
+  async getLatestEntitlementGrant(userId: string, capability: string, environment: "production" | "sandbox" = "production") {
     const subject = [...this.billingSubjects.values()].find((item) => item.userId === userId);
     if (!subject) return undefined;
     return [...this.entitlementRecords.values()]
-      .filter((grant) => grant.billingSubjectId === subject.id && grant.capability === capability)
+      .filter((grant) => {
+        const source = [...this.billingEvents.values()].find((event) => event.id === grant.sourceTransactionEventId);
+        return grant.billingSubjectId === subject.id &&
+          grant.capability === capability &&
+          source?.environment === environment;
+      })
       .sort((a, b) => {
         const occurrenceDelta = b.effectiveAt.getTime() - a.effectiveAt.getTime();
         return occurrenceDelta || b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime();
@@ -658,17 +663,20 @@ class PostgresStorage implements IStorage {
     if (!existing) throw new Error("Entitlement grant could not be resolved after replay");
     return existing;
   }
-  async getLatestEntitlementGrant(userId: string, capability: string) {
+  async getLatestEntitlementGrant(userId: string, capability: string, environment: "production" | "sandbox" = "production") {
     const db = await this.db();
     const subject = (await db.select().from(billingSubjects).where(eq(billingSubjects.userId, userId)).limit(1))[0];
     if (!subject) return undefined;
-    return (await db.select().from(entitlementGrants)
+    const rows = await db.select({ grant: entitlementGrants }).from(entitlementGrants)
+      .innerJoin(billingTransactionEvents, eq(entitlementGrants.sourceTransactionEventId, billingTransactionEvents.id))
       .where(and(
         eq(entitlementGrants.billingSubjectId, subject.id),
         eq(entitlementGrants.capability, capability),
+        eq(billingTransactionEvents.environment, environment),
       ))
       .orderBy(desc(entitlementGrants.effectiveAt), desc(entitlementGrants.lastVerifiedAt))
-      .limit(1))[0];
+      .limit(1);
+    return rows[0]?.grant;
   }
   async deleteSessionData(sessionId: string): Promise<void> {
     const db = await this.db();
