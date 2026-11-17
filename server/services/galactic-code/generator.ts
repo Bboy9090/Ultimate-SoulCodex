@@ -10,6 +10,7 @@ import type {
   GalacticCoverageState,
   SourceCoverageResult,
   GalacticAstrologyField,
+  GalacticHumanDesignField,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
@@ -21,6 +22,13 @@ import { canonicalNumberPattern, canonicalSignPattern } from '../../../shared/sy
 function verifiedAstrologyField(
   input: GalacticCodeInput['astrology'],
   field: GalacticAstrologyField,
+): boolean {
+  return input.fieldEvidence?.[field] === 'verified';
+}
+
+function verifiedHumanDesignField(
+  input: GalacticCodeInput['humanDesign'],
+  field: GalacticHumanDesignField,
 ): boolean {
   return input.fieldEvidence?.[field] === 'verified';
 }
@@ -41,19 +49,94 @@ function governedNumber(value: number | string | undefined): number | string | u
   return value !== undefined && canonicalNumberPattern(value) ? value : undefined;
 }
 
+const HD_CENTER_ALIASES: Readonly<Record<string, string>> = {
+  head: 'Head',
+  ajna: 'Ajna',
+  throat: 'Throat',
+  g: 'G',
+  'g center': 'G',
+  identity: 'G',
+  heart: 'Heart',
+  ego: 'Heart',
+  will: 'Heart',
+  spleen: 'Spleen',
+  'solar plexus': 'Solar Plexus',
+  sacral: 'Sacral',
+  root: 'Root',
+};
+
+const HD_CHANNELS = new Set([
+  '1-8','2-14','3-60','4-63','5-15','6-59','7-31','9-52','10-20',
+  '10-34','10-57','11-56','12-22','13-33','16-48','17-62','18-58',
+  '19-49','20-34','20-57','21-45','23-43','24-61','25-51','26-44',
+  '27-50','28-38','29-46','30-41','32-54','34-57','35-36','37-40',
+  '39-55','42-53','47-64',
+]);
+
+function governedCenters(input: GalacticCodeInput['humanDesign']['centers']) {
+  if (!input) return undefined;
+  const canonicalize = (values: string[]) => [...new Set(values
+    .map((value) => HD_CENTER_ALIASES[value.trim().toLowerCase()])
+    .filter((value): value is string => Boolean(value)))];
+  return {
+    defined: canonicalize(input.defined),
+    undefined: canonicalize(input.undefined),
+  };
+}
+
+function governedChannel(value: string): string | null {
+  const normalized = value.trim().toLowerCase().replace(/^channel\s+/, '');
+  const match = /^(\d{1,2})\s*[-/]\s*(\d{1,2})$/.exec(normalized);
+  if (!match) return null;
+  const left = Number(match[1]);
+  const right = Number(match[2]);
+  if (left < 1 || left > 64 || right < 1 || right > 64 || left === right) return null;
+  const key = [left, right].sort((a, b) => a - b).join('-');
+  return HD_CHANNELS.has(key) ? key : null;
+}
+
+function governedChannels(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values.map(governedChannel).filter((value): value is string => Boolean(value)))];
+}
+
+function governedGates(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values
+    .map((value) => value.trim().replace(/^gate\s+/i, ''))
+    .filter((value) => /^(?:[1-9]|[1-5]\d|6[0-4])$/.test(value)))];
+}
+
 function governedHumanDesign(input: GalacticCodeInput['humanDesign']) {
-  const type = input.type?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
+  const rawType = verifiedHumanDesignField(input, 'type') ? input.type : undefined;
+  const rawStrategy = verifiedHumanDesignField(input, 'strategy') ? input.strategy : undefined;
+  const rawAuthority = verifiedHumanDesignField(input, 'authority') ? input.authority : undefined;
+  const rawProfile = verifiedHumanDesignField(input, 'profile') ? input.profile : undefined;
+
+  const type = rawType?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
   if (!type || !HD_CORE[type]) return null;
-  const strategy = input.strategy?.trim().toLowerCase();
-  const authority = input.authority
+  const strategy = rawStrategy?.trim().toLowerCase();
+  const authority = rawAuthority
     ?.trim()
     .toLowerCase()
     .replace(/\s+authority$/, '');
-  const profile = input.profile?.trim();
+  const profile = rawProfile?.trim();
   if (!strategy || !(HD_CORE[type].strategies as readonly string[]).includes(strategy)) return null;
   if (!authority || !(HD_CORE[type].authorities as readonly string[]).includes(authority)) return null;
   if (!profile || !/^[1-6]\/[1-6]$/.test(profile)) return null;
-  return input;
+
+  return {
+    ...input,
+    type: rawType,
+    strategy: rawStrategy,
+    authority: rawAuthority,
+    profile: rawProfile,
+    definition: verifiedHumanDesignField(input, 'definition') ? input.definition : undefined,
+    centers: verifiedHumanDesignField(input, 'centers') ? governedCenters(input.centers) : undefined,
+    channels: verifiedHumanDesignField(input, 'channels') ? governedChannels(input.channels) : undefined,
+    gates: verifiedHumanDesignField(input, 'gates') ? governedGates(input.gates) : undefined,
+    incarnationCross: verifiedHumanDesignField(input, 'incarnationCross') ? input.incarnationCross : undefined,
+  };
 }
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
