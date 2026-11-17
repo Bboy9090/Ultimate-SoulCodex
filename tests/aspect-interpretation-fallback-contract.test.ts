@@ -39,8 +39,12 @@ test("governed aspect fallback contract", async (suite) => {
 
 
 test("legacy service entrypoint exports one canonical implementation", () => {
-  const serviceExports = Object.keys(serviceInterpretations).sort();
-  const canonicalExports = Object.keys(canonicalInterpretations).sort();
+  // tsx's CommonJS interop may synthesize a `default` namespace export on
+  // the original module but not on an ESM `export *` compatibility shim.
+  // Compare the declared named API, not loader-generated default wrappers.
+  const namedExports = (value: Record<string, unknown>) => Object.keys(value).filter((key) => key !== "default").sort();
+  const serviceExports = namedExports(serviceInterpretations);
+  const canonicalExports = namedExports(canonicalInterpretations);
   assert.deepEqual(serviceExports, canonicalExports);
   for (const key of canonicalExports) {
     assert.equal(
