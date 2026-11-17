@@ -130,9 +130,6 @@ export async function trustedGalacticInputFromProfile(
   const hdCenters = verifiedHd ? verifiedCenters(hd.centers) : undefined;
   const hdChannels = verifiedHd ? verifiedChannels(hd.channels) : undefined;
   const hdGates = verifiedHd ? verifiedGateList(hd.activatedGates) : undefined;
-  const hdDefinition = verifiedHd && typeof hd.definition === "string" && hd.definition.trim()
-    ? hd.definition
-    : undefined;
 
   return {
     profileId: profile.id,
@@ -163,7 +160,7 @@ export async function trustedGalacticInputFromProfile(
             strategy: "verified",
             authority: "verified",
             profile: "verified",
-            definition: hdDefinition ? "verified" : "unavailable",
+            definition: "unavailable",
             centers: hdCenters ? "verified" : "unavailable",
             channels: hdChannels ? "verified" : "unavailable",
             gates: hdGates ? "verified" : "unavailable",
@@ -174,7 +171,6 @@ export async function trustedGalacticInputFromProfile(
           strategy: hd.strategy,
           authority: hd.authority,
           profile: hd.profile,
-          definition: hdDefinition,
           centers: hdCenters,
           channels: hdChannels,
           gates: hdGates,
