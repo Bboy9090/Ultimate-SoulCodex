@@ -53,7 +53,9 @@ test("Human Design chart exposes verified centers channels gates and activations
   assert.match(bodygraph, /Conscious and unconscious activations/);
   assert.match(bodygraph, /What each center represents/);
   assert.match(bodygraph, /names, centers, and keywords/);
-  assert.match(bodygraph, /Variables and Incarnation Cross naming remain outside the verified core/);
+  assert.match(bodygraph, /Definition, Variables, and Incarnation Cross naming remain outside the independently verified core/);
+  assert.match(bodygraph, /Definition · calculated only/);
+  assert.doesNotMatch(bodygraph, /\["Definition", data\.definition\]/);
 });
 
 test("combined Codex separates cross-system reinforcement tension jobs and experiments", () => {
