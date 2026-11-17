@@ -34,10 +34,16 @@ function verifiedCenters(value: unknown): { defined: string[]; undefined: string
   };
 }
 
-function verifiedStringList(value: unknown): string[] | undefined {
+function verifiedChannels(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
-  const values = value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-  return values.length > 0 ? values : undefined;
+  const values = value.flatMap((item) => {
+    const channel = record(item);
+    if (channel.defined !== true || !Array.isArray(channel.gates) || channel.gates.length !== 2) return [];
+    const gates = channel.gates.map(Number);
+    if (gates.some((gate) => !Number.isInteger(gate) || gate < 1 || gate > 64)) return [];
+    return [gates.sort((a, b) => a - b).join("-")];
+  });
+  return values.length > 0 ? [...new Set(values)] : undefined;
 }
 
 function verifiedGateList(value: unknown): string[] | undefined {
@@ -122,7 +128,7 @@ export async function trustedGalacticInputFromProfile(
     typeof hd.type === "string" && typeof hd.strategy === "string" &&
     typeof hd.authority === "string" && typeof hd.profile === "string";
   const hdCenters = verifiedHd ? verifiedCenters(hd.centers) : undefined;
-  const hdChannels = verifiedHd ? verifiedStringList(hd.channels) : undefined;
+  const hdChannels = verifiedHd ? verifiedChannels(hd.channels) : undefined;
   const hdGates = verifiedHd ? verifiedGateList(hd.activatedGates) : undefined;
   const hdDefinition = verifiedHd && typeof hd.definition === "string" && hd.definition.trim()
     ? hd.definition
