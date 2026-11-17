@@ -101,7 +101,15 @@ export function projectProfileResponseForTier<T extends AnyRecord>(
       ...freeArchetype,
       shadows: [],
     };
-    projected.biography = freeArchetype.description;
+    // Free gets a real, bounded narrative from the same evidence-limited archetype,
+    // never cached Plus biography or an identity-label list.
+    const freeStrength = freeArchetype.strengths.find((value) => typeof value === "string" && value.trim());
+    projected.biography = [
+      freeArchetype.description,
+      freeStrength
+        ? `A possible strength to test is ${freeStrength}. Notice one concrete situation where it helped, and one where the outcome differed from the symbolism.`
+        : "The current evidence does not establish a personal strength; use a recent real event to begin the reflection.",
+    ].join(" ");
     projected.dailyGuidance = freeArchetype.guidance;
     projected.depthInterpretation = null;
     projected.synthesis = null;
