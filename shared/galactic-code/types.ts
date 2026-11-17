@@ -42,8 +42,20 @@ export interface GalacticAstrologyInput {
   coverage: SourceCoverageState;
 }
 
+export type GalacticHumanDesignField =
+  | 'type'
+  | 'strategy'
+  | 'authority'
+  | 'profile'
+  | 'definition'
+  | 'centers'
+  | 'channels'
+  | 'gates'
+  | 'incarnationCross';
+
 export interface GalacticHumanDesignInput {
   evidenceState?: SoulCodexEvidenceState;
+  fieldEvidence?: Partial<Record<GalacticHumanDesignField, SoulCodexEvidenceState>>;
   type?: string;
   strategy?: string;
   authority?: string;
