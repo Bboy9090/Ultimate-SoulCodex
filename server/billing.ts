@@ -704,6 +704,46 @@ export function registerBillingRoutes(app: Express): void {
   });
 
 
+  // Read-only tester receipt status after relaunch or reinstall. This is never
+  // a production Plus entitlement and cannot be used as an access bypass.
+  app.get("/api/billing/native/qualification-access", async (req: any, res) => {
+    res.setHeader("Cache-Control", "private, no-store, max-age=0");
+    if (!isNativeAppOrigin(requestOrigin(req))) {
+      return res.status(403).json({ code: "native_billing_origin_required" });
+    }
+
+    const platform = String(req.query?.platform ?? "").trim().toLowerCase();
+    if (platform !== "ios" && platform !== "android") {
+      return res.status(400).json({ code: "native_billing_platform_invalid" });
+    }
+
+    const qualificationEnabled = billingQualificationRequest(req) &&
+      !platformNativeBillingFlagEnabled(platform) &&
+      (platform === "ios" ? iosQualificationFlagEnabled() : androidQualificationFlagEnabled());
+    if (!qualificationEnabled) {
+      return res.status(404).json({ code: "native_billing_qualification_unavailable" });
+    }
+
+    const userId = req.session?.userId ?? null;
+    if (!userId) return res.status(401).json({ code: "authentication_required" });
+    if (!nativeBillingQualificationAccountAllowed(userId)) {
+      return res.status(403).json({ code: "native_billing_qualification_account_not_allowed" });
+    }
+
+    try {
+      // The resolver verifies that the user still exists and reads only
+      // sandbox-sourced durable grants. No purchase token is accepted here.
+      const access = await resolveSandboxBillingEntitlementForUser(storage, userId);
+      return res.status(200).json({
+        qualification: true,
+        platform,
+        sandboxAccess: access,
+      });
+    } catch {
+      return res.status(503).json({ code: "native_billing_qualification_access_unavailable" });
+    }
+  });
+
   app.post("/api/billing/native/verify", checkoutLimiter, async (req: any, res) => {
     if (!isNativeAppOrigin(requestOrigin(req))) {
       return res.status(409).json({
