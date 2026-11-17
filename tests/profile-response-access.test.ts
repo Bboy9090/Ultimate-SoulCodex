@@ -100,6 +100,8 @@ test("projection does not mutate the stored profile object", () => {
 test("Free profile response regenerates shallow prose from allowed projected inputs", () => {
   const out = projectProfileResponseForTier(profile, "free");
   assert.notEqual(out.biography, "stored plus biography secret");
+  assert.match(out.biography, /possible strength to test|current evidence does not establish/);
+  assert.match(out.biography, /recent real event|concrete situation/);
   assert.notEqual(out.dailyGuidance, "stored plus guidance secret");
   assert.equal(out.depthInterpretation, null);
   assert.equal(out.synthesis, null);

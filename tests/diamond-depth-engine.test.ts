@@ -50,9 +50,13 @@ test("server depth chapters are profile-derived instead of universal essays", ()
 
   for (const chapter of first) {
     assert.ok(chapterWordCount(chapter) > 150, `${chapter.id} should remain a substantive chapter`);
-    assert.equal(chapter.action, firstModel.groundedAction);
+    assert.ok(chapter.action.trim().length > 0);
     assert.match(chapter.reflection, /\?/);
   }
+
+  assert.equal(new Set(first.map((chapter) => chapter.action)).size, 5);
+  assert.equal(first[0].action, firstModel.groundedAction);
+  assert.equal(new Set(second.map((chapter) => chapter.action)).size, 5);
 
   const firstText = first
     .map((chapter) => [chapter.translation, chapter.strength, chapter.cost, chapter.relationshipView].join(" "))

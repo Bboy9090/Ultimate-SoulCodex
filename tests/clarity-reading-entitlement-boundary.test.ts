@@ -44,7 +44,11 @@ test("Free clarity model ignores cached Plus prose and paid name numerology", ()
   assert.doesNotMatch(model.summary, /paid interpretation/i);
   assert.equal(model.signals.some((signal) => signal.id === "expression"), false);
   assert.equal(model.signals.some((signal) => signal.id === "soul-urge"), false);
-  assert.match(model.groundedAction, /Choose one situation/i);
+  assert.match(model.groundedAction, /Life Path 9/);
+  assert.match(model.visiblePattern, /Life Path 9/);
+  assert.match(model.gift, /contribution|completion|perspective/i);
+  assert.match(model.cost, /overextending/i);
+  assert.doesNotMatch(serialized, /over-explain, delay, perform, withdraw/);
 });
 
 test("Plus clarity model preserves cached deeper interpretation sources", () => {
@@ -60,4 +64,14 @@ test("Plus clarity model preserves cached deeper interpretation sources", () => 
   assert.equal(model.groundedAction, "Premium grounded action.");
   assert.equal(model.signals.some((signal) => signal.id === "expression"), true);
   assert.equal(model.signals.some((signal) => signal.id === "soul-urge"), true);
+});
+
+
+test("distinct Life Paths yield different Free reflections without manufacturing birth-chart evidence", () => {
+  const nine = buildClarityReadingModel({ birthDate: "1990-09-17" }, { fullNameNumerology: false, humanDesignCore: false, interpretationDepth: false });
+  const one = buildClarityReadingModel({ birthDate: "1990-09-18" }, { fullNameNumerology: false, humanDesignCore: false, interpretationDepth: false });
+  assert.notEqual(nine.visiblePattern, one.visiblePattern);
+  assert.notEqual(nine.groundedAction, one.groundedAction);
+  assert.equal(nine.signals.some(signal => signal.id === "rising"), false);
+  assert.match(nine.protectiveFunction, /No protective function is established/);
 });

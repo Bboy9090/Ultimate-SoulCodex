@@ -181,7 +181,7 @@ function buildChapterSeeds(model: ClarityReadingModel): ChapterSeed[] {
       misunderstanding: `If the protective reading fits internally but the visible behavior looks different externally, other people may respond to ${model.visiblePattern} without knowing that ${model.protectiveFunction} is the function you recognize underneath it.`,
       relationshipView: `${model.relationshipImpact} If protection is part of the exchange, make the need or boundary explicit enough that another person can respond to it rather than forcing both people to guess.`,
       stressView: `Stress can make a protective strategy feel automatically necessary. Compare the present facts with the stated cost — ${model.cost} — before increasing the intensity of the same protection.`,
-      practicalTakeaway: `Name one thing the pattern genuinely protects and one thing it may unnecessarily restrict. Keep the first distinction separate from the second. Then test this supplied action: ${model.groundedAction}`,
+      practicalTakeaway: `Name one thing the pattern genuinely protects and one thing it may unnecessarily restrict. Keep the first distinction separate from the second. Use the observation to decide whether the boundary should remain, loosen, or change.`,
       reflection: "What is this pattern protecting in the present situation, and what evidence would show that the protection is no longer needed at the same intensity?",
       decisionExample: `Decision check: ask whether ${model.protectiveFunction} is responding to current evidence or simply appearing whenever the choice feels consequential.`,
       relationshipExample: `Relationship check: state the protected need plainly, then compare the response with this supplied relationship pattern — ${model.relationshipImpact}`,
@@ -198,7 +198,7 @@ function buildChapterSeeds(model: ClarityReadingModel): ChapterSeed[] {
       misunderstanding: `People may respond to the visible pattern — ${model.visiblePattern} — and miss the developed capacity named here: ${model.gift} That gap is worth noticing without assuming that either perspective is automatically the correct one.`,
       relationshipView: `${model.relationshipImpact} Ask whether the gift helps the relationship become more reciprocal and legible, or whether it turns into work you perform on behalf of the entire connection.`,
       stressView: `A developed gift can become overused under pressure. The stress test is whether ${model.gift} is still producing its intended value or has started reproducing the stated cost — ${model.cost}`,
-      practicalTakeaway: `Choose one place where this gift can create a measurable improvement without taking over the whole problem. Define what "enough" looks like before you begin. Then apply: ${model.groundedAction}`,
+      practicalTakeaway: `Choose one place where this gift can create a measurable improvement without taking over the whole problem. Define what "enough" looks like before you begin. Review the measured result before expanding the task.`,
       reflection: "Where does this gift feel chosen and effective, and where does using it begin to feel compulsory or responsible for everybody else's outcome?",
       decisionExample: `Decision check: use the gift — ${model.gift} — to improve the choice, then stop once the decision has enough support to move.`,
       relationshipExample: `Relationship check: compare the gift with the actual exchange described here — ${model.relationshipImpact}`,
@@ -215,7 +215,7 @@ function buildChapterSeeds(model: ClarityReadingModel): ChapterSeed[] {
       misunderstanding: `A person can look highly capable while privately paying the cost described here. Conversely, somebody else may see a cost where you do not. The app should not decide that disagreement for you; compare both views with observable results.`,
       relationshipView: `${model.relationshipImpact} In relationships, watch whether the stated cost is shared, repaired, or repeatedly absorbed by one person while the surface pattern continues unchanged.`,
       stressView: `When pressure rises, use the cost itself as the warning signal: ${model.cost} If that outcome is increasing, changing dose, sequence, or support is more informative than simply trying harder.`,
-      practicalTakeaway: `Give the pattern an exit condition. Decide what result would tell you to continue, adjust, ask for help, or stop. Pair that condition with the supplied grounded action: ${model.groundedAction}`,
+      practicalTakeaway: `Give the pattern an exit condition. Decide what result would tell you to continue, adjust, ask for help, or stop. Record whether the condition was met and change course if needed.`,
       reflection: "What observable result would tell you that this pattern has crossed from useful effort into the cost named here?",
       decisionExample: `Decision check: before investing another round of effort, compare the expected benefit with this stated cost — ${model.cost}`,
       relationshipExample: `Relationship check: look for reciprocity around the supplied relationship pattern — ${model.relationshipImpact}`,
@@ -232,7 +232,7 @@ function buildChapterSeeds(model: ClarityReadingModel): ChapterSeed[] {
       misunderstanding: `The supplied visible pattern — ${model.visiblePattern} — may be interpreted differently by another person. Instead of choosing whose interpretation wins, compare both accounts with the actual sequence of events and what each person was trying to protect or request.`,
       relationshipView: `${model.relationshipImpact} Treat this as the starting hypothesis for a conversation, then let the other person's lived account add information the chart or symbolic model cannot know.`,
       stressView: `Under relationship stress, separate what you observed from what you inferred. Hold the supplied impact — ${model.relationshipImpact} — beside the contradiction — ${tension} — and ask which part is actually active in this exchange.`,
-      practicalTakeaway: `Turn one unspoken expectation into a concrete request that permits a real yes, no, or counteroffer. Then test the broader grounded action: ${model.groundedAction}`,
+      practicalTakeaway: `Turn one unspoken expectation into a concrete request that permits a real yes, no, or counteroffer. Listen for the response before choosing a next step.`,
       reflection: "What relationship need is currently being communicated indirectly through behavior, and what would it sound like as a clear request rather than a test?",
       decisionExample: `Decision check: before deciding for the relationship, separate your own pattern from the other person's stated needs and choices.`,
       relationshipExample: `Relationship check: use this supplied pattern as a hypothesis to discuss — ${model.relationshipImpact} — not as a verdict about the bond.`,
@@ -248,7 +248,14 @@ export function buildDepthChapters(
   const seeds = buildChapterSeeds(model);
 
   return seeds.map((seed, index) => {
-    const built = chapter(seed, model.groundedAction);
+    const chapterActions: Record<string, string> = {
+      "visible-pattern": model.groundedAction,
+      "protective-function": "Write down one boundary this pattern may protect, then check whether the facts still justify it.",
+      "gift": "Apply the named strength to one small task, define completion, and stop when the result is sufficient.",
+      "cost": "Set a specific stopping condition before repeating the pattern and compare the outcome afterward.",
+      "relationships": "Make one explicit, answerable request and listen to the other person's actual response.",
+    };
+    const built = chapter(seed, chapterActions[seed.id] ?? model.groundedAction);
     const priorFits = seeds
       .slice(0, index)
       .map((priorSeed) => fits[priorSeed.id])

@@ -70,7 +70,7 @@ type NumberTheme = {
 };
 
 const DEFAULT_ACTION =
-  "Choose one situation where you usually over-explain, delay, perform, withdraw, or take over. Replace the automatic move with one direct sentence and one observable action. Record what actually happened.";
+  "Record one recent decision: what you knew, what you chose, and what happened afterward. Use the result rather than a personality label to decide what to change.";
 
 const FALLBACKS = {
   visiblePattern:
@@ -337,7 +337,7 @@ export function buildClarityReadingModel(
     ? freeIdentityParts.slice(0, 3).join(" · ")
     : "Your supported core pattern";
   const freeSummary = freeIdentityParts.length
-    ? `Your Free clarity is built from ${freeIdentityParts.join(", ")}. Use these as supported reflection anchors, not as a fixed personality verdict.`
+    ? `Your Free clarity draws on ${freeIdentityParts.join(", ")}. ${lifePath && EXPRESSION_THEMES[lifePath] ? `In numerology, Life Path ${lifePath} symbolizes ${EXPRESSION_THEMES[lifePath].drive}; this is a reflection theme, not a measured personality trait.` : "These are symbolic reflection anchors, not a fixed personality verdict."}`
     : "Start with the pattern you can actually recognize in your life. Keep what fits; discard what does not.";
 
   const title = interpretationDepth
@@ -401,13 +401,14 @@ export function buildClarityReadingModel(
     summary = `Your reading follows ${identityReading.title}${emotionalReading && emotionalReading.key !== identityReading.key ? ` alongside ${emotionalReading.title}` : ""}. Each placement below connects its planetary function, zodiac style, and supported life area to a practice you can test. These symbolic themes describe possibilities, not facts about your behavior.`;
   }
 
+  const lifePathTheme = lifePath ? EXPRESSION_THEMES[lifePath] : undefined;
   const baseVisible = firstSupportedText(
     sectionText(depth.visiblePattern),
     sectionText(depth.behavior),
     sectionText(depth.behaviorPattern),
     archetype.strengths?.[0],
     archetype.gifts?.[0],
-  ) ?? identityReading?.meaning ?? FALLBACKS.visiblePattern;
+  ) ?? identityReading?.meaning ?? (lifePathTheme ? `In the Life Path ${lifePath} tradition, ${lifePathTheme.drive} is a theme to examine. Check whether ${lifePathTheme.pull} actually describes a recent choice; the number does not establish your behavior.` : FALLBACKS.visiblePattern);
   const baseProtective = protectiveBehavioralSupport
     ? firstSupportedText(sectionText(depth.protectiveFunction)) ?? FALLBACKS.protectiveFunction
     : FALLBACKS.protectiveFunction;
@@ -416,19 +417,19 @@ export function buildClarityReadingModel(
     sectionText(depth.healthyExpression),
     archetype.gifts?.[0],
     archetype.strengths?.[0],
-  ) ?? identityReading?.gift ?? FALLBACKS.gift;
+  ) ?? identityReading?.gift ?? (lifePathTheme ? `Life Path ${lifePath} frames ${lifePathTheme.drive} as a potential strength. Its value depends on how you choose to apply it, not the label.` : FALLBACKS.gift);
   const baseCost = firstSupportedText(
     sectionText(depth.cost),
     sectionText(depth.shadow),
     archetype.shadows?.[0],
     archetype.growthAreas?.[0],
-  ) ?? (emotionalReading ?? identityReading)?.tension ?? FALLBACKS.cost;
+  ) ?? (emotionalReading ?? identityReading)?.tension ?? (lifePathTheme ? `A Life Path ${lifePath} reflection asks whether ${lifePathTheme.risk}. This is a possible tradeoff, not an inferred fact about you.` : FALLBACKS.cost);
   const baseRelationship = firstSupportedText(
     sectionText(depth.relationshipImpact),
     sectionText(depth.relationships),
     sectionText(personality.relationshipStyle),
     sectionText(archetype.relationshipImpact),
-  ) ?? connectionReading?.meaning ?? FALLBACKS.relationshipImpact;
+  ) ?? connectionReading?.meaning ?? (lifePathTheme ? `In relationships, consider whether the Life Path ${lifePath} theme of ${lifePathTheme.drive} leaves room for each person\u0027s separate needs and limits. Ask rather than assume.` : FALLBACKS.relationshipImpact);
 
   const progressive = makeProgressiveSections(summary, {
     visiblePattern: appendTheme(
@@ -561,8 +562,8 @@ export function buildClarityReadingModel(
           sectionText(depth.groundedAction),
           sectionText(depth.action),
           profile.dailyGuidance,
-        ) ?? identityReading?.action ?? DEFAULT_ACTION
-      : identityReading?.action ?? DEFAULT_ACTION,
+        ) ?? identityReading?.action ?? (lifePathTheme ? `Choose one manageable action connected to ${lifePathTheme.drive}; set a stopping point and record the result.` : DEFAULT_ACTION)
+      : identityReading?.action ?? (lifePathTheme ? `For a Life Path ${lifePath} reflection, choose one commitment connected to ${lifePathTheme.drive}. Set one clear limit, take one observable step, and review the result without taking on every unfinished need.` : DEFAULT_ACTION),
     signals,
     planetaryReadings,
     limitations,
