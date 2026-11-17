@@ -87,13 +87,15 @@ export default function OfflineProfilePage() {
       }
       const verification = await response.json();
       const syncedAt = verification.updatedAt || new Date().toISOString();
-      const hydrated = reconcileOfflineProfile(currentProfile, verification, syncedAt);
-      await saveOfflineProfile(hydrated);
+      const latestLocal = await loadOfflineProfile(currentProfile.id);
+      if (!latestLocal) throw new Error("This local profile was removed during verification.");
+      const hydrated = reconcileOfflineProfile(latestLocal, verification, syncedAt, currentProfile);
       const active = loadActiveProfile().profile;
       if (active?.id === currentProfile.id) {
-        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt));
+        const saved = saveActiveProfile(reconcileActiveProfile(active, verification, syncedAt, currentProfile));
         if (!saved.success) throw new Error(saved.error || "active_profile_reconciliation_failed");
       }
+      await saveOfflineProfile(hydrated);
       queryClient.setQueryData(["offline-profile", id], hydrated);
       setVerificationAttempt(verificationOutcome(profileNeedsOnlineVerification(hydrated)));
     } catch (cause) {
@@ -152,6 +154,16 @@ export default function OfflineProfilePage() {
     ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.sun?.evidenceState)) &&
     ["stable_across_range", "conditional"].includes(String((verifiedAstrology as any)?.moon?.evidenceState)),
   );
+  const civilRangeEvidence = (verifiedAstrology as any)?.sun?.rangeEvidence;
+  const rangeTestedInstants = Number.isFinite(Number(civilRangeEvidence?.testedValues))
+    ? Number(civilRangeEvidence.testedValues)
+    : null;
+  const rangeNonexistentMinutes = Number.isFinite(Number(civilRangeEvidence?.nonexistentLocalMinutes))
+    ? Number(civilRangeEvidence.nonexistentLocalMinutes)
+    : 0;
+  const rangeAmbiguousMinutes = Number.isFinite(Number(civilRangeEvidence?.ambiguousLocalMinutes))
+    ? Number(civilRangeEvidence.ambiguousLocalMinutes)
+    : 0;
   const conditionalAstrology = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto", "rising"]
     .map((key) => {
       const placement = key === "rising"
@@ -244,7 +256,7 @@ export default function OfflineProfilePage() {
             <div><dt>Birthplace timezone</dt><dd>{profile.timezone || "Unresolved"}</dd></div>
             <div><dt>Birthplace coordinates</dt><dd>{profile.latitude ?? "Unresolved"}, {profile.longitude ?? "Unresolved"}</dd></div>
           </dl>
-          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first.</p>
+          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">These saved inputs determine the chart calculation. If a placement differs from another chart, compare the time, timezone, coordinates, and house system first. Coordinates resolved from a city or place lookup may be a reference point rather than the exact birth site.</p>
           {!needsOnlineVerification && canRequestOnlineEvidence && <button type="button" className="sc-button-secondary mt-4" disabled={verificationAttempt === "running"} onClick={() => void requestOnlineVerification()}>Recheck this saved chart online</button>}
         </details>
 
@@ -253,6 +265,7 @@ export default function OfflineProfilePage() {
         {verificationAttempt === "partial" && <div className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Online verification returned some supported evidence, but this timed profile still has unresolved chart fields. The verified results were saved; you can retry without losing them.</div>}
         {verificationAttempt === "complete" && <div className="mb-5 flex items-start gap-3 rounded-2xl border border-[rgba(114,216,197,.2)] bg-[rgba(114,216,197,.04)] p-4 text-sm text-[var(--sc-stone)]"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[var(--sc-teal)]" /><span>Requested online verification completed and supported evidence was reconciled into this same local profile. No server profile was created by that verification request.</span></div>}
 
+        {reconciledProfile.birthEvidenceInvalidation && <p role="status" className="mb-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-[var(--sc-stone)]">Your saved chart could not be tied to these birth details. Its old placements and related reading were cleared. Your profile and birth details are preserved. Choose Verify complete profile systems to calculate this same profile again.</p>}
         {!verifiedHumanDesign && !rangeHumanDesign && <section className="sc-panel mb-6 p-5" data-testid="human-design-availability"><p className="sc-eyebrow">Human Design</p><p className="mt-2 text-sm leading-6 text-[var(--sc-stone)]">{humanDesignState.message}</p></section>}
         {verificationFailure?.profileId === reconciledProfile.id && <p role="alert" className="mb-6 text-sm text-[var(--sc-stone)]">{verificationFailure.message}</p>}
 
@@ -263,10 +276,13 @@ export default function OfflineProfilePage() {
                 <p className="sc-eyebrow">Unknown-time evidence map</p>
                 <h2 className="mt-2 font-serif text-2xl font-medium text-[var(--sc-ivory)]">Known, conditional, and locked are kept separate.</h2>
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                  Soul Codex evaluated every HH:MM birth time across this civil day. Stable results may influence synthesis with range provenance. Conditional results stay as branches and do not become personality facts.
+                  Soul Codex enumerated every HH:MM wall-clock label for this civil day and evaluated every valid instant represented by the saved timezone. Stable results may influence synthesis with range provenance. Conditional results stay as branches and do not become personality facts.
+                  {(rangeNonexistentMinutes > 0 || rangeAmbiguousMinutes > 0) && (
+                    <> This date crosses a timezone transition: {rangeNonexistentMinutes > 0 ? `${rangeNonexistentMinutes} nonexistent local minute${rangeNonexistentMinutes === 1 ? "" : "s"} were excluded` : ""}{rangeNonexistentMinutes > 0 && rangeAmbiguousMinutes > 0 ? "; " : ""}{rangeAmbiguousMinutes > 0 ? `${rangeAmbiguousMinutes} repeated local minute${rangeAmbiguousMinutes === 1 ? "" : "s"} were evaluated at both UTC instants` : ""}.</>
+                  )}
                 </p>
               </div>
-              <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">1,440-minute sweep</span>
+              <span className="rounded-full border border-[var(--sc-line)] bg-white/[0.03] px-3 py-1 text-xs font-semibold text-[var(--sc-stone)]">{rangeTestedInstants === null ? "complete civil-day sweep" : `${rangeTestedInstants.toLocaleString()} valid instant${rangeTestedInstants === 1 ? "" : "s"}`}</span>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -286,7 +302,7 @@ export default function OfflineProfilePage() {
 
               <div className="rounded-2xl border border-[rgba(217,182,111,.24)] bg-[rgba(217,182,111,.04)] p-4" data-testid="evidence-state-stable-range">
                 <p className="text-xs font-semibold uppercase tracking-[.12em] text-[var(--sc-gold-bright)]">Stable across range</p>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across all 1,440 tested minutes. It may influence synthesis with range provenance.</p>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--sc-stone)]">Birth time is missing, but the value stayed identical across every valid civil instant represented by the saved date and timezone. It may influence synthesis with range provenance.</p>
                 <div className="mt-3 space-y-2 text-sm text-[var(--sc-ivory-soft)]">
                   {synthesisSun && !verifiedSun && <p>Sun: <strong>{synthesisSun}</strong></p>}
                   {synthesisMoon && !verifiedMoon && <p>Moon: <strong>{synthesisMoon}</strong></p>}

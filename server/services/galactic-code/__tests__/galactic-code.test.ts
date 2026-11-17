@@ -20,6 +20,18 @@ const testInput: GalacticCodeInput = {
   birthLocation: 'Detroit, Michigan',
   astrology: {
     evidenceState: 'verified',
+    fieldEvidence: {
+      sun: 'verified',
+      moon: 'verified',
+      rising: 'verified',
+      mercury: 'verified',
+      venus: 'verified',
+      mars: 'verified',
+      dominantElements: 'verified',
+      dominantModalities: 'verified',
+      houseEmphasis: 'verified',
+      majorAspects: 'verified',
+    },
     sun: 'Virgo',
     moon: 'Capricorn',
     rising: 'Scorpio',
@@ -144,7 +156,12 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
   await t.test('bogus nonempty values cannot satisfy governed system coverage', () => {
     const spoofed: GalacticCodeInput = {
       profileId: 'spoofed',
-      astrology: { evidenceState: 'verified', sun: 'NotASign', coverage: 'complete' },
+      astrology: {
+        evidenceState: 'verified',
+        fieldEvidence: { sun: 'verified' },
+        sun: 'NotASign',
+        coverage: 'complete',
+      },
       humanDesign: {
         evidenceState: 'verified',
         type: 'Wizard',
@@ -168,6 +185,7 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       profileId: 'sun-only',
       astrology: {
         evidenceState: 'verified',
+        fieldEvidence: { sun: 'verified' },
         sun: 'Virgo',
         coverage: 'complete',
       } as any,
@@ -404,6 +422,18 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       birthLocation: 'Portland, Oregon',
       astrology: {
         evidenceState: 'verified',
+        fieldEvidence: {
+          sun: 'verified',
+          moon: 'verified',
+          rising: 'verified',
+          mercury: 'verified',
+          venus: 'verified',
+          mars: 'verified',
+          dominantElements: 'verified',
+          dominantModalities: 'verified',
+          houseEmphasis: 'verified',
+          majorAspects: 'verified',
+        },
         sun: 'Gemini',
         moon: 'Libra',
         rising: 'Aquarius',
@@ -488,6 +518,123 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.throws(() => generateGalacticCode(input), /requires at least 2 of 3 systems/);
 
     // The point: coverage measures data availability, not independent verification status
+  });
+
+  await t.test('unverified astrology fields cannot change production synthesis', () => {
+    const candidateA: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        fieldEvidence: {
+          ...testInput.astrology.fieldEvidence,
+          moon: 'candidate',
+        },
+        moon: 'Capricorn',
+      },
+    };
+    const candidateB: GalacticCodeInput = {
+      ...candidateA,
+      astrology: {
+        ...candidateA.astrology,
+        moon: 'Pisces',
+      },
+    };
+
+    const resultA = generateGalacticCode(candidateA);
+    const resultB = generateGalacticCode(candidateB);
+
+    assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
+    assert.deepStrictEqual(resultA.axes, resultB.axes);
+    assert.ok(resultA.evidence.every((value) => !value.startsWith('Moon ')));
+    assert.strictEqual(resultA.sourceCoverage.astrology, 'partial');
+  });
+
+  await t.test('every unverified astrology placement is fingerprint-inert', () => {
+    const changedSigns = {
+      sun: ['Virgo', 'Aries'],
+      moon: ['Capricorn', 'Pisces'],
+      rising: ['Scorpio', 'Gemini'],
+      mercury: ['Virgo', 'Leo'],
+      venus: ['Leo', 'Cancer'],
+      mars: ['Libra', 'Taurus'],
+    } as const;
+
+    for (const field of Object.keys(changedSigns) as Array<keyof typeof changedSigns>) {
+      const [first, second] = changedSigns[field];
+      for (const evidence of ['candidate', 'unavailable', undefined] as const) {
+        const fieldEvidence = { ...testInput.astrology.fieldEvidence };
+        if (evidence === undefined) {
+          delete fieldEvidence[field];
+        } else {
+          fieldEvidence[field] = evidence;
+        }
+        const withField = (sign: string): GalacticCodeInput => ({
+          ...testInput,
+          astrology: { ...testInput.astrology, fieldEvidence, [field]: sign },
+        });
+
+        const a = generateGalacticCode(withField(first));
+        const b = generateGalacticCode(withField(second));
+        assert.strictEqual(a.fingerprint, b.fingerprint, `${field}/${evidence}: fingerprint`);
+        assert.deepStrictEqual(a.axes, b.axes, `${field}/${evidence}: axes`);
+        assert.deepStrictEqual(a.evidence, b.evidence, `${field}/${evidence}: evidence`);
+        assert.strictEqual(a.codename, b.codename, `${field}/${evidence}: codename`);
+      }
+    }
+  });
+
+  await t.test('unverified derived astrology groups cannot influence synthesis', () => {
+    const variants = {
+      dominantElements: [['earth'], ['fire', 'water']],
+      dominantModalities: [['mutable'], ['fixed', 'cardinal']],
+      houseEmphasis: [['House 1'], ['House 10']],
+      majorAspects: [['Sun trine Moon'], ['Sun square Mars']],
+    } as const;
+
+    for (const field of Object.keys(variants) as Array<keyof typeof variants>) {
+      const [first, second] = variants[field];
+      for (const evidence of ['candidate', 'unavailable', undefined] as const) {
+        const fieldEvidence = { ...testInput.astrology.fieldEvidence };
+        if (evidence === undefined) {
+          delete fieldEvidence[field];
+        } else {
+          fieldEvidence[field] = evidence;
+        }
+        const withGroup = (values: readonly string[]): GalacticCodeInput => ({
+          ...testInput,
+          astrology: { ...testInput.astrology, fieldEvidence, [field]: [...values] },
+        });
+
+        const a = generateGalacticCode(withGroup(first));
+        const b = generateGalacticCode(withGroup(second));
+        assert.strictEqual(a.fingerprint, b.fingerprint, `${field}/${evidence}: fingerprint`);
+        assert.deepStrictEqual(a.axes, b.axes, `${field}/${evidence}: axes`);
+        assert.deepStrictEqual(a.evidence, b.evidence, `${field}/${evidence}: evidence`);
+        assert.deepStrictEqual(a.elementMatrix, b.elementMatrix, `${field}/${evidence}: element matrix`);
+      }
+    }
+  });
+
+  await t.test('invalid per-field verification labels fail closed', () => {
+    const altered: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        fieldEvidence: {
+          ...testInput.astrology.fieldEvidence,
+          moon: 'verified-by-client' as GalacticCodeInput['astrology']['evidenceState'],
+        },
+      },
+    };
+    const other: GalacticCodeInput = {
+      ...altered,
+      astrology: { ...altered.astrology, moon: 'Pisces' },
+    };
+    const a = generateGalacticCode(altered);
+    const b = generateGalacticCode(other);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.strictEqual(a.sourceCoverage.astrology, 'partial');
   });
 
   await t.test('unverified Human Design cannot change production synthesis', () => {
