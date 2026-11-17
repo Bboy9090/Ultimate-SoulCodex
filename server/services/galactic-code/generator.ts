@@ -359,12 +359,9 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   const designation = createDesignation(primaryFunction, secondaryFunction);
   const tagline = createTagline(topThreeAxes);
 
-  // Step 7: Create frequency
-  const frequency = createFrequency(
-    eligibleInput.birthDate,
-    eligibleInput.birthTime,
-    eligibleInput.numerology.lifePath?.toString()
-  );
+  // Step 7: Create a symbolic, non-reversible display token from the governed
+  // stable fingerprint. Never encode raw birth date/time into this field.
+  const frequency = createSymbolicFrequency(fingerprint);
 
   // Step 8: Element matrix
   const elementMatrix = createElementMatrix(normalized.astrology.dominantElements);
@@ -518,14 +515,11 @@ function createTagline(topAxes: Array<{ label: string; score: number }>): string
   return `${primary.label} (${primary.score}) and ${secondary.label} (${secondary.score}) are the two strongest governed synthesis axes.`;
 }
 
-function createFrequency(birthDate?: string, birthTime?: string, lifePathStr?: string): string {
-  if (!birthDate) return 'Frequency unavailable: birth date missing';
-
-  const [, month, day] = birthDate.split('-');
-  const dateStem = `${month}${day}`;
-  const timeStem = birthTime ? `-${birthTime.replace(':', '')}` : '';
-  const lifePathStem = lifePathStr ? `-LP${lifePathStr}` : '';
-  return `${dateStem}${timeStem}${lifePathStem}`;
+function createSymbolicFrequency(fingerprint: string): string {
+  if (!/^[0-9a-f]{64}$/i.test(fingerprint)) {
+    throw new Error('Galactic Code symbolic frequency requires a valid stable fingerprint');
+  }
+  return `SCF-${fingerprint.slice(0, 4).toUpperCase()}-${fingerprint.slice(4, 8).toUpperCase()}`;
 }
 
 function createElementMatrix(dominantElements?: string[]): Record<string, number> {
