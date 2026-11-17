@@ -123,10 +123,10 @@ test("unbound saved Aries evidence cannot leak through free or Plus profile proj
   for (const tier of ["free", "plus"] as const) {
     const result = projectProfileResponseForTier(stale, tier);
     assert.deepEqual(result.astrologyData, {});
-    assert.equal(result.risingSign, null);
+    assert.equal((result as any).risingSign, null);
     assert.notEqual(result.humanDesignData.status, "verified");
     assert.doesNotMatch(JSON.stringify([result.archetypeData, result.biography, result.dailyGuidance, result.synthesis]), /Old Aries/);
-    assert.equal(result.birthEvidenceInvalidation.reason, "stored_birth_evidence_unbound");
+    assert.equal((result as any).birthEvidenceInvalidation.reason, "stored_birth_evidence_unbound");
   }
 });
 
