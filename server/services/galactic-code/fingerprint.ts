@@ -2,7 +2,7 @@
  * Galactic Code Fingerprint
  *
  * Deterministic SHA-256 fingerprint generation.
- * Input: normalized astrology, human design, numerology, behavioral traits
+ * Input: normalized governed stable identity evidence (astrology, Human Design, numerology)
  * Output: unique fingerprint and short code
  */
 
