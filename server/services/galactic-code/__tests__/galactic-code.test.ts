@@ -20,6 +20,18 @@ const testInput: GalacticCodeInput = {
   birthLocation: 'Detroit, Michigan',
   astrology: {
     evidenceState: 'verified',
+    fieldEvidence: {
+      sun: 'verified',
+      moon: 'verified',
+      rising: 'verified',
+      mercury: 'verified',
+      venus: 'verified',
+      mars: 'verified',
+      dominantElements: 'verified',
+      dominantModalities: 'verified',
+      houseEmphasis: 'verified',
+      majorAspects: 'verified',
+    },
     sun: 'Virgo',
     moon: 'Capricorn',
     rising: 'Scorpio',
@@ -144,7 +156,12 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
   await t.test('bogus nonempty values cannot satisfy governed system coverage', () => {
     const spoofed: GalacticCodeInput = {
       profileId: 'spoofed',
-      astrology: { evidenceState: 'verified', sun: 'NotASign', coverage: 'complete' },
+      astrology: {
+        evidenceState: 'verified',
+        fieldEvidence: { sun: 'verified' },
+        sun: 'NotASign',
+        coverage: 'complete',
+      },
       humanDesign: {
         evidenceState: 'verified',
         type: 'Wizard',
@@ -168,6 +185,7 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
       profileId: 'sun-only',
       astrology: {
         evidenceState: 'verified',
+        fieldEvidence: { sun: 'verified' },
         sun: 'Virgo',
         coverage: 'complete',
       } as any,
@@ -404,6 +422,18 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       birthLocation: 'Portland, Oregon',
       astrology: {
         evidenceState: 'verified',
+        fieldEvidence: {
+          sun: 'verified',
+          moon: 'verified',
+          rising: 'verified',
+          mercury: 'verified',
+          venus: 'verified',
+          mars: 'verified',
+          dominantElements: 'verified',
+          dominantModalities: 'verified',
+          houseEmphasis: 'verified',
+          majorAspects: 'verified',
+        },
         sun: 'Gemini',
         moon: 'Libra',
         rising: 'Aquarius',
@@ -488,6 +518,35 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.throws(() => generateGalacticCode(input), /requires at least 2 of 3 systems/);
 
     // The point: coverage measures data availability, not independent verification status
+  });
+
+  await t.test('unverified astrology fields cannot change production synthesis', () => {
+    const candidateA: GalacticCodeInput = {
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        fieldEvidence: {
+          ...testInput.astrology.fieldEvidence,
+          moon: 'candidate',
+        },
+        moon: 'Capricorn',
+      },
+    };
+    const candidateB: GalacticCodeInput = {
+      ...candidateA,
+      astrology: {
+        ...candidateA.astrology,
+        moon: 'Pisces',
+      },
+    };
+
+    const resultA = generateGalacticCode(candidateA);
+    const resultB = generateGalacticCode(candidateB);
+
+    assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
+    assert.deepStrictEqual(resultA.axes, resultB.axes);
+    assert.ok(resultA.evidence.every((value) => !value.startsWith('Moon ')));
+    assert.strictEqual(resultA.sourceCoverage.astrology, 'partial');
   });
 
   await t.test('unverified Human Design cannot change production synthesis', () => {
