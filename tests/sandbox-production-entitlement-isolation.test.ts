@@ -10,7 +10,6 @@ import {
 } from "../server/lib/product-entitlement";
 
 const now = new Date("2026-11-17T12:00:00Z");
-const id = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
 
 async function fixture() {
