@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildPublicProfileProjection } from "../server/lib/public-profile-projection";
+import { buildStoredBirthEvidenceInput } from "../server/lib/profile-birth-evidence-integrity";
 import type { Profile } from "@shared/schema";
 
 const verified = (sign: string) => ({
@@ -14,6 +15,7 @@ const verified = (sign: string) => ({
   },
 });
 
+const binding = buildStoredBirthEvidenceInput({ birthDate: "1990-09-17", birthTime: "11:11", timezone: "America/New_York", latitude: "40.8448", longitude: "-73.8648" });
 const profile = {
   id: "private-profile-id",
   userId: "private-user-id",
@@ -27,6 +29,7 @@ const profile = {
   longitude: "-73.8648",
   isPremium: true,
   astrologyData: {
+    birthEvidenceInput: binding,
     sun: verified("Virgo"),
     moon: verified("Virgo"),
     rising: verified("Scorpio"),
@@ -108,6 +111,7 @@ test("unverified astrology never enters a public projection", () => {
   const unsafe = {
     ...profile,
     astrologyData: {
+      birthEvidenceInput: binding,
       sun: { sign: "Aries", verificationStatus: "unverified" },
       moon: { sign: "Taurus", verificationStatus: "verified", provenance: { source: "", engine: "", calculatedAt: "" } },
       rising: verified("Scorpio"),
@@ -184,4 +188,20 @@ test("share modal exposes the core archetype title without an interpretation-dep
   const shareModal = readFileSync(new URL("../client/src/components/ShareModal.tsx", import.meta.url), "utf8");
   assert.match(shareModal, /id: "archetypeTitle"/);
   assert.doesNotMatch(shareModal, /canShareArchetypeTitle|interpretation_depth/);
+});
+
+
+test("public share never publishes a legacy unbound Aries Rising or derived chart", () => {
+  const old = { ...profile, astrologyData: { rising: verified("Aries"), sun: verified("Virgo") }, archetypeData: { title: "Old Aries Archetype" } } satisfies Profile;
+  const result = buildPublicProfileProjection(old, { fields: ["risingSign", "sunSign", "archetypeTitle", "lifePath"] });
+  assert.equal(result.fields.risingSign, undefined);
+  assert.equal(result.fields.sunSign, undefined);
+  assert.equal(result.fields.archetypeTitle, "Chart verification required");
+  assert.equal(result.fields.lifePath, 9);
+});
+
+test("public share rejects a chart bound to a different birth time", () => {
+  const changed = { ...profile, birthTime: "12:11" } satisfies Profile;
+  const result = buildPublicProfileProjection(changed, { fields: ["risingSign", "sunSign", "comparisonChart"] });
+  assert.deepEqual(result.fields, {});
 });
