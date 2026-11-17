@@ -29,6 +29,8 @@ describe("Depth Engine", () => {
   it("turns every major insight into a complete chapter", () => {
     const chapters = buildDepthChapters(model);
     expect(chapters).toHaveLength(5);
+    expect(new Set(chapters.map((chapter) => chapter.action)).size).toBe(5);
+    expect(chapters[0].action).toBe(model.groundedAction);
     for (const chapter of chapters) {
       expect(chapter.translation.length).toBeGreaterThan(140);
       expect(chapter.dailyLife).toHaveLength(3);
@@ -37,7 +39,7 @@ describe("Depth Engine", () => {
       expect(chapter.relationshipView).toBeTruthy();
       expect(chapter.stressView).toBeTruthy();
       expect(chapter.reflection).toContain("?");
-      expect(chapter.action).toBe(model.groundedAction);
+      expect(chapter.action).toBeTruthy();
       expect(chapterWordCount(chapter)).toBeGreaterThan(150);
     }
   });
