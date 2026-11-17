@@ -118,7 +118,7 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
           <h2 className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">Centers, channels, gates, and decision architecture</h2>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
             The verified core covers gates, lines, Type, Strategy, Authority, Profile, channels, and centers.
-            Variables and Incarnation Cross naming remain outside the verified core and are not promoted here.
+            Definition, Variables, and Incarnation Cross naming remain outside the independently verified core. Definition may be displayed below as a calculated-only engine result.
           </p>
         </div>
         <span className="sc-trust-chip">HUMAN-DESIGN-CORE-v1</span>
@@ -184,7 +184,7 @@ export default function HumanDesignBodygraph({ data }: { data: Record<string, an
               ["Strategy", data.strategy],
               ["Authority", data.authority],
               ["Profile", data.profile],
-              ["Definition", data.definition],
+              ["Definition · calculated only", data.definition],
               ["Verified gates", gates.length],
             ].map(([label, value]) => (
               <div key={String(label)} className="rounded-xl border border-[var(--sc-line)] bg-white/[0.025] p-3">
