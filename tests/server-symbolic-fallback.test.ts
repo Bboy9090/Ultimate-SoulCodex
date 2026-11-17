@@ -68,3 +68,45 @@ test("identical symbolic actions are rendered once with both source labels", () 
   const action = canonicalNumberPattern(1)!.action;
   assert.equal(result.split(action).length - 1, 1);
 });
+
+test("repeated verified sign across Sun Moon Rising yields one sign explanation with distinct roles", () => {
+  const input = profile("Virgo", 0);
+  input.astrologyData.moon = { sign: "Virgo", verificationStatus: "verified", evidence };
+  input.astrologyData.rising = { sign: "Virgo", verificationStatus: "verified", evidence };
+  const text = generateFallbackBiography(input);
+  const pattern = canonicalSignPattern("Virgo")!;
+  assert.equal(text.split(pattern.drive).length - 1, 1);
+  assert.equal(text.split(pattern.gift).length - 1, 1);
+  assert.match(text, /identity and conscious direction/);
+  assert.match(text, /emotional needs and instinctive responses/);
+  assert.match(text, /approach and first impressions/);
+});
+
+test("distinct verified signs preserve their own vocabulary without repeated sentence boilerplate", () => {
+  const input = profile("Aries", 0);
+  input.astrologyData.moon = { sign: "Scorpio", verificationStatus: "verified", evidence };
+  input.astrologyData.rising = { sign: "Virgo", verificationStatus: "verified", evidence };
+  const text = generateFallbackBiography(input);
+  for (const sign of ["Aries", "Scorpio", "Virgo"]) {
+    assert.equal(text.split(canonicalSignPattern(sign)!.drive).length - 1, 1, sign);
+  }
+  assert.doesNotMatch(text, /symbolism emphasizes .*Its constructive theme is/);
+});
+
+test("unverified Rising cannot add generic or duplicate zodiac messaging", () => {
+  const input = profile("Virgo", 0);
+  input.astrologyData.moon = { sign: "Virgo", verificationStatus: "verified", evidence };
+  input.astrologyData.rising = { sign: "Aries", verificationStatus: "pending_independent_verification", evidence };
+  const text = generateFallbackBiography(input);
+  assert.doesNotMatch(text, /Aries|approach and first impressions/);
+  assert.equal(text.split(canonicalSignPattern("Virgo")!.drive).length - 1, 1);
+});
+
+test("repeated supported numerology values are synthesized once rather than repeated prose", () => {
+  const input = profile("Aries", 9);
+  input.numerologyData.expression = 9;
+  input.numerologyData.soulUrge = 9;
+  const text = generateFallbackBiography(input);
+  assert.equal(text.split(canonicalNumberPattern(9)!.drive).length - 1, 1);
+  assert.match(text, /Life Path and Expression and Soul Urge 9 symbolism/);
+});

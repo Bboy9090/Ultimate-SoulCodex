@@ -104,6 +104,7 @@ jobs:
           tests/server-profile-human-design-parity.test.ts
           tests/stored-profile-system-verification.test.ts
           tests/server-symbolic-fallback.test.ts
+          tests/legacy-soul-reading-evidence.test.ts
           tests/foundation-local-truth-invariants.test.ts
           tests/active-profile-contract.test.ts
           tests/timeline-today-card.test.ts

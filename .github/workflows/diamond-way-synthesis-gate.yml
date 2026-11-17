@@ -91,6 +91,8 @@ jobs:
             tests/birth-moment-lunar-evidence.test.ts \
             tests/profile-birth-moment-integration.test.ts \
             tests/ai-structure-repetition.test.ts \
+            tests/legacy-soul-reading-evidence.test.ts \
+            tests/server-symbolic-fallback.test.ts \
             packages/core/evidence-ledger/__tests__/numerology-evidence.test.ts \
             packages/core/__tests__/personal-numbers.test.ts
 
