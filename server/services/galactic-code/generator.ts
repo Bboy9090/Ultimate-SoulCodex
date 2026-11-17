@@ -49,6 +49,74 @@ function governedNumber(value: number | string | undefined): number | string | u
   return value !== undefined && canonicalNumberPattern(value) ? value : undefined;
 }
 
+const ASTROLOGY_ELEMENTS = new Set(['fire', 'earth', 'air', 'water']);
+const ASTROLOGY_MODALITIES = new Set(['cardinal', 'fixed', 'mutable']);
+const ASTROLOGY_BODIES: Readonly<Record<string, string>> = {
+  sun: 'Sun',
+  moon: 'Moon',
+  mercury: 'Mercury',
+  venus: 'Venus',
+  mars: 'Mars',
+  jupiter: 'Jupiter',
+  saturn: 'Saturn',
+  uranus: 'Uranus',
+  neptune: 'Neptune',
+  pluto: 'Pluto',
+  ascendant: 'Ascendant',
+  asc: 'Ascendant',
+  midheaven: 'Midheaven',
+  mc: 'Midheaven',
+  chiron: 'Chiron',
+  'north node': 'North Node',
+  northnode: 'North Node',
+  'south node': 'South Node',
+  southnode: 'South Node',
+};
+const ASTROLOGY_ASPECTS: Readonly<Record<string, string>> = {
+  conjunction: 'conjunction',
+  sextile: 'sextile',
+  square: 'square',
+  trine: 'trine',
+  opposition: 'opposition',
+};
+
+function governedAstrologyList(
+  values: string[] | undefined,
+  allowed: ReadonlySet<string>,
+): string[] | undefined {
+  if (!values) return undefined;
+  const filtered = values
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => allowed.has(value));
+  return [...new Set(filtered)];
+}
+
+function governedHouseEmphasis(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const canonical = values.flatMap((value) => {
+    const match = /^(?:house\s*)?(1[0-2]|[1-9])$/i.exec(value.trim());
+    return match ? [`House ${Number(match[1])}`] : [];
+  });
+  return [...new Set(canonical)];
+}
+
+function governedAspect(value: string): string | null {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  const match = /^(.+?)\s+(conjunction|sextile|square|trine|opposition)\s+(.+)$/.exec(normalized);
+  if (!match) return null;
+  const left = ASTROLOGY_BODIES[match[1]];
+  const aspect = ASTROLOGY_ASPECTS[match[2]];
+  const right = ASTROLOGY_BODIES[match[3]];
+  if (!left || !aspect || !right || left === right) return null;
+  const [first, second] = [left, right].sort((a, b) => a.localeCompare(b));
+  return `${first} ${aspect} ${second}`;
+}
+
+function governedAspects(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values.map(governedAspect).filter((value): value is string => Boolean(value)))];
+}
+
 const HD_CENTER_ALIASES: Readonly<Record<string, string>> = {
   head: 'Head',
   ajna: 'Ajna',
@@ -175,17 +243,17 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
           venus: verifiedAstrologyField(input.astrology, 'venus') ? governedSign(input.astrology.venus) : undefined,
           mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
           dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements')
-            ? input.astrology.dominantElements
+            ? governedAstrologyList(input.astrology.dominantElements, ASTROLOGY_ELEMENTS)
             : undefined,
           dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities')
-            ? input.astrology.dominantModalities
+            ? governedAstrologyList(input.astrology.dominantModalities, ASTROLOGY_MODALITIES)
             : undefined,
           houseEmphasis:
             housesAllowed && verifiedAstrologyField(input.astrology, 'houseEmphasis')
-              ? input.astrology.houseEmphasis
+              ? governedHouseEmphasis(input.astrology.houseEmphasis)
               : undefined,
           majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects')
-            ? input.astrology.majorAspects
+            ? governedAspects(input.astrology.majorAspects)
             : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
