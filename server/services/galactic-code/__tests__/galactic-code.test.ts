@@ -181,6 +181,40 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
     assert.ok(['partial', 'insufficient'].includes(result.coverage));
   });
 
+  await t.test('complete astrology + numerology can reach high coverage without Human Design', () => {
+    const input: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { coverage: 'missing' } as any,
+      behavior: {
+        ...testInput.behavior,
+        traits: [...testInput.behavior.traits, 'collaborative'],
+      },
+    };
+
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'complete');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'missing');
+    assert.strictEqual(result.sourceCoverage.numerology, 'complete');
+    assert.strictEqual(result.coverage, 'high');
+  });
+
+  await t.test('complete Human Design + numerology can reach high coverage without astrology', () => {
+    const input: GalacticCodeInput = {
+      ...testInput,
+      astrology: { coverage: 'missing' } as any,
+      behavior: {
+        ...testInput.behavior,
+        traits: [...testInput.behavior.traits, 'collaborative'],
+      },
+    };
+
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'missing');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'complete');
+    assert.strictEqual(result.sourceCoverage.numerology, 'complete');
+    assert.strictEqual(result.coverage, 'high');
+  });
+
 
   await t.test('bogus nonempty values cannot satisfy governed system coverage', () => {
     const spoofed: GalacticCodeInput = {
