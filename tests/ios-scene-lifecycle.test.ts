@@ -29,7 +29,9 @@ test("scene startup preserves the custom native bridge and forwards cold and war
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, willConnectTo: session, options: connectionOptions\)/);
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, openURLContexts: URLContexts\)/);
   assert.match(scene, /SceneDelegateProxy\.shared\.scene\(scene, continue: userActivity\)/);
-  const packages = JSON.parse(read("package.json")).dependencies;
+  const manifest = JSON.parse(read("package.json"));
+  // @capacitor/cli moved to devDependencies in #621; every Capacitor package must still be pinned to 8.6.0.
+  const packages = { ...manifest.devDependencies, ...manifest.dependencies };
   for (const name of ["@capacitor/core", "@capacitor/ios", "@capacitor/android", "@capacitor/cli"]) {
     assert.equal(packages[name], "8.6.0");
   }

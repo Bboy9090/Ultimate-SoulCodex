@@ -24,9 +24,9 @@ test("iOS hotfix metadata is a fresh App Store version/build", async () => {
     readFile("ios/App/App.xcodeproj/project.pbxproj", "utf8"),
   ]);
 
-  assert.match(plist, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.0<\/string>/);
+  assert.match(plist, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.1<\/string>/);
   assert.match(plist, /<key>CFBundleVersion<\/key>\s*<string>4000015<\/string>/);
-  assert.match(project, /MARKETING_VERSION = 4\.1\.0;/);
+  assert.match(project, /MARKETING_VERSION = 4\.1\.1;/);
   assert.match(project, /CURRENT_PROJECT_VERSION = 4000015;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
 });
