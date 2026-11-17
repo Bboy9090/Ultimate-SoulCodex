@@ -319,8 +319,12 @@ test('Galactic Code: Structure & Content', async (t) => {
   });
 
   await t.test('frequency matches expected format', () => {
-    // Format: MMDD-HHMM-LPX
-    assert(result.frequency.match(/^\d{4}-\d{2}\d{2}-LP\d+$/), 'frequency format incorrect');
+    // Non-reversible symbolic token derived from the stable fingerprint.
+    assert(result.frequency.match(/^SCF-[0-9A-F]{4}-[0-9A-F]{4}$/), 'symbolic frequency format incorrect');
+    assert.equal(
+      result.frequency,
+      `SCF-${result.fingerprint.slice(0, 4).toUpperCase()}-${result.fingerprint.slice(4, 8).toUpperCase()}`,
+    );
   });
 });
 
@@ -421,10 +425,10 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
 
     assert.strictEqual(baseline.fingerprint, changedSourceMetadata.fingerprint);
     assert.deepStrictEqual(baseline.axes, changedSourceMetadata.axes);
-    assert.notStrictEqual(
+    assert.strictEqual(
       baseline.frequency,
       changedSourceMetadata.frequency,
-      'display frequency may reflect source metadata without changing stable identity fingerprint',
+      'symbolic frequency must not reveal or vary with raw birth metadata when governed evidence is unchanged',
     );
   });
 
