@@ -13,6 +13,19 @@ Google Play validation run `44015139712` rejected Android versionCode `4000018` 
 
 The 4.1.2 candidate uses Android versionCode `4000019` and iOS build `4000016`. These are **new source/build identities only**, not evidence of a Google Play edit, Apple TestFlight processing, App Store approval, or public production availability. Do not assume previous `4.1.1` store upload receipts cover this candidate. For a claim of upload/publishing, preserve the exact commit SHA, bundle checksum, workflow source run, provider receipt, and active track.
 
+### 4.1.2 provider receipts (2026-11-17)
+
+| Item | Evidence | Result |
+|---|---|---|
+| Android signed AAB, versionCode `4000019` | Store Candidate run `44016570663` on `main`; Android artifact ID `14299800434` | build, signature and manifest-permission steps passed |
+| Play validate | upload workflow run `44017152617`; receipt artifact `14298299480` | `validated_not_committed` |
+| Play commit to Alpha closed testing | upload workflow run `44017322804`; receipt artifact `14299466780`; `confirm` was `closed-testing 4000019` | `committed_to_closed_testing` |
+| Play validate repeated afterwards | upload workflow run `44021913868`; receipt artifact `14300749613` | failed: HTTP 403, `Version code 4000019 has already been used`; nothing committed by this run |
+| iOS signed IPA, 4.1.2 / build `4000016` | iOS Native Load workflow run `44014945094` on the commit that merged #675; IPA artifact ID `14298444854` | simulator launch (iPhone and iPad), signing, and exported-IPA identity and signature checks passed |
+| iOS upload to App Store Connect | none | **no upload, processing, or TestFlight receipt exists** |
+
+Boundaries: the Play outcomes are read from the run logs (`Receipt written ... outcome=`); the receipt JSON files were not opened. They are API acceptance receipts, not Play Console observations, so Google's review state and tester availability for `4000019` are unverified. The repeated validation failure is the response Play gives for a version code that was already committed. #676 changed only the Android versionCode after the IPA was built, so the iOS source is unchanged since that IPA. A first run of the iOS workflow on `main` failed the iPhone first-paint check (the iPad passed) and a single retry passed; the cause of the first failure was not established. The IPA is a CI artifact only: nothing here shows it was uploaded to Apple or accepted by Apple.
+
 ## Product Identity
 
 | Field | Final value |
@@ -21,8 +34,8 @@ The 4.1.2 candidate uses Android versionCode `4000019` and iOS build `4000016`. 
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release candidate | 4.1.2 / versionCode 4000019 (new candidate; provider upload not yet confirmed; earlier 4.1.1 / 4000017 Alpha upload retained in historical evidence) |
-| iOS source project release | 4.1.2 / build 4000016 (source candidate; signed upload and App Store Connect processing not yet confirmed) |
+| Android release candidate | 4.1.2 / versionCode 4000019 (committed to Alpha closed testing through the Play API on 2026-11-17; Play Console state unverified; earlier 4.1.1 / 4000017 Alpha upload retained in historical evidence) |
+| iOS source project release | 4.1.2 / build 4000016 (signed IPA built in CI, run `44014945094`; not uploaded; App Store Connect processing not confirmed) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |
@@ -211,6 +224,7 @@ Complete the live questionnaires from the final shipped behavior; the stores det
 - Static store-review legal/support host: `bboy9090.github.io/Ultimate-SoulCodex` (GitHub Pages, HTTPS verified)
 - Android 4.1.0 / versionCode `4000016`: uploaded to Google Play **Alpha closed testing** on November 8, 2026, according to the release tracker and Play edit receipt. This is not a production release. New signed Store Candidate artifacts built from later commits do not automatically replace the uploaded closed-test binary.
 - Android 4.1.1 / versionCode `4000017`: committed to the Google Play **Alpha closed testing** track on November 16, 2026 through the Play Developer API (GitHub Actions run `43956396804`, receipt artifact ID `14272337326`, outcome `committed_to_closed_testing`). The uploaded file is the signed AAB built by Store Candidate run `43948457688` (Android artifact ID `14266711111`); the candidate SHA is recorded in that run and in `governance/PROJECT_STATUS.md`. This is not a production release. The receipt records that the API accepted the commit; Google's review state and tester availability have not been read from Play Console.
+- Android 4.1.2 / versionCode `4000019`: committed to the Google Play **Alpha closed testing** track on November 17, 2026 through the Play Developer API (GitHub Actions run `44017322804`, receipt artifact ID `14299466780`, outcome `committed_to_closed_testing`; signed AAB from Store Candidate run `44016570663`, Android artifact ID `14299800434`). This is not a production release, and Play Console state has not been read.
 - Android release artifact ID and AAB checksum: take these from the successful exact-head GitHub Actions artifact/receipt; do not hard-code them into the source tree because the release payload embeds the source SHA.
 - Android app-owned manifest requests `android.permission.INTERNET`; merged store builds also include framework/billing permissions such as network state, Play Billing/license, and an app-scoped dynamic-receiver permission. `READ_CONTACTS` and `WRITE_CONTACTS` are explicitly removed from the merged manifest; Android contact import falls back to manual entry.
 - iOS simulator Release and generic-device archive qualification: passed
@@ -261,3 +275,5 @@ Status as of 2026-11-16: the workflow has run twice against Google Play for vers
 | `commit` | `43956396804` | `14272337326` | `committed_to_closed_testing` |
 
 This confirms the keyless publisher service account can create edits, upload bundles, and commit to the `alpha` track for `soulcodex.app`. It does not confirm Google's review outcome or that testers can install the build; read that from Play Console.
+
+Status as of 2026-11-17: the workflow ran against Google Play for versionCode `4000019` (4.1.2): `validate` run `44017152617` (`validated_not_committed`) and `commit` run `44017322804` (`committed_to_closed_testing`). A later `validate` run `44021913868` was refused by Play because the version code was already used. For this version, `commit` needs `confirm` set to `closed-testing 4000019`. Play refuses a re-upload of a version code it has already used, so any new build needs a new versionCode.
