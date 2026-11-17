@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { projectProfileResponseForTier } from "../server/lib/profile-response-access.ts";
+import { buildStoredBirthEvidenceInput } from "../server/lib/profile-birth-evidence-integrity.ts";
 
+const binding = buildStoredBirthEvidenceInput({ birthDate: "1990-09-17", birthTime: "11:11", timezone: "America/New_York", latitude: "40.8448", longitude: "-73.8648" });
 const profile = {
+  birthDate: new Date("1990-09-17T00:00:00.000Z"), birthTime: "11:11", timezone: "America/New_York", latitude: "40.8448", longitude: "-73.8648",
   id: "profile-1",
   name: "Bobby",
-  astrologyData: {},
+  astrologyData: { birthEvidenceInput: binding },
   personalityData: {},
   archetypeData: { title: "Stored Plus Archetype", description: "stored plus description", guidance: "stored plus guidance", shadows: ["stored shadow"] },
   biography: "stored plus biography secret",
@@ -32,6 +35,7 @@ const profile = {
     },
   },
   humanDesignData: {
+    birthEvidenceInput: binding,
     status: "verified",
     type: "Reflector",
     strategy: "Wait a lunar cycle",
@@ -109,4 +113,27 @@ test("Plus profile response preserves stored interpretation depth", () => {
   assert.equal(out.dailyGuidance, "stored plus guidance secret");
   assert.deepEqual(out.depthInterpretation, { secret: "paid depth" });
   assert.deepEqual(out.synthesis, { secret: "paid synthesis" });
+});
+
+
+test("unbound saved Aries evidence cannot leak through free or Plus profile projection", () => {
+  const stale = { ...profile, astrologyData: { rising: { sign: "Aries", verificationStatus: "verified" } },
+    humanDesignData: { ...profile.humanDesignData, birthEvidenceInput: undefined },
+    archetypeData: { title: "Old Aries", description: "Old Aries chart" }, biography: "Old Aries story", dailyGuidance: "Old Aries guidance" };
+  for (const tier of ["free", "plus"] as const) {
+    const result = projectProfileResponseForTier(stale, tier);
+    assert.deepEqual(result.astrologyData, {});
+    assert.equal((result as any).risingSign, null);
+    assert.notEqual(result.humanDesignData.status, "verified");
+    assert.doesNotMatch(JSON.stringify([result.archetypeData, result.biography, result.dailyGuidance, result.synthesis]), /Old Aries/);
+    assert.equal((result as any).birthEvidenceInvalidation.reason, "stored_birth_evidence_unbound");
+  }
+});
+
+test("birth-time mismatch clears stored chart claims without changing saved identity", () => {
+  const changed = { ...profile, birthTime: "12:11", astrologyData: { birthEvidenceInput: binding, rising: { sign: "Aries", verificationStatus: "verified" } } };
+  const projected = projectProfileResponseForTier(changed, "plus");
+  assert.equal(projected.id, profile.id);
+  assert.deepEqual(projected.astrologyData, {});
+  assert.equal(projected.birthTime, "12:11");
 });
