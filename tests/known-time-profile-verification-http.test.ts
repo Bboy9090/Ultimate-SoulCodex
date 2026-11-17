@@ -71,6 +71,23 @@ test("first verification POST calculates real HD and feeds the saved full synthe
     assert.match(reconciled.biography, /Lunar Authority/);
     assert.match(reconciled.biography, /2\/5/);
     assert.deepEqual(reconciled.humanDesignData?.activatedGates, snapshot.humanDesignData.activatedGates);
+    const changedDefinition = reconcileOfflineProfile(saved, {
+      ...snapshot,
+      humanDesignData: {
+        ...snapshot.humanDesignData,
+        definition: "UNQUALIFIED-DEFINITION-SENTINEL",
+      },
+    });
+    assert.equal(
+      changedDefinition.biography,
+      reconciled.biography,
+      "unqualified Definition must not change synthesized biography",
+    );
+    assert.deepEqual(
+      changedDefinition.depthInterpretation,
+      reconciled.depthInterpretation,
+      "unqualified Definition must not change depth synthesis",
+    );
     assert.equal(snapshot.processing.persistedProfile, false);
 
     // Rejected civil input is explicit through HTTP; it cannot masquerade as
