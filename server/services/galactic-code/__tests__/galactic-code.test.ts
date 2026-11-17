@@ -46,6 +46,17 @@ const testInput: GalacticCodeInput = {
   },
   humanDesign: {
     evidenceState: 'verified',
+    fieldEvidence: {
+      type: 'verified',
+      strategy: 'verified',
+      authority: 'verified',
+      profile: 'verified',
+      definition: 'unavailable',
+      centers: 'verified',
+      channels: 'verified',
+      gates: 'verified',
+      incarnationCross: 'unavailable',
+    },
     type: 'Generator',
     strategy: 'To Respond',
     authority: 'Sacral',
@@ -110,6 +121,24 @@ test('Galactic Code: Determinism', async (t) => {
     assert.strictEqual(result1.fingerprint, result2.fingerprint, 'fingerprint should be independent of array order');
   });
 
+  await t.test('equivalent channel and aspect orientation normalizes to one fingerprint', () => {
+    const input1: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['Channel 64-47'] },
+      astrology: { ...testInput.astrology, majorAspects: ['Sun square Moon'] },
+    };
+    const input2: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['47-64'] },
+      astrology: { ...testInput.astrology, majorAspects: ['Moon square Sun'] },
+    };
+
+    const result1 = generateGalacticCode(input1);
+    const result2 = generateGalacticCode(input2);
+    assert.strictEqual(result1.fingerprint, result2.fingerprint);
+    assert.deepStrictEqual(result1.axes, result2.axes);
+  });
+
   await t.test('prose changes do not change fingerprint', () => {
     const result1 = generateGalacticCode(testInput);
     const result2 = generateGalacticCode(testInput);
@@ -136,20 +165,54 @@ test('Galactic Code: System Coverage & Confidence', async (t) => {
   await t.test('calculates coverage based on data completeness', () => {
     const result = generateGalacticCode(testInput);
 
-    assert.strictEqual(result.coverage, 'partial');
+    assert.strictEqual(result.coverage, 'high');
     assert.strictEqual(result.sourceCoverage.astrology, 'complete');
     assert.strictEqual(result.sourceCoverage.humanDesign, 'complete');
     assert.strictEqual(result.sourceCoverage.numerology, 'complete');
   });
 
-  await t.test('missing Human Design lowers coverage', () => {
-    const noHDInput: GalacticCodeInput = {
+  await t.test('one complete plus one partial governed system stays partial', () => {
+    const input: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { coverage: 'missing' } as any,
+      numerology: {
+        evidenceState: 'deterministic',
+        coverage: 'partial',
+        lifePath: testInput.numerology.lifePath,
+      },
+    };
+
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'complete');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'missing');
+    assert.strictEqual(result.sourceCoverage.numerology, 'partial');
+    assert.strictEqual(result.coverage, 'partial');
+  });
+
+  await t.test('complete astrology + numerology can reach high coverage without Human Design', () => {
+    const input: GalacticCodeInput = {
       ...testInput,
       humanDesign: { coverage: 'missing' } as any,
     };
 
-    const result = generateGalacticCode(noHDInput);
-    assert.ok(['partial', 'insufficient'].includes(result.coverage));
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'complete');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'missing');
+    assert.strictEqual(result.sourceCoverage.numerology, 'complete');
+    assert.strictEqual(result.coverage, 'high');
+  });
+
+  await t.test('complete Human Design + numerology can reach high coverage without astrology', () => {
+    const input: GalacticCodeInput = {
+      ...testInput,
+      astrology: { coverage: 'missing' } as any,
+    };
+
+    const result = generateGalacticCode(input);
+    assert.strictEqual(result.sourceCoverage.astrology, 'missing');
+    assert.strictEqual(result.sourceCoverage.humanDesign, 'complete');
+    assert.strictEqual(result.sourceCoverage.numerology, 'complete');
+    assert.strictEqual(result.coverage, 'high');
   });
 
 
@@ -256,8 +319,12 @@ test('Galactic Code: Structure & Content', async (t) => {
   });
 
   await t.test('frequency matches expected format', () => {
-    // Format: MMDD-HHMM-LPX
-    assert(result.frequency.match(/^\d{4}-\d{2}\d{2}-LP\d+$/), 'frequency format incorrect');
+    // Non-reversible symbolic token derived from the stable fingerprint.
+    assert(result.frequency.match(/^SCF-[0-9A-F]{4}-[0-9A-F]{4}$/), 'symbolic frequency format incorrect');
+    assert.equal(
+      result.frequency,
+      `SCF-${result.fingerprint.slice(0, 4).toUpperCase()}-${result.fingerprint.slice(4, 8).toUpperCase()}`,
+    );
   });
 });
 
@@ -290,10 +357,6 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
       },
       {
         ...testInput,
-        behavior: { ...testInput.behavior, relationalPattern: 'Highly collaborative' },
-      },
-      {
-        ...testInput,
         astrology: { ...testInput.astrology, houseEmphasis: ['House 10'] },
       },
     ];
@@ -304,6 +367,69 @@ test('Galactic Code: Changed inputs produce different fingerprints', async (t) =
         baseResult.fingerprint,
       );
     }
+  });
+
+  await t.test('assessed behavior remains outside the stable fingerprint until its schema is promoted', () => {
+    const first: GalacticCodeInput = {
+      ...testInput,
+      behavior: {
+        evidenceState: 'assessed',
+        traits: ['analytical', 'methodical', 'strategic'],
+        decisionStyle: 'Data-driven',
+        stressPattern: 'Over-analysis',
+        relationalPattern: 'Selective',
+        builderMode: 'Foundation-first',
+        moralCompass: 'Principle-based',
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...testInput,
+      behavior: {
+        evidenceState: 'assessed',
+        traits: ['social', 'spontaneous', 'expressive'],
+        decisionStyle: 'Instinctive',
+        stressPattern: 'Rapid action',
+        relationalPattern: 'Highly collaborative',
+        builderMode: 'Prototype-first',
+        moralCompass: 'Care-based',
+      },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
+    assert.strictEqual(a.sourceCoverage.behavioralTraitCount, 0);
+    assert.strictEqual(b.sourceCoverage.behavioralTraitCount, 0);
+  });
+
+  await t.test('verification metadata alone cannot change a stable fingerprint', () => {
+    const deterministic = generateGalacticCode(testInput);
+    const verified = generateGalacticCode({
+      ...testInput,
+      numerology: { ...testInput.numerology, evidenceState: 'verified' },
+    });
+    assert.strictEqual(deterministic.fingerprint, verified.fingerprint);
+    assert.deepStrictEqual(deterministic.axes, verified.axes);
+  });
+
+  await t.test('raw birth metadata cannot split identical governed identity evidence', () => {
+    const baseline = generateGalacticCode(testInput);
+    const changedSourceMetadata = generateGalacticCode({
+      ...testInput,
+      birthDate: '2001-01-01',
+      birthTime: '23:59',
+      birthLocation: 'Different source location',
+    });
+
+    assert.strictEqual(baseline.fingerprint, changedSourceMetadata.fingerprint);
+    assert.deepStrictEqual(baseline.axes, changedSourceMetadata.axes);
+    assert.strictEqual(
+      baseline.frequency,
+      changedSourceMetadata.frequency,
+      'symbolic frequency must not reveal or vary with raw birth metadata when governed evidence is unchanged',
+    );
   });
 
   await t.test('changed Authority produces different fingerprint', () => {
@@ -448,6 +574,17 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       },
       humanDesign: {
         evidenceState: 'verified',
+        fieldEvidence: {
+          type: 'verified',
+          strategy: 'verified',
+          authority: 'verified',
+          profile: 'verified',
+          definition: 'unavailable',
+          centers: 'verified',
+          channels: 'verified',
+          gates: 'verified',
+          incarnationCross: 'unavailable',
+        },
         type: 'Projector',
         strategy: 'To Be Invited',
         authority: 'Mental',
@@ -482,7 +619,7 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
 
     const result = generateGalacticCode(completeCoverageInput);
 
-    // Coverage is high (2+ complete systems + behavioral traits)
+    // Coverage is high when at least 2 governed identity systems are complete
     assert.strictEqual(result.coverage, 'high', 'complete coverage should produce high coverage state');
 
     // But coverage NEVER means the underlying placements are independently verified
@@ -661,5 +798,97 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
     assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
     assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
+  });
+
+  await t.test('Human Design Definition remains excluded without independent qualification', () => {
+    const first: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        fieldEvidence: { ...testInput.humanDesign.fieldEvidence, definition: 'unavailable' },
+        definition: 'Single Definition',
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...first,
+      humanDesign: { ...first.humanDesign, definition: 'Quadruple Split Definition' },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
+  });
+
+  await t.test('unverified Human Design fields are fingerprint-inert inside a verified system envelope', () => {
+    const baseFieldEvidence = { ...testInput.humanDesign.fieldEvidence, channels: 'candidate' as const };
+    const first: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        fieldEvidence: baseFieldEvidence,
+        channels: ['1-8'],
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...first,
+      humanDesign: {
+        ...first.humanDesign,
+        channels: ['34-57'],
+      },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
+  });
+
+  await t.test('verified HD channel ids cannot inject behavioral prose into axis scoring', () => {
+    const legitimate: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['1-8'] },
+    };
+    const fabricated: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['strategic builder channel'] },
+    };
+
+    const legitimateResult = generateGalacticCode(legitimate);
+    const fabricatedResult = generateGalacticCode(fabricated);
+    assert.deepStrictEqual(fabricatedResult.axes, generateGalacticCode({
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: [] },
+    }).axes);
+    assert.deepStrictEqual(legitimateResult.axes, fabricatedResult.axes);
+  });
+
+  await t.test('malformed verified derived astrology fields are quarantined', () => {
+    const clean = generateGalacticCode({
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        dominantElements: [],
+        dominantModalities: [],
+        houseEmphasis: [],
+        majorAspects: [],
+      },
+    });
+    const malformed = generateGalacticCode({
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        dominantElements: ['plasma'],
+        dominantModalities: ['quantum'],
+        houseEmphasis: ['House 10 executive strategy'],
+        majorAspects: ['Sun strategic square Moon builder'],
+      },
+    });
+
+    assert.strictEqual(malformed.fingerprint, clean.fingerprint);
+    assert.deepStrictEqual(malformed.axes, clean.axes);
+    assert.deepStrictEqual(malformed.elementMatrix, clean.elementMatrix);
   });
 });
