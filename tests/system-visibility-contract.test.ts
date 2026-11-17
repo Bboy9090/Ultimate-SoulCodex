@@ -34,6 +34,16 @@ test("Human Design candidate stays inspectable-only until its trust record verif
   assert.equal(maySystemInfluenceSynthesis("humanDesign", "verified"), true);
 });
 
+test("personality assessments remain inspectable but outside stable synthesis", () => {
+  assert.equal(mayInspectSystem("personalityAssessments", "assessed"), true);
+  assert.equal(maySystemInfluenceSynthesis("personalityAssessments", "assessed"), false);
+  assert.equal(maySystemInfluenceSynthesis("personalityAssessments", "verified"), false);
+  assert.match(
+    SOUL_CODEX_SYSTEM_POLICIES.personalityAssessments.rule,
+    /do not enter the stable primary synthesis/i,
+  );
+});
+
 test("only promoted verified systems can influence production synthesis", () => {
   for (const policy of unavailableProductionSystems()) {
     assert.equal(policy.mayInfluencePrimarySynthesis, false, policy.id);
