@@ -1,10 +1,14 @@
 # Soul Codex Store Submission Packet
 
-Maintained for Soul Codex 4.1.1 mobile update candidates (current web/backend release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
+Maintained for Soul Codex 4.1.2 mobile update candidates (current web/backend package release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
 
 Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
 This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
+
+## 4.1.2 Candidate Status
+
+The 4.1.2 candidate uses Android versionCode `4000018` and iOS build `4000016`. These are **new source/build identities only**, not evidence of a Google Play edit, Apple TestFlight processing, App Store approval, or public production availability. Do not assume previous `4.1.1` store upload receipts cover this candidate. For a claim of upload/publishing, preserve the exact commit SHA, bundle checksum, workflow source run, provider receipt, and active track.
 
 ## Product Identity
 
@@ -14,8 +18,8 @@ This is the canonical operator checklist for App Store Connect and Google Play C
 | iOS bundle ID | `app.soulcodex.ios` |
 | App Store numeric ID | `6764221944` |
 | Android application ID | `soulcodex.app` |
-| Android release candidate | 4.1.1 / versionCode 4000017 (new cosmic update; committed to Alpha closed testing through the Play API on 2026-11-16 — see Current Release Evidence) |
-| iOS source project release | 4.1.1 / build 4000015 (source setting) |
+| Android release candidate | 4.1.2 / versionCode 4000018 (new candidate; provider upload not yet confirmed; earlier 4.1.1 / 4000017 Alpha upload retained in historical evidence) |
+| iOS source project release | 4.1.2 / build 4000016 (source candidate; signed upload and App Store Connect processing not yet confirmed) |
 | Primary category | Lifestyle |
 | Secondary iOS category | Entertainment |
 | Intended audience | 13+ |

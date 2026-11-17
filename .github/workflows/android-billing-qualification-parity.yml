@@ -26,12 +26,12 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.1
+  VITE_RELEASE_VERSION: 4.1.2
   VITE_API_CONTRACT: foundation-v4
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_BILLING_QUALIFICATION_MODE: "true"
-  QUALIFICATION_VERSION_CODE: "4000018"
+  QUALIFICATION_VERSION_CODE: "4000019"
 
 jobs:
   android-play-billing-qualification:
@@ -94,10 +94,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$QUALIFICATION_VERSION_CODE" = "4000018"
-          test "$(grep -Ec 'versionCode 4000017' android/app/build.gradle)" -eq 1
-          sed -i 's/versionCode 4000017/versionCode 4000018/' android/app/build.gradle
-          grep -F 'versionCode 4000018' android/app/build.gradle
+          test "$QUALIFICATION_VERSION_CODE" = "4000019"
+          test "$(grep -Ec 'versionCode 4000018' android/app/build.gradle)" -eq 1
+          sed -i 's/versionCode 4000018/versionCode 4000019/' android/app/build.gradle
+          grep -F 'versionCode 4000019' android/app/build.gradle
           test "$(git diff --numstat -- android/app/build.gradle | awk '{print $1 ":" $2}')" = "1:1"
 
       - name: Require release signing credentials
@@ -138,7 +138,7 @@ jobs:
           keytool -printcert -jarfile "$AAB" | grep -E 'SHA1:|SHA256:' > SIGNING-CERT-FINGERPRINTS.txt
           {
             echo "source_sha=$CANDIDATE_SHA"
-            echo "version_name=4.1.1"
+            echo "version_name=4.1.2"
             echo "version_code=$QUALIFICATION_VERSION_CODE"
             echo "package_name=soulcodex.app"
             echo "billing_qualification_mode=true"
@@ -152,7 +152,7 @@ jobs:
       - name: Upload Alpha qualification artifact and receipt
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.1-android-play-qualification
+          name: soulcodex-4.1.2-android-play-qualification
           path: |
             android/app/build/outputs/bundle/release/app-release.aab
             AAB-SHA256.txt

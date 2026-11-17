@@ -24,7 +24,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.1
+  VITE_RELEASE_VERSION: 4.1.2
   VITE_API_CONTRACT: foundation-v4
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -111,7 +111,7 @@ jobs:
             echo "job_status=$QUALIFICATION_JOB_STATUS"
             echo "archive_signing=unsigned"
             echo "provider_transactions=not_tested"
-            echo "release=4.1.1"
+            echo "release=4.1.2"
             echo "scheme=Ultimate Soul Codex"
             echo "bootstrap=ios/App/ci_scripts/ci_post_clone.sh"
             echo "billing_qualification_mode=true"

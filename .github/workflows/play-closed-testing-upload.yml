@@ -25,7 +25,7 @@ on:
           - validate
           - commit
       confirm:
-        description: 'Required for commit: type "closed-testing <versionCode>" (for example: closed-testing 4000017)'
+        description: 'Required for commit: type "closed-testing <versionCode>" (for example: closed-testing 4000018)'
         required: false
         type: string
 
@@ -40,10 +40,10 @@ concurrency:
 env:
   PLAY_PACKAGE_NAME: soulcodex.app
   PLAY_TRACK: alpha
-  EXPECTED_VERSION_NAME: 4.1.1
-  EXPECTED_VERSION_CODE: "4000017"
+  EXPECTED_VERSION_NAME: 4.1.2
+  EXPECTED_VERSION_CODE: "4000018"
   SOURCE_WORKFLOW_PATH: .github/workflows/store-4.0.0-release.yml
-  SOURCE_ARTIFACT_NAME: soulcodex-4.1.1-android
+  SOURCE_ARTIFACT_NAME: soulcodex-4.1.2-android
 
 jobs:
   upload-closed-testing:
