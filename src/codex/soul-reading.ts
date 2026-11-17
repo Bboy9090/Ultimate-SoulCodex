@@ -90,11 +90,9 @@ const LP_PURPOSE: Record<number, string> = {
 export function generateSoulReading(profile: SoulProfile): SoulReading {
   const synth = synthesizeCodex(profile);
 
-  const sun = profile.chart?.sun?.sign || "Unknown";
-  const moon = profile.chart?.moon?.sign || "Unknown";
-  const mercury = profile.chart?.mercury?.sign || sun;
-  const venus = profile.chart?.venus?.sign || moon;
-  const mars = profile.chart?.mars?.sign || sun;
+  const moon = profile.chart?.moon?.sign ?? "";
+  const mercury = profile.chart?.mercury?.sign ?? "";
+  const mars = profile.chart?.mars?.sign ?? "";
   const lifePath = profile.numerology?.lifePath || 0;
   const phase = profile.timeline?.currentPhase || "Integration";
 
@@ -180,6 +178,7 @@ function buildIdentityMirror(profile: SoulProfile, synth: CodexSynthesis): strin
 
 function buildMindStyle(mercury: string, elements?: { earth: number; air: number; fire: number; water: number }): string {
   const mind = MERCURY_MIND[mercury];
+  if (!mind) return "Mercury is unresolved; no sign-specific thinking style can be inferred.";
   const parts: string[] = [];
 
   if (mind) parts.push(mind);
@@ -194,11 +193,12 @@ function buildMindStyle(mercury: string, elements?: { earth: number; air: number
     }
   }
 
-  return parts.join(" ") || "My mind works by analyzing patterns and looking for what doesn't fit.";
+  return parts.join(" ");
 }
 
 function buildEmotionalPattern(moon: string, shadowTrigger?: string): string {
   const emotional = MOON_EMOTIONAL[moon];
+  if (!emotional) return "Moon is unresolved; no sign-specific emotional pattern can be inferred.";
   const parts: string[] = [];
 
   if (emotional) parts.push(emotional);
@@ -207,11 +207,12 @@ function buildEmotionalPattern(moon: string, shadowTrigger?: string): string {
     parts.push(`My emotional tripwire is ${shadowTrigger.toLowerCase()}. When that gets pulled, my rational processing shuts down and instinct takes over.`);
   }
 
-  return parts.join(" ") || "I process emotions internally before I express them. What people see is the edited version.";
+  return parts.join(" ");
 }
 
 function buildStressReading(mars: string, shadowTrigger?: string, elements?: { earth: number; air: number; fire: number; water: number }): string {
   const stress = MARS_STRESS[mars];
+  if (!stress) return "Mars is unresolved; no sign-specific stress response can be inferred.";
   const parts: string[] = [];
 
   if (stress) parts.push(stress);
@@ -223,7 +224,7 @@ function buildStressReading(mars: string, shadowTrigger?: string, elements?: { e
     if (waterLevel > 2) parts.push("My water element means stress goes inward first. By the time someone notices, I've already been processing it for hours.");
   }
 
-  return parts.join(" ") || "Under pressure I speed up mentally and try to solve everything at once.";
+  return parts.join(" ");
 }
 
 function buildPurpose(lifePath: number, synth: CodexSynthesis): string {
