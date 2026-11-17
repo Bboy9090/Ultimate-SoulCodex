@@ -24,8 +24,8 @@ Last verified pre-status-update checkpoint:
 - Latest exact-head Store Candidate source: `b1a2af702411a54ddc94da4ac8f89cfe4f927f8a`
 - Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
-  - Android cosmic update candidate: `4.1.1` / versionCode `4000017` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-16 (run `43956396804`); historical Alpha closed-test 4.1.0 / 4000016 was uploaded 2026-11-08.
-  - iOS source project (Cosmic post-merge candidate): `4.1.1` / build `4000015` / bundle `app.soulcodex.ios`; submission and signed Apple-managed archive remain unverified.
+  - Android 4.1.2 candidate: `4.1.2` / versionCode `4000019` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-17 (run `44017322804`). Earlier: 4.1.1 / `4000017` committed 2026-11-16 (run `43956396804`); 4.1.0 / `4000016` uploaded 2026-11-08.
+  - iOS source project: `4.1.2` / build `4000016` / bundle `app.soulcodex.ios`. A signed App Store IPA was built in CI (iOS Native Load run `44014945094`, IPA artifact ID `14298444854`, signature and identity checks passed). It has **not** been uploaded: no App Store Connect, TestFlight, or processing receipt exists. The earlier 4.1.1 / `4000015` IPA (artifact `14286544530`) was also never uploaded and is superseded.
 - Latest qualified source artifacts:
   - release-gate artifact ID: `13585158689`
   - iOS qualification artifact ID: `13585159197`
@@ -161,7 +161,16 @@ Play Developer API upload receipt, 2026-11-16:
 - production track and billing catalog: not touched
 - evidence class: the outcomes above are read from the run logs; the receipt JSON artifacts hold the full Play API responses. This is an API acceptance receipt, not a Play Console observation. Google's review state and tester availability for `4000017` are **unverified** until read from Play Console.
 
-Authenticated Play Console receipt as of 2026-11-07 (predates the 4000016 and 4000017 uploads):
+4.1.2 source qualification and Play Developer API receipt, 2026-11-17:
+- Store Candidate run `44016570663` on `main` at `64362a3de4202f08b7ba8d6f8c8828032d35cd02`: release-gates, android-store and ios-store-validation jobs passed; signed AAB built and verified; versionCode `4000019`, versionName `4.1.2`; Android artifact ID `14299800434`
+- validate run `44017152617`: outcome `validated_not_committed` (receipt artifact ID `14298299480`)
+- commit run `44017322804`: outcome `committed_to_closed_testing` (receipt artifact ID `14299466780`), `confirm` `closed-testing 4000019`
+- repeated validate run `44021913868`: failed, HTTP 403 `Version code 4000019 has already been used` (receipt artifact ID `14300749613`); consistent with the commit above, nothing committed by it
+- earlier failed attempt for versionCode `4000018` (validation run `44015139712`): `Version code 4000018 has already been used`; #676 moved the candidate to `4000019`
+- production track and billing catalog: not touched
+- evidence class: outcomes read from the run logs; the receipt JSON artifacts were not opened. An API acceptance receipt, not a Play Console observation. Google's review state and tester availability for `4000019` are **unverified**.
+
+Authenticated Play Console receipt as of 2026-11-07 (predates the 4000016, 4000017 and 4000019 uploads):
 - app: SOUL CODEX / `soulcodex.app`
 - Production: **Inactive**
 - Closed testing: **Active**
