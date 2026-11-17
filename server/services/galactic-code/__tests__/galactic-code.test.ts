@@ -46,6 +46,17 @@ const testInput: GalacticCodeInput = {
   },
   humanDesign: {
     evidenceState: 'verified',
+    fieldEvidence: {
+      type: 'verified',
+      strategy: 'verified',
+      authority: 'verified',
+      profile: 'verified',
+      definition: 'verified',
+      centers: 'verified',
+      channels: 'verified',
+      gates: 'verified',
+      incarnationCross: 'unavailable',
+    },
     type: 'Generator',
     strategy: 'To Respond',
     authority: 'Sacral',
@@ -448,6 +459,17 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
       },
       humanDesign: {
         evidenceState: 'verified',
+        fieldEvidence: {
+          type: 'verified',
+          strategy: 'verified',
+          authority: 'verified',
+          profile: 'verified',
+          definition: 'verified',
+          centers: 'verified',
+          channels: 'verified',
+          gates: 'verified',
+          incarnationCross: 'unavailable',
+        },
         type: 'Projector',
         strategy: 'To Be Invited',
         authority: 'Mental',
@@ -661,5 +683,76 @@ test('Galactic Code: Coverage vs Verification (Diamond Doctrine)', async (t) => 
     assert.strictEqual(resultA.fingerprint, resultB.fingerprint);
     assert.strictEqual(resultA.sourceCoverage.humanDesign, 'missing');
     assert.ok(resultA.evidence.every((value) => !value.startsWith('HD ')));
+  });
+
+  await t.test('unverified Human Design fields are fingerprint-inert inside a verified system envelope', () => {
+    const baseFieldEvidence = { ...testInput.humanDesign.fieldEvidence, channels: 'candidate' as const };
+    const first: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: {
+        ...testInput.humanDesign,
+        fieldEvidence: baseFieldEvidence,
+        channels: ['1-8'],
+      },
+    };
+    const second: GalacticCodeInput = {
+      ...first,
+      humanDesign: {
+        ...first.humanDesign,
+        channels: ['34-57'],
+      },
+    };
+
+    const a = generateGalacticCode(first);
+    const b = generateGalacticCode(second);
+    assert.strictEqual(a.fingerprint, b.fingerprint);
+    assert.deepStrictEqual(a.axes, b.axes);
+    assert.deepStrictEqual(a.evidence, b.evidence);
+  });
+
+  await t.test('verified HD channel ids cannot inject behavioral prose into axis scoring', () => {
+    const legitimate: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['1-8'] },
+    };
+    const fabricated: GalacticCodeInput = {
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: ['strategic builder channel'] },
+    };
+
+    const legitimateResult = generateGalacticCode(legitimate);
+    const fabricatedResult = generateGalacticCode(fabricated);
+    assert.deepStrictEqual(fabricatedResult.axes, generateGalacticCode({
+      ...testInput,
+      humanDesign: { ...testInput.humanDesign, channels: [] },
+    }).axes);
+    assert.deepStrictEqual(legitimateResult.axes, fabricatedResult.axes);
+  });
+
+  await t.test('malformed verified derived astrology fields are quarantined', () => {
+    const clean = generateGalacticCode({
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        dominantElements: [],
+        dominantModalities: [],
+        houseEmphasis: [],
+        majorAspects: [],
+      },
+    });
+    const malformed = generateGalacticCode({
+      ...testInput,
+      astrology: {
+        ...testInput.astrology,
+        dominantElements: ['plasma'],
+        dominantModalities: ['quantum'],
+        houseEmphasis: ['House 10 executive strategy'],
+        majorAspects: ['Sun strategic square Moon builder'],
+      },
+    });
+
+    assert.strictEqual(malformed.fingerprint, clean.fingerprint);
+    assert.deepStrictEqual(malformed.axes, clean.axes);
+    assert.deepStrictEqual(malformed.elementMatrix, clean.elementMatrix);
   });
 });
