@@ -42,6 +42,7 @@ import {
 import { resolveProductEntitlementForUser } from "./lib/product-entitlement";
 import { projectInterpretationInputsForTier } from "./lib/profile-interpretation-access";
 import { projectProfileResponseForTier } from "./lib/profile-response-access";
+import { bindStoredEvidence } from "./lib/profile-birth-evidence-integrity";
 import { buildProfileBirthMomentEvidence } from "./lib/profile-birth-moment";
 import { tierAllowsCapability } from "@shared/product-access";
 import { registerBillingRoutes } from "./billing";
@@ -171,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!requireDurableFeature(res)) return;
     try {
       const birthData = birthDataSchema.parse(req.body);
-      const humanDesignData = calculateProfileHumanDesign(birthData);
+      const humanDesignData = bindStoredEvidence(calculateProfileHumanDesign(birthData), birthData);
       const verifiedAstrologyData = await calculateVerifiedAstrology({
         birthDate: birthData.birthDate,
         birthTime: birthData.birthTime,
@@ -179,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         longitude: finiteCoordinate(birthData.longitude),
         timezone: birthData.timezone,
       });
-      const astrologyData = withVerifiedLegacyAliases(verifiedAstrologyData);
+      const astrologyData = bindStoredEvidence(withVerifiedLegacyAliases(verifiedAstrologyData), birthData);
       const numerologyData = calculateNumerology(birthData.fullBirthName, birthData.birthDate);
       const tarotCards = getTarotBirthCards(birthData.birthDate);
       const authenticatedUserId = req.session?.userId ?? null;

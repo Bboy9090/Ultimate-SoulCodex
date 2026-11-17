@@ -10,6 +10,7 @@ import type {
   GalacticCoverageState,
   SourceCoverageResult,
   GalacticAstrologyField,
+  GalacticHumanDesignField,
 } from '../../../shared/galactic-code/types';
 import { normalizeGalacticInput, extractHashableInput } from './normalize';
 import { createGalacticFingerprint } from './fingerprint';
@@ -21,6 +22,13 @@ import { canonicalNumberPattern, canonicalSignPattern } from '../../../shared/sy
 function verifiedAstrologyField(
   input: GalacticCodeInput['astrology'],
   field: GalacticAstrologyField,
+): boolean {
+  return input.fieldEvidence?.[field] === 'verified';
+}
+
+function verifiedHumanDesignField(
+  input: GalacticCodeInput['humanDesign'],
+  field: GalacticHumanDesignField,
 ): boolean {
   return input.fieldEvidence?.[field] === 'verified';
 }
@@ -41,19 +49,162 @@ function governedNumber(value: number | string | undefined): number | string | u
   return value !== undefined && canonicalNumberPattern(value) ? value : undefined;
 }
 
+const ASTROLOGY_ELEMENTS = new Set(['fire', 'earth', 'air', 'water']);
+const ASTROLOGY_MODALITIES = new Set(['cardinal', 'fixed', 'mutable']);
+const ASTROLOGY_BODIES: Readonly<Record<string, string>> = {
+  sun: 'Sun',
+  moon: 'Moon',
+  mercury: 'Mercury',
+  venus: 'Venus',
+  mars: 'Mars',
+  jupiter: 'Jupiter',
+  saturn: 'Saturn',
+  uranus: 'Uranus',
+  neptune: 'Neptune',
+  pluto: 'Pluto',
+  ascendant: 'Ascendant',
+  asc: 'Ascendant',
+  midheaven: 'Midheaven',
+  mc: 'Midheaven',
+  chiron: 'Chiron',
+  'north node': 'North Node',
+  northnode: 'North Node',
+  'south node': 'South Node',
+  southnode: 'South Node',
+};
+const ASTROLOGY_ASPECTS: Readonly<Record<string, string>> = {
+  conjunction: 'conjunction',
+  sextile: 'sextile',
+  square: 'square',
+  trine: 'trine',
+  opposition: 'opposition',
+};
+
+function governedAstrologyList(
+  values: string[] | undefined,
+  allowed: ReadonlySet<string>,
+): string[] | undefined {
+  if (!values) return undefined;
+  const filtered = values
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => allowed.has(value));
+  return [...new Set(filtered)];
+}
+
+function governedHouseEmphasis(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  const canonical = values.flatMap((value) => {
+    const match = /^(?:house\s*)?(1[0-2]|[1-9])$/i.exec(value.trim());
+    return match ? [`House ${Number(match[1])}`] : [];
+  });
+  return [...new Set(canonical)];
+}
+
+function governedAspect(value: string): string | null {
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, ' ');
+  const match = /^(.+?)\s+(conjunction|sextile|square|trine|opposition)\s+(.+)$/.exec(normalized);
+  if (!match) return null;
+  const left = ASTROLOGY_BODIES[match[1]];
+  const aspect = ASTROLOGY_ASPECTS[match[2]];
+  const right = ASTROLOGY_BODIES[match[3]];
+  if (!left || !aspect || !right || left === right) return null;
+  const [first, second] = [left, right].sort((a, b) => a.localeCompare(b));
+  return `${first} ${aspect} ${second}`;
+}
+
+function governedAspects(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values.map(governedAspect).filter((value): value is string => Boolean(value)))];
+}
+
+const HD_CENTER_ALIASES: Readonly<Record<string, string>> = {
+  head: 'Head',
+  ajna: 'Ajna',
+  throat: 'Throat',
+  g: 'G',
+  'g center': 'G',
+  identity: 'G',
+  heart: 'Heart',
+  ego: 'Heart',
+  will: 'Heart',
+  spleen: 'Spleen',
+  'solar plexus': 'Solar Plexus',
+  sacral: 'Sacral',
+  root: 'Root',
+};
+
+const HD_CHANNELS = new Set([
+  '1-8','2-14','3-60','4-63','5-15','6-59','7-31','9-52','10-20',
+  '10-34','10-57','11-56','12-22','13-33','16-48','17-62','18-58',
+  '19-49','20-34','20-57','21-45','23-43','24-61','25-51','26-44',
+  '27-50','28-38','29-46','30-41','32-54','34-57','35-36','37-40',
+  '39-55','42-53','47-64',
+]);
+
+function governedCenters(input: GalacticCodeInput['humanDesign']['centers']) {
+  if (!input) return undefined;
+  const canonicalize = (values: string[]) => [...new Set(values
+    .map((value) => HD_CENTER_ALIASES[value.trim().toLowerCase()])
+    .filter((value): value is string => Boolean(value)))];
+  return {
+    defined: canonicalize(input.defined),
+    undefined: canonicalize(input.undefined),
+  };
+}
+
+function governedChannel(value: string): string | null {
+  const normalized = value.trim().toLowerCase().replace(/^channel\s+/, '');
+  const match = /^(\d{1,2})\s*[-/]\s*(\d{1,2})$/.exec(normalized);
+  if (!match) return null;
+  const left = Number(match[1]);
+  const right = Number(match[2]);
+  if (left < 1 || left > 64 || right < 1 || right > 64 || left === right) return null;
+  const key = [left, right].sort((a, b) => a - b).join('-');
+  return HD_CHANNELS.has(key) ? key : null;
+}
+
+function governedChannels(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values.map(governedChannel).filter((value): value is string => Boolean(value)))];
+}
+
+function governedGates(values: string[] | undefined): string[] | undefined {
+  if (!values) return undefined;
+  return [...new Set(values
+    .map((value) => value.trim().replace(/^gate\s+/i, ''))
+    .filter((value) => /^(?:[1-9]|[1-5]\d|6[0-4])$/.test(value)))];
+}
+
 function governedHumanDesign(input: GalacticCodeInput['humanDesign']) {
-  const type = input.type?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
+  const rawType = verifiedHumanDesignField(input, 'type') ? input.type : undefined;
+  const rawStrategy = verifiedHumanDesignField(input, 'strategy') ? input.strategy : undefined;
+  const rawAuthority = verifiedHumanDesignField(input, 'authority') ? input.authority : undefined;
+  const rawProfile = verifiedHumanDesignField(input, 'profile') ? input.profile : undefined;
+
+  const type = rawType?.trim().toLowerCase() as keyof typeof HD_CORE | undefined;
   if (!type || !HD_CORE[type]) return null;
-  const strategy = input.strategy?.trim().toLowerCase();
-  const authority = input.authority
+  const strategy = rawStrategy?.trim().toLowerCase();
+  const authority = rawAuthority
     ?.trim()
     .toLowerCase()
     .replace(/\s+authority$/, '');
-  const profile = input.profile?.trim();
+  const profile = rawProfile?.trim();
   if (!strategy || !(HD_CORE[type].strategies as readonly string[]).includes(strategy)) return null;
   if (!authority || !(HD_CORE[type].authorities as readonly string[]).includes(authority)) return null;
   if (!profile || !/^[1-6]\/[1-6]$/.test(profile)) return null;
-  return input;
+
+  return {
+    ...input,
+    type: rawType,
+    strategy: rawStrategy,
+    authority: rawAuthority,
+    profile: rawProfile,
+    definition: verifiedHumanDesignField(input, 'definition') ? input.definition : undefined,
+    centers: verifiedHumanDesignField(input, 'centers') ? governedCenters(input.centers) : undefined,
+    channels: verifiedHumanDesignField(input, 'channels') ? governedChannels(input.channels) : undefined,
+    gates: verifiedHumanDesignField(input, 'gates') ? governedGates(input.gates) : undefined,
+    incarnationCross: verifiedHumanDesignField(input, 'incarnationCross') ? input.incarnationCross : undefined,
+  };
 }
 
 function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
@@ -92,17 +243,17 @@ function synthesisEligibleInput(input: GalacticCodeInput): GalacticCodeInput {
           venus: verifiedAstrologyField(input.astrology, 'venus') ? governedSign(input.astrology.venus) : undefined,
           mars: verifiedAstrologyField(input.astrology, 'mars') ? governedSign(input.astrology.mars) : undefined,
           dominantElements: verifiedAstrologyField(input.astrology, 'dominantElements')
-            ? input.astrology.dominantElements
+            ? governedAstrologyList(input.astrology.dominantElements, ASTROLOGY_ELEMENTS)
             : undefined,
           dominantModalities: verifiedAstrologyField(input.astrology, 'dominantModalities')
-            ? input.astrology.dominantModalities
+            ? governedAstrologyList(input.astrology.dominantModalities, ASTROLOGY_MODALITIES)
             : undefined,
           houseEmphasis:
             housesAllowed && verifiedAstrologyField(input.astrology, 'houseEmphasis')
-              ? input.astrology.houseEmphasis
+              ? governedHouseEmphasis(input.astrology.houseEmphasis)
               : undefined,
           majorAspects: verifiedAstrologyField(input.astrology, 'majorAspects')
-            ? input.astrology.majorAspects
+            ? governedAspects(input.astrology.majorAspects)
             : undefined,
         }
       : { coverage: 'missing', evidenceState: input.astrology.evidenceState || 'candidate' },
@@ -208,12 +359,9 @@ export function generateGalacticCode(input: GalacticCodeInput): GalacticCodeResu
   const designation = createDesignation(primaryFunction, secondaryFunction);
   const tagline = createTagline(topThreeAxes);
 
-  // Step 7: Create frequency
-  const frequency = createFrequency(
-    eligibleInput.birthDate,
-    eligibleInput.birthTime,
-    eligibleInput.numerology.lifePath?.toString()
-  );
+  // Step 7: Create a symbolic, non-reversible display token from the governed
+  // stable fingerprint. Never encode raw birth date/time into this field.
+  const frequency = createSymbolicFrequency(fingerprint);
 
   // Step 8: Element matrix
   const elementMatrix = createElementMatrix(normalized.astrology.dominantElements);
@@ -314,18 +462,14 @@ function calculateCoverage(sourceCoverage: SourceCoverageResult, systemCount: nu
   const completeCount = [
     sourceCoverage.astrology === 'complete' ? 1 : 0,
     sourceCoverage.humanDesign === 'complete' ? 1 : 0,
+    sourceCoverage.numerology === 'complete' ? 1 : 0,
   ].reduce((a, b) => a + b);
 
-  const hasBehavior = sourceCoverage.behavioralTraitCount >= 5;
-
-  // High coverage: at least 2 complete systems (astrology + HD) plus behavioral traits
-  if (completeCount >= 2 && hasBehavior) {
-    return 'high';
-  }
-
-  // High/Partial boundary: at least 2 complete systems but insufficient behavioral traits
+  // High coverage is driven only by governed stable identity systems.
+  // User-assessed behavior remains inspectable supporting context until its
+  // normalized evidence schema is explicitly promoted by the registry.
   if (completeCount >= 2) {
-    return 'partial';
+    return 'high';
   }
 
   // Partial coverage: 2+ systems present, even if not complete
@@ -371,14 +515,11 @@ function createTagline(topAxes: Array<{ label: string; score: number }>): string
   return `${primary.label} (${primary.score}) and ${secondary.label} (${secondary.score}) are the two strongest governed synthesis axes.`;
 }
 
-function createFrequency(birthDate?: string, birthTime?: string, lifePathStr?: string): string {
-  if (!birthDate) return 'Frequency unavailable: birth date missing';
-
-  const [, month, day] = birthDate.split('-');
-  const dateStem = `${month}${day}`;
-  const timeStem = birthTime ? `-${birthTime.replace(':', '')}` : '';
-  const lifePathStem = lifePathStr ? `-LP${lifePathStr}` : '';
-  return `${dateStem}${timeStem}${lifePathStem}`;
+function createSymbolicFrequency(fingerprint: string): string {
+  if (!/^[0-9a-f]{64}$/i.test(fingerprint)) {
+    throw new Error('Galactic Code symbolic frequency requires a valid stable fingerprint');
+  }
+  return `SCF-${fingerprint.slice(0, 4).toUpperCase()}-${fingerprint.slice(4, 8).toUpperCase()}`;
 }
 
 function createElementMatrix(dominantElements?: string[]): Record<string, number> {

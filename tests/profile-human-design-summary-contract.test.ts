@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const profileUrl = new URL("../client/src/pages/offline-profile.tsx", import.meta.url);
+const bodygraphUrl = new URL("../client/src/components/HumanDesignBodygraph.tsx", import.meta.url);
 
 test("profile Human Design summary stays compact and defers bodygraph detail", async () => {
   const source = await readFile(profileUrl, "utf8");
@@ -22,4 +23,12 @@ test("unqualified Human Design bodygraph detail remains withheld", async () => {
   assert.doesNotMatch(source, /<HumanDesignBodygraph/);
   assert.doesNotMatch(source, /DeepChartFallback label="Human Design bodygraph"/);
   assert.match(source, /human-design-bodygraph-deferred/);
+});
+
+
+test("full bodygraph labels Definition as calculated-only", async () => {
+  const source = await readFile(bodygraphUrl, "utf8");
+  assert.match(source, /Definition · calculated only/);
+  assert.match(source, /Definition, Variables, and Incarnation Cross naming remain outside the independently verified core/);
+  assert.doesNotMatch(source, /\["Definition", data\.definition\]/);
 });

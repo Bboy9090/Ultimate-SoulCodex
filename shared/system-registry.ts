@@ -92,7 +92,7 @@ export const SOUL_CODEX_PRODUCTION_SYSTEM_REGISTRY: readonly SoulCodexRegistryEn
     state: "governed",
     mayInfluenceUltimateCodex: true,
     evidenceContract: "HUMAN-DESIGN-CORE-v1",
-    rule: "Type, Strategy, Authority, Profile, Definition, centers, channels, gates, and gate/line activations may influence synthesis only after the verified core contract passes.",
+    rule: "Type, Strategy, Authority, Profile, centers, channels, gates, and gate/line activations may influence synthesis only after the verified core contract passes. Definition remains excluded until independently qualified.",
   },
   {
     id: "human-design-advanced",

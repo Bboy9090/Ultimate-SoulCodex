@@ -487,7 +487,6 @@ export function buildUltimateCodexSynthesis(
   const hdAuthority = verifiedHd && typeof hd.authority === "string" ? hd.authority.trim() : stableHdComponent("authority");
   const hdProfile = verifiedHd && typeof hd.profile === "string" ? hd.profile.trim() : stableHdComponent("profile");
   const includeHdDetails = access.humanDesignDetails !== false;
-  const hdDefinition = includeHdDetails && verifiedHd && typeof hd.definition === "string" ? hd.definition.trim() : includeHdDetails ? stableHdComponent("definition") : null;
   const hdCenters = includeHdDetails
     ? verifiedHd
       ? normalizeHumanDesignCenters(hd.centers)
@@ -534,7 +533,6 @@ export function buildUltimateCodexSynthesis(
     hdStrategy ? `hd:${hdEvidenceMode ?? "unresolved"}:strategy:${hdStrategy}` : null,
     hdAuthority ? `hd:${hdEvidenceMode ?? "unresolved"}:authority:${hdAuthority}` : null,
     hdProfile ? `hd:${hdEvidenceMode ?? "unresolved"}:profile:${hdProfile}` : null,
-    hdDefinition ? `hd:${hdEvidenceMode ?? "unresolved"}:definition:${hdDefinition}` : null,
     ...hdCenters.defined.map((center) => `hd:center:${center}`),
     ...hdChannels.map((channel) => `hd:channel:${channel}`),
     ...hdGates.map((gate) => `hd:gate:${gate}`),
@@ -844,9 +842,9 @@ export function buildUltimateCodexSynthesis(
       system: "Human Design",
       status: verifiedHd ? "verified core" : hdEvidenceMode === "stable_across_range" ? "stable across full-day range" : "unresolved",
       detail: verifiedHd
-        ? unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")
+        ? unique([hdType, hdStrategy, hdAuthority, hdProfile]).join(" · ")
         : hdEvidenceMode === "stable_across_range"
-          ? `${unique([hdType, hdStrategy, hdAuthority, hdProfile, hdDefinition]).join(" · ")} · only invariant components are admitted; conditional components remain excluded.`
+          ? `${unique([hdType, hdStrategy, hdAuthority, hdProfile]).join(" · ")} · only independently governed invariant components are admitted; conditional or unqualified components remain excluded.`
           : "Excluded from synthesis until verified or stable across the full unknown-time range.",
     },
     {

@@ -1,8 +1,9 @@
 /**
  * Galactic Code Types
  *
- * Deterministic fusion layer combining astrology, Human Design, numerology,
- * behavioral traits, and symbolic archetypes into a stable identity fingerprint.
+ * Deterministic fusion layer combining governed stable astrology, Human Design,
+ * and numerology evidence into a stable identity fingerprint. User-assessed
+ * behavior remains supporting context until its evidence schema is promoted.
  */
 
 import type { SoulCodexEvidenceState } from '../system-visibility';
@@ -42,8 +43,20 @@ export interface GalacticAstrologyInput {
   coverage: SourceCoverageState;
 }
 
+export type GalacticHumanDesignField =
+  | 'type'
+  | 'strategy'
+  | 'authority'
+  | 'profile'
+  | 'definition'
+  | 'centers'
+  | 'channels'
+  | 'gates'
+  | 'incarnationCross';
+
 export interface GalacticHumanDesignInput {
   evidenceState?: SoulCodexEvidenceState;
+  fieldEvidence?: Partial<Record<GalacticHumanDesignField, SoulCodexEvidenceState>>;
   type?: string;
   strategy?: string;
   authority?: string;
