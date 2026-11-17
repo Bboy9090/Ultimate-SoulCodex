@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { IStorage } from "../storage";
 import type { EntitlementGrant } from "@shared/schema";
 import type { SoulCodexTier } from "@shared/product-access";
+import { nativeBillingQualificationAccountAllowed } from "./native-billing-qualification-accounts";
 
 export const SOUL_CODEX_PLUS_CAPABILITY = "soul_codex_plus";
 
@@ -284,9 +285,33 @@ export async function resolveProductEntitlementForUser(
         lastVerifiedAt: now.toISOString() };
     }
   } catch { /* malformed configuration fails closed; paid access is resolved normally */ }
+  // Ordinary access is strictly production-sourced. A sandbox provider event
+  // remains auditable but can never become a paid production entitlement.
   const grant = await storage.getLatestEntitlementGrant(
     userId,
     SOUL_CODEX_PLUS_CAPABILITY,
+    "production",
+  );
+  return entitlementFromGrant(grant, now);
+}
+
+/**
+ * Dedicated preview for a server-authorized sandbox tester, never used by
+ * regular access routes or public shares. No owner/complimentary overrides.
+ * The caller must additionally be on the native qualification request path.
+ */
+export async function resolveSandboxBillingEntitlementForUser(
+  storage: Pick<IStorage, "getUser" | "getLatestEntitlementGrant">,
+  userId: string | null | undefined,
+  now = new Date(),
+): Promise<ProductEntitlement> {
+  if (!nativeBillingQualificationAccountAllowed(userId)) return entitlementFromGrant(null, now);
+  const user = await storage.getUser(userId!);
+  if (!user) return entitlementFromGrant(null, now);
+  const grant = await storage.getLatestEntitlementGrant(
+    userId!,
+    SOUL_CODEX_PLUS_CAPABILITY,
+    "sandbox",
   );
   return entitlementFromGrant(grant, now);
 }

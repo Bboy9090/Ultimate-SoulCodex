@@ -17,6 +17,7 @@ import {
   SOUL_CODEX_PLUS_CAPABILITY,
   recordVerifiedBillingEvent,
   resolveProductEntitlementForUser,
+  resolveSandboxBillingEntitlementForUser,
   type VerifiedBillingEvent,
 } from "./lib/product-entitlement";
 
@@ -782,7 +783,11 @@ export function registerBillingRoutes(app: Express): void {
       }
 
       await recordVerifiedBillingEvent(storage, verifiedEvent);
-      const access = await resolveProductEntitlementForUser(storage, userId);
+      // Qualification receipts are visible only to the allowlisted sandbox
+      // session. Ordinary production access never reads sandbox grants.
+      const access = qualificationEnabled
+        ? await resolveSandboxBillingEntitlementForUser(storage, userId)
+        : await resolveProductEntitlementForUser(storage, userId);
 
       if (access.tier !== "plus") {
         return res.status(409).json({
