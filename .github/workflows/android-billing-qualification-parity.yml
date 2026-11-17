@@ -31,7 +31,7 @@ env:
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_RELEASE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
   VITE_BILLING_QUALIFICATION_MODE: "true"
-  QUALIFICATION_VERSION_CODE: "4000019"
+  QUALIFICATION_VERSION_CODE: "4000020"
 
 jobs:
   android-play-billing-qualification:
@@ -94,10 +94,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$QUALIFICATION_VERSION_CODE" = "4000019"
-          test "$(grep -Ec 'versionCode 4000018' android/app/build.gradle)" -eq 1
-          sed -i 's/versionCode 4000018/versionCode 4000019/' android/app/build.gradle
-          grep -F 'versionCode 4000019' android/app/build.gradle
+          test "$QUALIFICATION_VERSION_CODE" = "4000020"
+          test "$(grep -Ec 'versionCode 4000019' android/app/build.gradle)" -eq 1
+          sed -i 's/versionCode 4000019/versionCode 4000020/' android/app/build.gradle
+          grep -F 'versionCode 4000020' android/app/build.gradle
           test "$(git diff --numstat -- android/app/build.gradle | awk '{print $1 ":" $2}')" = "1:1"
 
       - name: Require release signing credentials

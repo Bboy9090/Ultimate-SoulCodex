@@ -13,7 +13,7 @@
 ## Release identity
 
 - iOS bundle ID: `app.soulcodex.ios`; version `4.1.2`; build `4000016`.
-- Android application ID: `soulcodex.app`; version `4.1.2`; versionCode `4000018`.
+- Android application ID: `soulcodex.app`; version `4.1.2`; versionCode `4000019`.
 - Google Play target: **Alpha closed testing first**; never claim production release without Play Console evidence.
 - Apple target: **App Store Connect/TestFlight qualification**; do not treat unsigned CI archives as provider uploads.
 - Do not infer a user's actual Rising sign from release notes; that comes only from qualified chart evidence.

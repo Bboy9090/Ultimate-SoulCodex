@@ -17,7 +17,7 @@ test("Soul Codex platform release identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000018/);
+  assert.match(android, /versionCode\s+4000019/);
   assert.match(android, /versionName\s+"4\.1\.2"/);
   assert.match(android, /applicationId\s+"soulcodex\.app"/);
   assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
@@ -91,7 +91,7 @@ test("release validator refuses stale rc metadata and unknown SHAs", async () =>
   const validator = await text("scripts/validate-mobile-release.mjs");
   assert.match(validator, /platform === "ios" && releaseVersion !== "4\.1\.2"/);
   assert.match(validator, /android\/app\/build\.gradle/);
-  assert.match(validator, /versionCode\\s\+4000018/);
+  assert.match(validator, /versionCode\\s\+4000019/);
   assert.match(validator, /CURRENT_PROJECT_VERSION = 4000016/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
@@ -111,7 +111,7 @@ test("store metadata points at the verified public legal host and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.2 \/ versionCode 4000018/);
+  assert.match(packet, /4\.1\.2 \/ versionCode 4000019/);
   assert.match(packet, /4\.1\.2 \/ build 4000016/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
