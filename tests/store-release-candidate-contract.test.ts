@@ -182,7 +182,7 @@ test("subscription listing descriptions retain the Apple EULA required by App Re
 
 test("store submission handoff distinguishes existing closed test from future production release", async () => {
   const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
-  assert.match(packet, /versionCode `4000017`: uploaded to Google Play \*\*Alpha closed testing\*\*/);
+  assert.match(packet, /versionCode `4000017`: committed to the Google Play \*\*Alpha closed testing\*\*/);
   assert.match(packet, /keyless Workload Identity Federation/);
   assert.match(packet, /does not require a long-lived `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` key/);
   assert.match(packet, /Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release/);
