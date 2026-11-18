@@ -17,20 +17,20 @@ test("Soul Codex platform release identities are aligned", async () => {
   const androidBuildspec = await text("buildspec-android.yml");
   const envExample = await text(".env.example");
 
-  assert.match(android, /versionCode\s+4000019/);
-  assert.match(android, /versionName\s+"4\.1\.2"/);
+  assert.match(android, /versionCode\s+4000021/);
+  assert.match(android, /versionName\s+"4\.1\.3"/);
   assert.match(android, /applicationId\s+"soulcodex\.app"/);
   assert.match(android, /namespace\s*=\s*"app\.soulcodex\.main"/);
-  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.2<\/string>/);
-  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000016<\/string>/);
-  assert.match(project, /CURRENT_PROJECT_VERSION = 4000016;/);
-  assert.match(project, /MARKETING_VERSION = 4\.1\.2;/);
+  assert.match(info, /<key>CFBundleShortVersionString<\/key>\s*<string>4\.1\.3<\/string>/);
+  assert.match(info, /<key>CFBundleVersion<\/key>\s*<string>4000017<\/string>/);
+  assert.match(project, /CURRENT_PROJECT_VERSION = 4000017;/);
+  assert.match(project, /MARKETING_VERSION = 4\.1\.3;/);
   assert.match(project, /PRODUCT_BUNDLE_IDENTIFIER = app\.soulcodex\.ios;/);
   assert.match(manifest, /releaseVersion:\s*"4\.1\.0"/);
   assert.match(dockerfile, /SOUL_CODEX_RELEASE_VERSION=4\.1\.0/);
   assert.match(serverIdentity, /DEFAULT_FOUNDATION_RELEASE_VERSION = "4\.1\.0"/);
   assert.match(clientIdentity, /DEFAULT_CLIENT_RELEASE_VERSION = "4\.1\.0"/);
-  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.1\.2"/);
+  assert.match(androidBuildspec, /VITE_RELEASE_VERSION: "4\.1\.3"/);
   assert.match(envExample, /VITE_RELEASE_VERSION=4\.1\.0/);
   assert.match(envExample, /SOUL_CODEX_RELEASE_VERSION=4\.1\.0/);
 
@@ -81,18 +81,18 @@ test("store workflow qualifies exact candidate without auto-publishing productio
   assert.match(workflow, /submission is deferred until the owner authorizes and completes a separate store-launch process/);
   assert.doesNotMatch(workflow, /r0adkll\/upload-google-play/);
   assert.doesNotMatch(workflow, /track:\s*production/);
-  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.2/);
-  assert.match(workflow, /iOS marketingVersion=4\.1\.2/);
-  assert.match(workflow, /iOS build=4000016/);
+  assert.match(workflow, /VITE_RELEASE_VERSION:\s*4\.1\.3/);
+  assert.match(workflow, /iOS marketingVersion=4\.1\.3/);
+  assert.match(workflow, /iOS build=4000017/);
   assert.match(workflow, /signed_store_upload=delegated_to_xcode_cloud_after_main_merge/);
 });
 
 test("release validator refuses stale rc metadata and unknown SHAs", async () => {
   const validator = await text("scripts/validate-mobile-release.mjs");
-  assert.match(validator, /platform === "ios" && releaseVersion !== "4\.1\.2"/);
+  assert.match(validator, /platform === "ios" && releaseVersion !== "4\.1\.3"/);
   assert.match(validator, /android\/app\/build\.gradle/);
-  assert.match(validator, /versionCode\\s\+4000019/);
-  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000016/);
+  assert.match(validator, /versionCode\\s\+4000021/);
+  assert.match(validator, /CURRENT_PROJECT_VERSION = 4000017/);
   assert.match(validator, /VITE_RELEASE_SHA cannot be unknown/);
   assert.match(validator, /40-character Git commit SHA/);
 });
@@ -111,8 +111,8 @@ test("store metadata points at the verified public legal host and exact release 
     assert.doesNotMatch(source, /https:\/\/soulcodex\.app\/(?:privacy|support|account-deletion)/);
   }
 
-  assert.match(packet, /4\.1\.2 \/ versionCode 4000019/);
-  assert.match(packet, /4\.1\.2 \/ build 4000016/);
+  assert.match(packet, /4\.1\.3 \/ versionCode 4000021/);
+  assert.match(packet, /4\.1\.3 \/ build 4000017/);
   assert.match(packet, /do not hard-code them into the source tree/);
 
   assert.match(listing, /Verified Human Design Type, Strategy, Authority, and Profile/);
@@ -182,7 +182,7 @@ test("subscription listing descriptions retain the Apple EULA required by App Re
 
 test("store submission handoff distinguishes existing closed test from future production release", async () => {
   const packet = await text("docs/STORE_SUBMISSION_PACKET.md");
-  assert.match(packet, /versionCode `4000016`: uploaded to Google Play \*\*Alpha closed testing\*\*/);
+  assert.match(packet, /versionCode `4000017`: uploaded to Google Play \*\*Alpha closed testing\*\*/);
   assert.match(packet, /keyless Workload Identity Federation/);
   assert.match(packet, /does not require a long-lived `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` key/);
   assert.match(packet, /Do not confuse a later successful CI Store Candidate with an automatically uploaded Play release/);
