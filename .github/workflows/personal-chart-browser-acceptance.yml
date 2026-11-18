@@ -41,7 +41,12 @@ jobs:
           mkdir -p node_modules/@playwright
           ln -s "$RUNNER_TEMP/soul-browser-tools/node_modules/@playwright/test" node_modules/@playwright/test
           git diff --exit-code -- package.json package-lock.json
-      - run: '"$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" install --with-deps chromium webkit'
+      - name: Install pinned Chromium and WebKit browsers
+        # Ubuntu image already has the browser runtime libraries. Avoid an
+        # unbounded apt dependency mirror stall while retaining both real
+        # browser projects as mandatory acceptance checks.
+        timeout-minutes: 8
+        run: '"$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" install chromium webkit'
       - run: npm run build:workspaces
       - run: npm run build
       - name: Test saved profiles and partial chart readings in Chromium and WebKit
