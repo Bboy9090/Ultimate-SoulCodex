@@ -98,6 +98,8 @@ jobs:
           tests/natal-wheel-verified-orientation.test.ts
           tests/profile-verification-reconciliation.test.ts
           tests/profile-birth-evidence-integrity.test.ts
+          tests/natal-coordinate-provenance-contract.test.ts
+          tests/release-4.1.3-cosmic-accuracy-contract.test.ts
           tests/profile-response-access.test.ts
           tests/unknown-time-dst-range.test.ts
           tests/dst-range-evidence-contract.test.ts
