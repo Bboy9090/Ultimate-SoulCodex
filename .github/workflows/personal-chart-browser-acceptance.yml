@@ -19,6 +19,9 @@ concurrency:
 jobs:
   personal-chart-browser:
     runs-on: ubuntu-24.04
+    # This pinned Playwright runtime includes Chromium, WebKit and the GTK4 /
+    # GStreamer libraries required by the iPhone WebKit acceptance project.
+    container: mcr.microsoft.com/playwright:v1.54.1-noble
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
@@ -41,12 +44,10 @@ jobs:
           mkdir -p node_modules/@playwright
           ln -s "$RUNNER_TEMP/soul-browser-tools/node_modules/@playwright/test" node_modules/@playwright/test
           git diff --exit-code -- package.json package-lock.json
-      - name: Install pinned Chromium and WebKit browsers
-        # Ubuntu image already has the browser runtime libraries. Avoid an
-        # unbounded apt dependency mirror stall while retaining both real
-        # browser projects as mandatory acceptance checks.
-        timeout-minutes: 8
-        run: '"$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" install chromium webkit'
+      - name: Verify pinned browser runtime
+        run: |
+          test -d /ms-playwright
+          "$RUNNER_TEMP/soul-browser-tools/node_modules/.bin/playwright" --version | grep -Fx "Version 1.54.1"
       - run: npm run build:workspaces
       - run: npm run build
       - name: Test saved profiles and partial chart readings in Chromium and WebKit
