@@ -1,11 +1,20 @@
 # Soul Codex Store Submission Packet
 
-Maintained for Soul Codex 4.1.2 mobile update candidates (current web/backend package release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
+Maintained for Soul Codex 4.1.3 mobile update candidates (current web/backend package release line remains 4.1.0). Product contracts and suggested copy are versioned here; store-console and binary status must be read from dated provider receipts, not assumed from this packet.
 
 Release authority is intentionally not hard-coded in this document. At submission time, use the exact-head GitHub Actions release receipt/artifact for the candidate being uploaded and verify its SHA matches the signed binary and deployed backend identity.
 
 This is the canonical operator checklist for App Store Connect and Google Play Console. Store answers must be rechecked whenever data collection, third-party services, authentication, payments, or native permissions change.
 
+## 4.1.3 New Candidate — 2026-11-18
+
+This is **source preparation**, not an App Store Connect upload, TestFlight processing receipt, Google Play track commit, or public release. The new Android candidate is **4.1.3 / versionCode 4000021**, bundle ID `soulcodex.app`; the isolated Android sandbox qualification artifact uses **versionCode 4000022** and must never be submitted as production. The iOS candidate is **4.1.3 / build 4000017**, bundle ID `app.soulcodex.ios`. Both codes remain subject to provider-side uniqueness and must be checked against live consoles before any submission; local source assignments alone are not provider acceptance evidence.
+
+Release contents: the verified current-main birth-input binding repairs, server-separated sandbox/production subscription grants, native sandbox diagnostic recovery, updated cosmic interaction styling, and stricter decimal latitude/longitude provenance. Historical store approvals, previously signed IPA/AAB checksums, and 4.1.2 provider receipts remain historical and **must not** be relabeled as 4.1.3 results.
+
+Qualification gates: exact-head ten-workflow source and signed native build checks; independent real-device first paint and accessibility; zodiac cusp/DST/polar/unknown-birth-time, saved chart migration and genuine evidence provenance; Android/Apple console metadata; real Apple StoreKit and Google Play monthly/annual purchase, verify, restore, revocation/expiry; confirmed Google Play tester counts and approval. Keep both production native billing flags off until genuine provider evidence. No AWS/GCP paid resources.
+
+---
 ## 4.1.2 Candidate Status
 
 Google Play validation run `44015139712` rejected Android versionCode `4000018` with provider error `Version code 4000018 has already been used`. No 4.1.2 release was committed by that failed run. The current Android candidate advances to `4000019` and must independently pass provider validation and closed-testing commit. Historical 4.1.1 Play receipts remain unchanged.
