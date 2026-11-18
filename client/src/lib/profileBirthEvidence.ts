@@ -18,7 +18,7 @@ function coordinate(value: unknown, limit: number): number | null | undefined {
   // Only decimal coordinates are valid birth evidence. Number() also accepts
   // hex, binary and exponent notation, which cannot be trusted as saved
   // latitude/longitude entered through a geographic form.
-  if (typeof value === "string" && !/^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(value.trim())) {
+  if (typeof value === "string" && !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value.trim())) {
     return undefined;
   }
   const number = Number(value);
