@@ -1,20 +1,32 @@
-name: Soul Codex iOS 4.1.0 Native Load Hotfix
+name: Soul Codex iOS 4.1.3 Native Load & Signed Store IPA
 
 on:
   push:
     branches:
+      - main
       - release/4.1.0-rc1
       - hotfix/ios-4.1.0-native-load
       - fix/profile-narrative-refresh-federation
       - fix/personal-chart-release-integrity
       - fix/complimentary-review-access
+    paths:
+      - .github/workflows/ios-4.0.2-native-load-hotfix.yml
+      - ios/**
+      - client/**
+      - shared/**
+      - packages/**
+      - scripts/**
+      - tests/ios-*
+      - package.json
+      - package-lock.json
+      - capacitor.config.*
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: soulcodex-ios-4-1-0-hotfix
+  group: soulcodex-ios-4-1-3-signed-ipa-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -536,17 +548,17 @@ jobs:
             echo "signature=verified"
             echo "app_store_profile=verified"
             echo "native_launch_gate=passed"
-          } > build/export/IOS-4.1.0-SIGNED-RECEIPT.txt
+          } > build/export/IOS-4.1.3-SIGNED-RECEIPT.txt
 
       - name: Upload signed IPA
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-signed-app-store-ipa
+          name: soulcodex-4.1.3-signed-app-store-ipa
           path: |
             build/export/*.ipa
             build/export/IPA-SHA256.txt
             build/export/RELEASE-CANDIDATE-SHA.txt
-            build/export/IOS-4.1.0-SIGNED-RECEIPT.txt
+            build/export/IOS-4.1.3-SIGNED-RECEIPT.txt
           if-no-files-found: error
           retention-days: 90
 
@@ -554,7 +566,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: soulcodex-4.1.0-signing-diagnostics
+          name: soulcodex-4.1.3-signing-diagnostics
           path: |
             release-candidate-sha.txt
             archive.log
