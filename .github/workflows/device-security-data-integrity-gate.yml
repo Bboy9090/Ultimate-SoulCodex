@@ -54,6 +54,7 @@ jobs:
           tests/native-session-fetch.test.ts
           tests/native-billing-session-recovery-contract.test.ts
           tests/ios-billing-qualification-build-contract.test.ts
+          tests/ios-4.1.3-signed-main-qualification-contract.test.ts
           tests/ios-billing-qualification-cors-contract.test.ts
           tests/native-billing-verification-behavior.test.ts
           tests/native-billing-server-verification-contract.test.ts
