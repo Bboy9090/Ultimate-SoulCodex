@@ -1,4 +1,4 @@
-name: Soul Codex Store Candidate — Android 4.1.2 / iOS 4.1.2
+name: Soul Codex Store Candidate — Android 4.1.3 / iOS 4.1.3
 
 on:
   push:
@@ -26,7 +26,7 @@ concurrency:
 
 env:
   VITE_API_URL: https://soulcodex.up.railway.app
-  VITE_RELEASE_VERSION: 4.1.2
+  VITE_RELEASE_VERSION: 4.1.3
   VITE_API_CONTRACT: foundation-v4
   CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
@@ -75,7 +75,7 @@ jobs:
         run: npm run mobile:validate:android
       - name: Validate iOS release metadata
         env:
-          VITE_RELEASE_VERSION: 4.1.2
+          VITE_RELEASE_VERSION: 4.1.3
           VITE_RELEASE_SHA: ${{ env.CANDIDATE_SHA }}
         run: npm run mobile:validate:ios
       - name: Generate release receipt
@@ -83,12 +83,12 @@ jobs:
           cat > STORE-CANDIDATE-RECEIPT.txt <<EOF
           Soul Codex store candidate
           SHA=${CANDIDATE_SHA}
-          Android versionName=4.1.2
+          Android versionName=4.1.3
           Android applicationId=soulcodex.app
-          Android versionCode=4000019
-          iOS marketingVersion=4.1.2
+          Android versionCode=4000021
+          iOS marketingVersion=4.1.3
           iOS bundleId=app.soulcodex.ios
-          iOS build=4000016
+          iOS build=4000017
           API=https://soulcodex.up.railway.app
           API contract=foundation-v4
           EOF
@@ -228,8 +228,8 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "versionName=4.1.2"
-            echo "versionCode=4000019"
+            echo "versionName=4.1.3"
+            echo "versionCode=4000021"
             echo "signing_available=${{ steps.signing.outputs.available }}"
             echo "play_credentials_available=${{ steps.play.outputs.available }}"
             echo "play_credentials_mode=${{ steps.play.outputs.mode }}"
@@ -237,7 +237,7 @@ jobs:
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v6
         with:
-          name: soulcodex-4.1.2-android
+          name: soulcodex-4.1.3-android
           path: |
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/debug/*.apk
@@ -282,7 +282,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60
     env:
-      VITE_RELEASE_VERSION: 4.1.2
+      VITE_RELEASE_VERSION: 4.1.3
     steps:
       - name: Checkout exact candidate
         uses: actions/checkout@v7
@@ -318,8 +318,8 @@ jobs:
         run: |
           {
             echo "SHA=${CANDIDATE_SHA}"
-            echo "marketingVersion=4.1.2"
-            echo "buildNumber=4000016"
+            echo "marketingVersion=4.1.3"
+            echo "buildNumber=4000017"
             echo "bundleId=app.soulcodex.ios"
             echo "signed_store_upload=delegated_to_xcode_cloud_after_main_merge"
           } > ios-store-state.txt
