@@ -15,6 +15,12 @@ export type BirthEvidenceInput = {
 function coordinate(value: unknown, limit: number): number | null | undefined {
   if (value === null || value === undefined || (typeof value === "string" && !value.trim())) return null;
   if (typeof value !== "number" && typeof value !== "string") return undefined;
+  // Only decimal coordinates are valid birth evidence. Number() also accepts
+  // hex, binary and exponent notation, which cannot be trusted as saved
+  // latitude/longitude entered through a geographic form.
+  if (typeof value === "string" && !/^[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)$/.test(value.trim())) {
+    return undefined;
+  }
   const number = Number(value);
   return Number.isFinite(number) && Math.abs(number) <= limit ? number : undefined;
 }
