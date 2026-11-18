@@ -27,6 +27,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Trust checked-out workspace inside pinned browser container
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Record exact source
         env:
           CANDIDATE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
