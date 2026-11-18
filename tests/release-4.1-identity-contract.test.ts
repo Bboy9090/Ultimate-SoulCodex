@@ -14,20 +14,20 @@ const files = {
 
 test("active release surfaces use 4.1.0 with platform-specific store build numbers", () => {
   assert.match(files.packageJson, /"version": "4\.1\.0"/);
-  assert.match(files.android, /versionCode\s+4000019/);
-  assert.match(files.android, /versionName\s+"4\.1\.2"/);
-  assert.match(files.iosInfo, /<string>4\.1\.2<\/string>/);
-  assert.match(files.iosInfo, /<string>4000016<\/string>/);
-  assert.match(files.iosProject, /MARKETING_VERSION = 4\.1\.2;/);
-  assert.match(files.iosProject, /CURRENT_PROJECT_VERSION = 4000016;/);
-  assert.match(files.validator, /platform === "ios" && releaseVersion !== "4\.1\.2"/);
-  assert.match(files.validator, /platform === "android" && releaseVersion !== "4\.1\.2"/);
-  assert.match(files.storeWorkflow, /Android versionName=4\.1\.2/);
-  assert.match(files.storeWorkflow, /Android versionCode=4000019/);
-  assert.match(files.storeWorkflow, /iOS marketingVersion=4\.1\.2/);
-  assert.match(files.storeWorkflow, /iOS build=4000016/);
-  assert.match(files.metadata, /Android: `4\.1\.2` \/ versionCode `4000019`/);
-  assert.match(files.metadata, /iOS: `4\.1\.2` \/ build `4000016`/);
+  assert.match(files.android, /versionCode\s+4000021/);
+  assert.match(files.android, /versionName\s+"4\.1\.3"/);
+  assert.match(files.iosInfo, /<string>4\.1\.3<\/string>/);
+  assert.match(files.iosInfo, /<string>4000017<\/string>/);
+  assert.match(files.iosProject, /MARKETING_VERSION = 4\.1\.3;/);
+  assert.match(files.iosProject, /CURRENT_PROJECT_VERSION = 4000017;/);
+  assert.match(files.validator, /platform === "ios" && releaseVersion !== "4\.1\.3"/);
+  assert.match(files.validator, /platform === "android" && releaseVersion !== "4\.1\.3"/);
+  assert.match(files.storeWorkflow, /Android versionName=4\.1\.3/);
+  assert.match(files.storeWorkflow, /Android versionCode=4000021/);
+  assert.match(files.storeWorkflow, /iOS marketingVersion=4\.1\.3/);
+  assert.match(files.storeWorkflow, /iOS build=4000017/);
+  assert.match(files.metadata, /Android: `4\.1\.3` \/ versionCode `4000021`/);
+  assert.match(files.metadata, /iOS: `4\.1\.3` \/ build `4000017`/);
 });
 
 test("4.1 RC does not turn on purchase surfaces by source default", () => {

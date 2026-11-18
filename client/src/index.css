@@ -710,3 +710,40 @@ html[data-cosmic-motion="still"] .sc-cosmic-root :is(.sc-card-link, .feature-car
     outline-offset: 3px;
   }
 }
+
+/* 4.1.3 cosmic instrument polish: legible depth without touch-hover traps. */
+.sc-cosmic-root :is(.sc-panel, .sc-orbit-inspector):focus-within {
+  border-color: rgba(239, 208, 141, .48);
+  box-shadow: 0 20px 58px rgba(0, 0, 0, .34), 0 0 0 1px rgba(239, 208, 141, .13);
+}
+.sc-cosmic-root .sc-orbit-mobile-option[aria-pressed="true"],
+.sc-cosmic-root .sc-orbit-body[aria-pressed="true"] {
+  border-color: var(--sc-gold-bright);
+  box-shadow: 0 0 0 2px rgba(239, 208, 141, .18), 0 0 25px rgba(154, 116, 220, .15);
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  html:not([data-cosmic-motion="still"]) .sc-cosmic-root .sc-panel:focus-within {
+    transition: border-color .22s cubic-bezier(.22,1,.36,1), box-shadow .22s cubic-bezier(.22,1,.36,1);
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .sc-cosmic-root :is(.sc-button-primary, .sc-button-secondary, .sc-card-link, .feature-card):hover {
+    transform: none;
+  }
+  .sc-orbit-body:hover:not([aria-pressed="true"]) {
+    box-shadow: 0 5px 18px rgba(0, 0, 0, .36);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sc-cosmic-root :is(.sc-panel, .sc-orbit-inspector, .sc-orbit-mobile-option) {
+    transition: none !important;
+  }
+}
+@media (prefers-contrast: more) {
+  .sc-cosmic-root .sc-panel:focus-within,
+  .sc-cosmic-root .sc-orbit-mobile-option[aria-pressed="true"] {
+    border-color: #f5db9f;
+    outline: 2px solid #f5db9f;
+    outline-offset: 2px;
+  }
+}

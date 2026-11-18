@@ -65,7 +65,10 @@ jobs:
         run: npm install --no-save --package-lock=false @playwright/test@1.54.1
 
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # Do not let a transient Ubuntu apt mirror stall the entire release
+        # qualification. The real Chromium acceptance below is still required.
+        timeout-minutes: 8
+        run: npx playwright install chromium
 
       - name: Build workspaces
         run: npm run build:workspaces

@@ -227,9 +227,10 @@ test("Navigation and planetary browser acceptance: cosmic shared-chart orbit res
   const signs = ["Virgo", "Cancer", "Libra", "Leo", "Aries", "Sagittarius", "Capricorn", "Aquarius", "Pisces", "Scorpio"];
   await page.addInitScript(({ keys, signs }) => {
     const stamp = "2026-11-01T00:00:00.000Z";
+    const sourceInstant = "1990-09-17T15:11:00.000Z";
     const planets = Object.fromEntries(keys.map((key, i) => [key, {
       sign: signs[i], verificationStatus: "verified",
-      provenance: { source: "browser-fixture", engine: "browser-fixture", calculatedAt: stamp },
+      provenance: { source: "browser-fixture", engine: "browser-fixture", calculatedAt: stamp, inputTimestamp: sourceInstant },
     }]));
     const planetaryHouses = Object.fromEntries(keys.map((key, i) => [key, i + 1]));
     const houses = Array.from({ length: 12 }, (_, i) => ({
@@ -238,6 +239,12 @@ test("Navigation and planetary browser acceptance: cosmic shared-chart orbit res
     }));
     localStorage.setItem("soulcodex.activeProfile.v1", JSON.stringify({
       id: "browser-fixture", schemaVersion: 1, birthDate: "1990-09-17", name: "Test Profile",
+      birthTime: "11:11", birthTimeStatus: "known", timezone: "America/New_York",
+      birthLocation: "Bronx, New York", latitude: "40.7", longitude: "-73.9",
+      // This is a synthetic browser geometry fixture, but its persisted
+      // verification evidence MUST bind to its declared birth inputs.
+      birthEvidenceInput: { version: 1, birthDate: "1990-09-17", timezone: "America/New_York",
+        mode: "known", utc: sourceInstant, latitude: 40.7, longitude: -73.9 },
       astrologyData: { houseSystem: "equal", houses, planetaryHouses, planets },
     }));
     localStorage.setItem("soulcodex.connections.v1", JSON.stringify({
