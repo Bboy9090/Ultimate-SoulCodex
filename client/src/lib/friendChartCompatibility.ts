@@ -169,6 +169,58 @@ function buildGuideSummary(friendshipMatches: ChartPlacementMatch[]) {
   };
 }
 
+export type FriendConversationMoment = {
+  key: (typeof FRIENDSHIP_KEYS)[number];
+  label: string;
+  basis: string;
+  opening: string;
+  question: string;
+  followUp: string;
+};
+
+/**
+ * Optional, evidence-bounded conversation starters for two people comparing
+ * their saved charts. This does not infer thoughts, behaviors, real-world
+ * compatibility, exact angles, or privately shared history.
+ */
+function conversationMoments(matches: ChartPlacementMatch[]): FriendConversationMoment[] {
+  const questions: Record<(typeof FRIENDSHIP_KEYS)[number], { question: string; followUp: string }> = {
+    moon: {
+      question: "Think of the last time one of you was overwhelmed. What kind of support actually helped, and what was misunderstood?",
+      followUp: "Each person names one specific moment and one support request the other could try next time.",
+    },
+    mercury: {
+      question: "Recall a recent crossed wire. What did each of you think was being said, and what finally clarified it?",
+      followUp: "Each person paraphrases the other before offering a different interpretation.",
+    },
+    venus: {
+      question: "How do you each show appreciation? What caring gesture did one person make that the other barely noticed?",
+      followUp: "Name one genuine gesture worth repeating; don't assume matching symbols mean identical needs.",
+    },
+    jupiter: {
+      question: "When did this friendship help one of you take a chance, learn something, or see a bigger possibility?",
+      followUp: "Pick one shared challenge you would both enjoy, without assigning either person a fixed role.",
+    },
+  };
+  return matches.flatMap((match) => {
+    if (!FRIENDSHIP_KEYS.includes(match.key as (typeof FRIENDSHIP_KEYS)[number])) return [];
+    const key = match.key as (typeof FRIENDSHIP_KEYS)[number];
+    const shared = match.signal === "same sign";
+    const opening = shared
+      ? `You both have ${match.yours.sign} in this saved placement. Familiar symbols can still lead to different lived experiences.`
+      : `Your ${match.yours.sign} and their ${match.theirs.sign} suggest two symbolic styles worth comparing—not a proven conflict.`;
+    const basis = `Your ${FRIENDSHIP_LABELS[key]}: ${match.yours.sign}${match.yours.house ? ` · House ${match.yours.house}` : ""}; theirs: ${match.theirs.sign}${match.theirs.house ? ` · House ${match.theirs.house}` : ""}`;
+    return [{
+      key,
+      label: FRIENDSHIP_LABELS[key],
+      basis,
+      opening,
+      question: questions[key].question,
+      followUp: questions[key].followUp,
+    }];
+  });
+}
+
 /** Transparent symbolic comparison of only matching chart placements; never calculates degree-based aspects. */
 export function compareFriendCharts(yours: SharedChartPlacement[], theirs: SharedChartPlacement[]) {
   const otherByKey = new Map(theirs.map((placement) => [placement.key, placement]));
@@ -183,6 +235,7 @@ export function compareFriendCharts(yours: SharedChartPlacement[], theirs: Share
     friendshipScore: average(friendshipMatches),
     friendshipMatches,
     friendshipPerspectives: friendshipMatches.map(buildPerspective),
+    conversationMoments: conversationMoments(friendshipMatches),
     guideSummary: buildGuideSummary(friendshipMatches),
     overallCoverage: { matched: matches.length, available: new Set([...yours, ...theirs].map((placement) => placement.key)).size },
     friendshipCoverage: { matched: friendshipMatches.length, available: FRIENDSHIP_KEYS.length },
