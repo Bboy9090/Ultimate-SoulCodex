@@ -260,6 +260,12 @@ test("Navigation and planetary browser acceptance: cosmic shared-chart orbit res
     await page.goto("/compatibility/compare?connection=test-friend", { waitUntil: "domcontentloaded" });
     const orbit = page.getByTestId("cosmic-comparison-orbit");
     await expect(orbit).toBeVisible();
+    const conversation = page.getByTestId("friend-conversation-lab");
+    await expect(conversation).toBeVisible();
+    await expect(conversation.locator("article")).toHaveCount(2);
+    await expect(conversation).toContainText("overwhelmed");
+    await expect(conversation).toContainText("crossed wire");
+    await expect(page.getByTestId("friend-conversation-plus-boundary")).toBeVisible();
     if (width < 640) {
       await expect(orbit.locator(".sc-orbit-mobile-option")).toHaveCount(10);
       await expect(orbit.locator(".sc-orbit-stage")).toBeHidden();
