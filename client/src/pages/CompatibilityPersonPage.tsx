@@ -299,7 +299,7 @@ export default function CompatibilityPersonPage() {
             One person. Four signals. No universal verdict.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same planet and verified house context.
+            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same saved planet and house details. A friend's manually entered placements are not independently verified.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
@@ -315,7 +315,7 @@ export default function CompatibilityPersonPage() {
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                A placement-by-placement comparison using only chart facts actually saved for both people. Missing planets stay missing.
+                A placement-by-placement comparison using only chart details saved for both people. Friend entries may be manual rather than independently verified; missing planets stay missing.
               </p>
             </div>
 
