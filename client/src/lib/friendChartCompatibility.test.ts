@@ -64,3 +64,33 @@ test("compareFriendCharts returns unresolved scores and an evidence-safe guide w
   assert.deepEqual(result.friendshipPerspectives, []);
   assert.match(result.guideSummary.headline, /Not enough shared chart evidence/);
 });
+
+
+test("friend conversation questions follow actual overlap rather than fabricated compatibility or private thoughts", () => {
+  const result = compareFriendCharts(
+    [{ key: "moon", sign: "Virgo", house: 4 }, { key: "mercury", sign: "Gemini" }, { key: "venus", sign: "Capricorn" }],
+    [{ key: "moon", sign: "Capricorn", house: 9 }, { key: "mercury", sign: "Libra" }, { key: "jupiter", sign: "Leo" }],
+  );
+  assert.deepEqual(result.conversationMoments.map((moment) => moment.key), ["moon", "mercury"]);
+  assert.match(result.conversationMoments[0].basis, /Virgo.*House 4.*Capricorn.*House 9/);
+  assert.match(result.conversationMoments[0].question, /overwhelmed/);
+  assert.match(result.conversationMoments[1].question, /crossed wire/);
+  assert.ok(result.conversationMoments.every((moment) => moment.question.includes("?")));
+  assert.ok(result.conversationMoments.every((moment) => moment.followUp.length > 35));
+  assert.equal(JSON.stringify(result.conversationMoments).includes("jupiter"), false);
+  assert.equal(JSON.stringify(result.conversationMoments).includes("venus"), false);
+});
+
+test("matching chart symbols invite challenge rather than asserting mind-reading", () => {
+  const result = compareFriendCharts([{ key: "venus", sign: "Cancer" }], [{ key: "venus", sign: "Cancer" }]);
+  assert.equal(result.conversationMoments.length, 1);
+  assert.match(result.conversationMoments[0].opening, /different lived experiences/);
+  assert.match(result.conversationMoments[0].basis, /Cancer/);
+  assert.equal(result.conversationMoments[0].basis.includes("House"), false);
+});
+
+test("missing overlapping Moon Mercury Venus and Jupiter produces no invented conversation", () => {
+  const result = compareFriendCharts([{ key: "sun", sign: "Virgo" }], [{ key: "sun", sign: "Aries" }]);
+  assert.deepEqual(result.conversationMoments, []);
+  assert.equal(result.friendshipScore, null);
+});
