@@ -162,7 +162,7 @@ function buildGuideSummary(friendshipMatches: ChartPlacementMatch[]) {
     streetTranslation: strongest.score >= 80
       ? `Aureon's read: this friendship has a real shared language around ${strongestLabel.toLowerCase()}. The move is not to assume—use it.`
       : `Aureon's read: y'all can work with this, but the friendship gets stronger when the differences are translated instead of guessed at.`,
-    strength: `${strongestLabel} currently carries the strongest symbolic resonance in the verified overlap.`,
+    strength: `${strongestLabel} currently carries the strongest symbolic resonance in the saved overlap.`,
     watchPoint: hardest.key === strongest.key
       ? "Coverage is still narrow, so one placement should not be asked to explain the whole friendship."
       : `${hardestLabel} carries the most adjustment pressure among the currently comparable friendship placements.`,
