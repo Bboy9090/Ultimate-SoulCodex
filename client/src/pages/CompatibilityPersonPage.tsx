@@ -188,6 +188,9 @@ export default function CompatibilityPersonPage() {
   const visibleFriendshipPerspectives = deeperInterpretationUnlocked
     ? friendChartComparison.friendshipPerspectives
     : friendChartComparison.friendshipPerspectives.slice(0, 1);
+  const visibleConversationMoments = deeperInterpretationUnlocked
+    ? friendChartComparison.conversationMoments
+    : friendChartComparison.conversationMoments.slice(0, 2);
 
   const placementSignalCounts = placementComparisons.reduce<Record<string, number>>((counts, { yours, theirs }) => {
     const label = placementComparisonLine(yours, theirs).label;
@@ -296,7 +299,7 @@ export default function CompatibilityPersonPage() {
             One person. Four signals. No universal verdict.
           </h1>
           <p className="sc-lede mt-5">
-            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same planet and verified house context.
+            {profileName(profile)} stays loaded. The four-dimension model still uses its privacy-minimized Sun comparison, while saved friend chart placements can now be explored locally side by side when both charts contain the same saved planet and house details. A friend's manually entered placements are not independently verified.
           </p>
           <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">
             Your name, birth date, birth location, biography, Moon, Rising, and Human Design are not included in this Compatibility request.
@@ -312,12 +315,48 @@ export default function CompatibilityPersonPage() {
               <p className="sc-eyebrow">Chart-to-chart</p>
               <h2 className="mt-2 font-serif text-3xl font-semibold">{profileName(profile)} + {initialConnection.name}</h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--sc-stone)]">
-                A placement-by-placement comparison using only chart facts actually saved for both people. Missing planets stay missing.
+                A placement-by-placement comparison using only chart details saved for both people. Friend entries may be manual rather than independently verified; missing planets stay missing.
               </p>
             </div>
 
             {placementComparisons.length ? (
               <div className="space-y-4">
+                {visibleConversationMoments.length ? (
+                  <section className="rounded-2xl border border-[var(--sc-line-gold)] bg-[linear-gradient(140deg,rgba(217,182,111,.07),rgba(154,116,220,.035))] p-5 sm:p-6" data-testid="friend-conversation-lab" aria-labelledby="friend-conversation-lab-title">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="sc-eyebrow">Soul Circle · Conversation Lab</p>
+                        <h3 id="friend-conversation-lab-title" className="mt-2 font-serif text-2xl text-[var(--sc-ivory)]">A reading worth talking about</h3>
+                      </div>
+                      <span className="rounded-full border border-[var(--sc-line-gold)] px-3 py-1.5 text-xs text-[var(--sc-gold-bright)]">
+                        {friendChartComparison.friendshipCoverage.matched}/4 shared friendship placements
+                      </span>
+                    </div>
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--sc-ivory-soft)]">
+                      Compare a memory, not just a score. Each question starts from a placement saved for both of you. Answer separately, swap perspectives, and notice where your real experience agrees or disagrees.
+                    </p>
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      {visibleConversationMoments.map((moment) => (
+                        <article key={moment.key} className="rounded-xl border border-white/10 bg-black/15 p-4" data-testid={`friend-conversation-${moment.key}`}>
+                          <h4 className="font-serif text-xl text-[var(--sc-ivory)]">{moment.label}</h4>
+                          <p className="mt-2 text-xs leading-5 text-[var(--sc-stone)]">{moment.basis}</p>
+                          <p className="mt-3 text-sm leading-6 text-[var(--sc-ivory-soft)]">{moment.opening}</p>
+                          <p className="mt-4 text-base font-semibold leading-7 text-[var(--sc-gold-bright)]">{moment.question}</p>
+                          <p className="mt-3 text-sm leading-6 text-[var(--sc-stone)]">{moment.followUp}</p>
+                        </article>
+                      ))}
+                    </div>
+                    {!deeperInterpretationUnlocked && friendChartComparison.conversationMoments.length > visibleConversationMoments.length ? (
+                      <p className="mt-4 text-sm leading-6 text-[var(--sc-stone)]" data-testid="friend-conversation-plus-boundary">
+                        Free includes two conversation starters. <Link href="/pricing" className="font-semibold text-[var(--sc-gold-bright)]">Soul Codex+</Link> opens the remaining supported friendship topics.
+                      </p>
+                    ) : null}
+                    <p className="mt-4 text-xs leading-5 text-[var(--sc-stone)]">
+                      These are invitations to talk, not psychological assessments, proof of another person's feelings, or a prediction. No answers are collected or shared by this section.
+                    </p>
+                  </section>
+                ) : null}
+
                 <div className="grid gap-3 sm:grid-cols-2" data-testid="friend-placement-snapshot">
                   <div className="rounded-2xl border border-[var(--sc-line-gold)] bg-[rgba(217,182,111,.035)] p-4">
                     <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Shared chart resonance</p>

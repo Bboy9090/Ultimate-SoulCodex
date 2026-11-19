@@ -189,7 +189,7 @@ export default function CompatibilityHubPage() {
             <div className="sc-eyebrow mt-5">Compare a person</div>
             <h2 className="mt-3 font-serif text-3xl font-semibold">One bounded comparison</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--sc-stone)]">
-              Keep your saved Identity loaded and add only the other person’s symbolic Sun sign for the current Foundation model.
+              Keep your saved Identity loaded. Start with a bounded Sun comparison; when both saved charts contain overlapping friendship placements, open Conversation Lab to talk through specific memories together.
             </p>
             <strong className="mt-6 inline-flex items-center gap-2 text-sm text-[var(--sc-gold-bright)]">Compare a person <ArrowRight className="h-4 w-4" /></strong>
           </Link>
