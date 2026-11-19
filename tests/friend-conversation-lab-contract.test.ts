@@ -35,3 +35,11 @@ test("conversation lab does not collect, export or diagnose friend answers", () 
   assert.match(section, /not psychological assessments/);
   assert.doesNotMatch(section, /apiFetch|fetch\(|localStorage|sendBeacon|navigator\.share|clipboard|postMessage/);
 });
+
+
+test("saved friend signs and houses are not presented as independently verified birth charts", () => {
+  assert.match(page, /A friend's manually entered placements are not independently verified/);
+  assert.match(page, /Friend entries may be manual rather than independently verified/);
+  assert.match(model, /in the saved overlap/);
+  assert.doesNotMatch(model, /in the verified overlap/);
+});
