@@ -24,8 +24,10 @@ Last verified pre-status-update checkpoint:
 - Latest exact-head Store Candidate source: `b1a2af702411a54ddc94da4ac8f89cfe4f927f8a`
 - Store Candidate run: `42400835507` — PASS\n- Exact-head Account Sign-In run: `42400835166` — PASS\n- Exact-head iOS Billing Parity run: `42400835339` — PASS
 - Current source mobile identity:
-  - Android 4.1.2 candidate: `4.1.2` / versionCode `4000019` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-17 (run `44017322804`). Earlier: 4.1.1 / `4000017` committed 2026-11-16 (run `43956396804`); 4.1.0 / `4000016` uploaded 2026-11-08.
-  - iOS source project: `4.1.2` / build `4000016` / bundle `app.soulcodex.ios`. A signed App Store IPA was built in CI (iOS Native Load run `44014945094`, IPA artifact ID `14298444854`, signature and identity checks passed). It has **not** been uploaded: no App Store Connect, TestFlight, or processing receipt exists. The earlier 4.1.1 / `4000015` IPA (artifact `14286544530`) was also never uploaded and is superseded.
+  - Android 4.1.3 candidate: `4.1.3` / versionCode `4000021` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-19 (run `44426762022`).
+  - iOS source project: `4.1.3` / build `4000017` / bundle `app.soulcodex.ios`. A signed App Store IPA was built in CI (iOS Native Load & Signed Store IPA run `44425126284`, IPA artifact ID `14483624117`, simulator launch, signing, and identity/signature checks passed). It has **not** been uploaded: no App Store Connect, TestFlight, or processing receipt exists.
+  - Previous Android candidate: `4.1.2` / versionCode `4000019` / package `soulcodex.app`; committed to Play Alpha closed testing through the API on 2026-11-17 (run `44017322804`). Earlier: 4.1.1 / `4000017` committed 2026-11-16 (run `43956396804`); 4.1.0 / `4000016` uploaded 2026-11-08.
+  - Previous iOS source project: `4.1.2` / build `4000016` / bundle `app.soulcodex.ios`. A signed App Store IPA was built in CI (iOS Native Load run `44014945094`, IPA artifact ID `14298444854`, signature and identity checks passed). It has **not** been uploaded: no App Store Connect, TestFlight, or processing receipt exists. The earlier 4.1.1 / `4000015` IPA (artifact `14286544530`) was also never uploaded and is superseded.
 - Latest qualified source artifacts:
   - release-gate artifact ID: `13585158689`
   - iOS qualification artifact ID: `13585159197`
@@ -170,7 +172,15 @@ Play Developer API upload receipt, 2026-11-16:
 - production track and billing catalog: not touched
 - evidence class: outcomes read from the run logs; the receipt JSON artifacts were not opened. An API acceptance receipt, not a Play Console observation. Google's review state and tester availability for `4000019` are **unverified**.
 
-Authenticated Play Console receipt as of 2026-11-07 (predates the 4000016, 4000017 and 4000019 uploads):
+4.1.3 source qualification and Play Developer API receipt, 2026-11-19:
+- Store Candidate run `44425126476` on `main` at `28b5497738c303fa50842234d9a5805364e29f0c`: release-gates, android-store and ios-store-validation jobs passed; signed AAB built and verified; versionCode `4000021`, versionName `4.1.3`; Android artifact ID `14484212049`
+- validate run `44426486159`: outcome `validated_not_committed` (receipt artifact ID `14484597080`)
+- commit run `44426762022`: outcome `committed_to_closed_testing` (receipt artifact ID `14484836702`), `confirm` `closed-testing 4000021`; one commit run dispatched
+- package / track: `soulcodex.app` / `alpha` (closed testing); production track and billing catalog: not touched
+- iOS: iOS Native Load & Signed Store IPA run `44425126284` on the same commit; signed IPA artifact `soulcodex-4.1.3-signed-app-store-ipa`, ID `14483624117`; **not uploaded to App Store Connect**
+- evidence class: Play outcomes read from the run logs and the iOS result from the job steps; the receipt JSON and IPA receipt files were not opened. An API acceptance receipt, not a Play Console observation. Google's review state and tester availability for `4000021`, and any Apple processing state for build `4000017`, are **unverified**.
+
+Authenticated Play Console receipt as of 2026-11-07 (predates the 4000016, 4000017, 4000019 and 4000021 uploads):
 - app: SOUL CODEX / `soulcodex.app`
 - Production: **Inactive**
 - Closed testing: **Active**
