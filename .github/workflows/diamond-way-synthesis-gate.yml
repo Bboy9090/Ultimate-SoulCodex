@@ -78,6 +78,7 @@ jobs:
             tests/personal-chart-browser-workflow-contract.test.ts \
             tests/human-depth-specialty-surfaces.test.ts \
             tests/location-resolution-contract.test.ts \
+            tests/integration-config.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
             tests/diamond-experience-architecture.test.ts \

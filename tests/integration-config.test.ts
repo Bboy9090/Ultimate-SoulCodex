@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveIntegrationConfig } from "../../server/lib/integration-config";
+import { resolveIntegrationConfig } from "../server/lib/integration-config";
 
 test("integrations remain disabled by default", () => {
   const config = resolveIntegrationConfig({ NODE_ENV: "production" });
