@@ -93,7 +93,7 @@ export interface IStorage {
   createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt>;
   createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant>;
   getLatestEntitlementGrant(userId: string, capability: string, environment?: "production" | "sandbox"): Promise<EntitlementGrant | undefined>;
-  createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date): Promise<SoulCircleInvite>;
+  createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName?: string | null): Promise<SoulCircleInvite>;
   listSoulCircleInvites(inviterUserId: string): Promise<SoulCircleInvite[]>;
   revokeSoulCircleInvite(inviterUserId: string, inviteId: string, now: Date): Promise<SoulCircleInvite | undefined>;
   getSoulCircleInviteByTokenHash(tokenHash: string): Promise<SoulCircleInvite | undefined>;
@@ -103,7 +103,8 @@ export interface IStorage {
   listSoulCircleBlockedByUser(userId: string): Promise<SoulCircleLink[]>;
   removeSoulCircleLink(linkId: string): Promise<void>;
   blockSoulCircleLink(linkId: string, blockedByUserId: string): Promise<SoulCircleLink | undefined>;
-  upsertSoulCircleShare(ownerUserId: string, friendUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare>;
+  /** Writes consent only if the link is still active and the owner belongs to it, atomically with removal/blocking. */
+  upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined>;
   getSoulCircleShare(ownerUserId: string, friendUserId: string): Promise<SoulCircleShare | undefined>;
   listSoulCircleSharesTo(friendUserId: string): Promise<SoulCircleShare[]>;
   listSoulCircleSharesFrom(ownerUserId: string): Promise<SoulCircleShare[]>;
@@ -444,9 +445,9 @@ export class MemStorage implements IStorage {
         return occurrenceDelta || b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime();
       })[0];
   }
-  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date): Promise<SoulCircleInvite> {
+  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName: string | null = null): Promise<SoulCircleInvite> {
     const invite: SoulCircleInvite = {
-      id: randomUUID(), tokenHash, inviterUserId, createdAt: new Date(), expiresAt,
+      id: randomUUID(), tokenHash, inviterUserId, inviterDisplayName, createdAt: new Date(), expiresAt,
       acceptedByUserId: null, acceptedAt: null, revokedAt: null,
     };
     this.soulCircleInvites.set(invite.id, invite);
@@ -483,6 +484,8 @@ export class MemStorage implements IStorage {
     const link: SoulCircleLink = existing ?? {
       id: randomUUID(), ...pair, status: "active", blockedByUserId: null, createdAt: now, updatedAt: now,
     };
+    // A new friendship never inherits consent from an earlier one.
+    if (!existing) this.dropSoulCircleSharesBetween(pair.userLowId, pair.userHighId);
     this.soulCircleLinks.set(link.id, link);
     this.soulCircleInvites.set(invite.id, { ...invite, acceptedByUserId: accepterUserId, acceptedAt: now });
     return { status: "linked", link, inviterUserId: invite.inviterUserId };
@@ -519,7 +522,13 @@ export class MemStorage implements IStorage {
     this.soulCircleLinks.set(linkId, blocked);
     return blocked;
   }
-  async upsertSoulCircleShare(ownerUserId: string, friendUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare> {
+  async upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined> {
+    // No await between the link check and the write: removal and blocking are also
+    // synchronous, so a share can never be recreated for a link that was just deleted.
+    const link = this.soulCircleLinks.get(linkId);
+    if (!link || link.status !== "active") return undefined;
+    const friendUserId = soulCircleOtherUser(link, ownerUserId);
+    if (!friendUserId) return undefined;
     const existing = [...this.soulCircleShares.values()].find((share) => share.ownerUserId === ownerUserId && share.friendUserId === friendUserId);
     const now = new Date();
     const share: SoulCircleShare = existing
@@ -831,9 +840,9 @@ export class PostgresStorage implements IStorage {
       .limit(1);
     return rows[0]?.grant;
   }
-  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date): Promise<SoulCircleInvite> {
+  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName: string | null = null): Promise<SoulCircleInvite> {
     const db = await this.db();
-    return (await db.insert(soulCircleInvites).values({ inviterUserId, tokenHash, expiresAt }).returning())[0];
+    return (await db.insert(soulCircleInvites).values({ inviterUserId, tokenHash, expiresAt, inviterDisplayName }).returning())[0];
   }
   async listSoulCircleInvites(inviterUserId: string) {
     const db = await this.db();
@@ -871,6 +880,8 @@ export class PostgresStorage implements IStorage {
         .where(and(eq(soulCircleLinks.userLowId, pair.userLowId), eq(soulCircleLinks.userHighId, pair.userHighId))).limit(1))[0];
       if (existing?.status === "blocked") return { status: "blocked" } as const;
 
+      // A new friendship never inherits consent from an earlier one.
+      if (!existing) await this.dropSoulCircleSharesBetween(tx, pair.userLowId, pair.userHighId);
       const link = existing ?? (await tx.insert(soulCircleLinks).values({ ...pair, status: "active" })
         .onConflictDoNothing().returning())[0]
         ?? (await tx.select().from(soulCircleLinks)
@@ -909,7 +920,8 @@ export class PostgresStorage implements IStorage {
   async removeSoulCircleLink(linkId: string) {
     const db = await this.db();
     await db.transaction(async (tx) => {
-      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1))[0];
+      // Lock the link row so an in-flight consent write must wait and then see it gone.
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
       if (!link) return;
       await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
       await tx.delete(soulCircleLinks).where(eq(soulCircleLinks.id, linkId));
@@ -918,7 +930,7 @@ export class PostgresStorage implements IStorage {
   async blockSoulCircleLink(linkId: string, blockedByUserId: string) {
     const db = await this.db();
     return db.transaction(async (tx) => {
-      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1))[0];
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
       if (!link) return undefined;
       await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
       return (await tx.update(soulCircleLinks)
@@ -926,15 +938,23 @@ export class PostgresStorage implements IStorage {
         .where(eq(soulCircleLinks.id, linkId)).returning())[0];
     });
   }
-  async upsertSoulCircleShare(ownerUserId: string, friendUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare> {
+  async upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined> {
     const db = await this.db();
-    const now = new Date();
-    return (await db.insert(soulCircleShares)
-      .values({ ownerUserId, friendUserId, selection, expiresAt, updatedAt: now })
-      .onConflictDoUpdate({
-        target: [soulCircleShares.ownerUserId, soulCircleShares.friendUserId],
-        set: { selection, expiresAt, updatedAt: now, revokedAt: null },
-      }).returning())[0];
+    return db.transaction(async (tx) => {
+      // Same row lock as removal/blocking: whichever commits first wins, and a share can
+      // never be written for a link that was removed after the caller was authorized.
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
+      if (!link || link.status !== "active") return undefined;
+      const friendUserId = soulCircleOtherUser(link, ownerUserId);
+      if (!friendUserId) return undefined;
+      const now = new Date();
+      return (await tx.insert(soulCircleShares)
+        .values({ ownerUserId, friendUserId, selection, expiresAt, updatedAt: now })
+        .onConflictDoUpdate({
+          target: [soulCircleShares.ownerUserId, soulCircleShares.friendUserId],
+          set: { selection, expiresAt, updatedAt: now, revokedAt: null },
+        }).returning())[0];
+    });
   }
   async getSoulCircleShare(ownerUserId: string, friendUserId: string) {
     const db = await this.db();

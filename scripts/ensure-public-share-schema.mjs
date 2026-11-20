@@ -182,6 +182,7 @@ const statements = [
     "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
     "token_hash" varchar(64) NOT NULL,
     "inviter_user_id" varchar NOT NULL,
+    "inviter_display_name" text,
     "created_at" timestamp DEFAULT now() NOT NULL,
     "expires_at" timestamp NOT NULL,
     "accepted_by_user_id" varchar,
@@ -189,6 +190,7 @@ const statements = [
     "revoked_at" timestamp,
     CONSTRAINT "soul_circle_invites_token_hash_unique" UNIQUE("token_hash")
   )`,
+  `ALTER TABLE "soul_circle_invites" ADD COLUMN IF NOT EXISTS "inviter_display_name" text`,
   `CREATE INDEX IF NOT EXISTS "soul_circle_invites_inviter_idx"
     ON "soul_circle_invites" ("inviter_user_id")`,
   `CREATE TABLE IF NOT EXISTS "soul_circle_links" (
@@ -286,6 +288,7 @@ const requiredSchema = {
     id: "character varying",
     token_hash: "character varying",
     inviter_user_id: "character varying",
+    inviter_display_name: "text",
     expires_at: "timestamp without time zone",
     accepted_by_user_id: "character varying",
     revoked_at: "timestamp without time zone",

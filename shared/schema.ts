@@ -110,6 +110,8 @@ export const soulCircleInvites = pgTable("soul_circle_invites", {
   // SHA-256 of the invite token; the token itself is never stored.
   tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
   inviterUserId: varchar("inviter_user_id").notNull(),
+  // The only name an invitee ever sees: chosen by the inviter for this invite, never the account name.
+  inviterDisplayName: text("inviter_display_name"),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   acceptedByUserId: varchar("accepted_by_user_id"),

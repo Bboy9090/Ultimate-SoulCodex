@@ -43,6 +43,14 @@ Local-only profiles stay on-device until their owner chooses online verification
   (existence is never revealed). Other users' ids are never returned.
 - A blocked person cannot tell they were blocked: new invites from them look like any
   other unavailable invite (`410`).
+- **Names come only from consent.** Account names (a sign-in provider can supply a full
+  legal name) are never shown. A friend appears as "Soul Circle friend" unless they chose a
+  display name for you; an invitee sees only a name the inviter typed for that invite;
+  the block list is anonymous.
+- **Consent writes are atomic with the friendship.** The link is re-checked under a row lock
+  when consent is written, and removal/blocking take the same lock, so a request authorized
+  before a friendship ended cannot leave a consent behind. A new friendship never inherits
+  consent from an earlier one.
 - Block deletes consents both ways; only the blocker can lift it, and lifting deletes the
   link, so the pair must be re-invited and must consent again.
 - Invite acceptance is limited to 20 attempts / 15 min and is single-use under a row lock.
@@ -70,10 +78,10 @@ script `scripts/ensure-public-share-schema.mjs` that production runs before boot
 
 ## Validation (actually run)
 
-`tests/soul-circle-routes.test.ts`: 12 scenarios against `MemStorage` and the same 12
-against `PostgresStorage` on a real local PostgreSQL 16 (24/24). The CI gate runs the
+`tests/soul-circle-routes.test.ts`: 14 scenarios against `MemStorage` and the same 14
+against `PostgresStorage` on a real local PostgreSQL 16 (28/28). The CI gate runs the
 in-memory half; the Postgres half runs wherever `DATABASE_URL` is set. The invite race
-was repeated six times against Postgres. The SQL migration and the startup schema script
+was repeated six times and the removal-during-share race five times against Postgres. The SQL migration and the startup schema script
 were applied to clean databases, and the script was re-run to confirm it is idempotent.
 
 ## Not included / open

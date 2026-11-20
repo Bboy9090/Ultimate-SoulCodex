@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
+import { z } from "zod";
 import type { IStorage } from "../storage";
 import { soulCircleOtherUser } from "../storage";
 import {
@@ -18,7 +19,6 @@ import {
 
 type SoulCircleStorage = Pick<
   IStorage,
-  | "getUser"
   | "getProfileByUserId"
   | "createSoulCircleInvite"
   | "listSoulCircleInvites"
@@ -30,7 +30,7 @@ type SoulCircleStorage = Pick<
   | "listSoulCircleBlockedByUser"
   | "removeSoulCircleLink"
   | "blockSoulCircleLink"
-  | "upsertSoulCircleShare"
+  | "upsertSoulCircleShareForLink"
   | "getSoulCircleShare"
   | "revokeSoulCircleShare"
 >;
@@ -42,6 +42,9 @@ export interface SoulCircleDependencies {
 }
 
 const ANONYMOUS_FRIEND_NAME = "Soul Circle friend";
+
+// The only name an invitee sees is one the inviter typed for this invite.
+const inviteOptionsSchema = z.object({ displayName: z.string().trim().min(1).max(80).optional() }).strict();
 
 function noStore(res: Response) {
   res.setHeader("Cache-Control", "private, no-store, max-age=0");
@@ -71,10 +74,11 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
     return friendUserId ? { link, friendUserId } : null;
   }
 
-  async function friendName(friendUserId: string, theirSelection: ReturnType<typeof parseStoredSelection>) {
+  // A name is shown only if the person chose it for this friend. Account names
+  // (which can be a full legal name from a sign-in provider) are never used.
+  function friendName(theirSelection: ReturnType<typeof parseStoredSelection>) {
     if (theirSelection?.fields.includes("displayName") && theirSelection.displayName) return theirSelection.displayName;
-    const user = await storage.getUser(friendUserId);
-    return user?.firstName?.trim() || ANONYMOUS_FRIEND_NAME;
+    return ANONYMOUS_FRIEND_NAME;
   }
 
   // What this one friend may currently see of the signed-in user's chart.
@@ -91,7 +95,7 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
     const mySelection = mineActive ? parseStoredSelection(mineActive.selection) : null;
     return {
       id: link.id,
-      displayName: await friendName(friendUserId, theirSelection),
+      displayName: friendName(theirSelection),
       since: link.createdAt,
       iShare: mineActive && mySelection
         ? { fields: mySelection.fields, expiresAt: mineActive.expiresAt }
@@ -121,9 +125,13 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         if (friends.length >= SOUL_CIRCLE_MAX_FRIENDS) {
           return res.status(409).json({ message: "Your Soul Circle is full.", code: "soul_circle_full" });
         }
+        const chosen = inviteOptionsSchema.safeParse(req.body ?? {});
+        if (!chosen.success) {
+          return res.status(400).json({ message: "Invalid invite options", code: "invalid_invite", issues: chosen.error.issues });
+        }
         const token = newSoulCircleInviteToken();
         const expiresAt = new Date(now.getTime() + SOUL_CIRCLE_INVITE_TTL_MS);
-        const invite = await storage.createSoulCircleInvite(userId, hashSoulCircleInviteToken(token), expiresAt);
+        const invite = await storage.createSoulCircleInvite(userId, hashSoulCircleInviteToken(token), expiresAt, chosen.data.displayName ?? null);
         // The token is returned exactly once; only its hash is stored.
         res.status(201).json({ id: invite.id, token, path: `/circle/join/${token}`, expiresAt: invite.expiresAt });
       } catch (error) {
@@ -180,8 +188,7 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         const now = clock();
         if (!invite || invite.revokedAt || invite.acceptedAt || invite.expiresAt.getTime() <= now.getTime()) return unavailable();
         if (invite.inviterUserId === userId) return res.status(400).json({ message: "This is your own invite.", code: "own_invite" });
-        const inviter = await storage.getUser(invite.inviterUserId);
-        res.json({ inviterName: inviter?.firstName?.trim() || ANONYMOUS_FRIEND_NAME, expiresAt: invite.expiresAt });
+        res.json({ inviterName: invite.inviterDisplayName?.trim() || ANONYMOUS_FRIEND_NAME, expiresAt: invite.expiresAt });
       } catch (error) {
         console.error("[SoulCircle] previewInvite failed:", error);
         res.status(500).json({ message: "Could not read the invite." });
@@ -285,7 +292,10 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
           });
         }
         const expiresAt = new Date(clock().getTime() + SOUL_CIRCLE_SHARE_TTL_MS);
-        await storage.upsertSoulCircleShare(userId, member.friendUserId, selection.data, expiresAt);
+        // The link is re-checked under a lock with the write, so a friendship removed or
+        // blocked while we were verifying cannot be left with a consent behind.
+        const saved = await storage.upsertSoulCircleShareForLink(member.link.id, userId, selection.data, expiresAt);
+        if (!saved) return notFound(res);
         // Echo exactly what the friend can see so consent is informed.
         res.status(200).json({ fields: selection.data.fields, expiresAt, preview });
       } catch (error) {
@@ -349,12 +359,8 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
       if (!userId) return;
       try {
         const blocked = await storage.listSoulCircleBlockedByUser(userId);
-        const rows = await Promise.all(blocked.map(async (link) => {
-          const otherId = soulCircleOtherUser(link, userId);
-          const user = otherId ? await storage.getUser(otherId) : undefined;
-          return { id: link.id, displayName: user?.firstName?.trim() || ANONYMOUS_FRIEND_NAME, blockedAt: link.updatedAt };
-        }));
-        res.json(rows);
+        // Deliberately no names: the blocked person's consent was deleted with the link.
+        res.json(blocked.map((link) => ({ id: link.id, displayName: ANONYMOUS_FRIEND_NAME, blockedAt: link.updatedAt })));
       } catch (error) {
         console.error("[SoulCircle] listBlocks failed:", error);
         res.status(500).json({ message: "Could not load blocked people." });

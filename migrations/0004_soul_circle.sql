@@ -2,6 +2,7 @@ CREATE TABLE "soul_circle_invites" (
   "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "token_hash" varchar(64) NOT NULL,
   "inviter_user_id" varchar NOT NULL,
+  "inviter_display_name" text,
   "created_at" timestamp DEFAULT now() NOT NULL,
   "expires_at" timestamp NOT NULL,
   "accepted_by_user_id" varchar,

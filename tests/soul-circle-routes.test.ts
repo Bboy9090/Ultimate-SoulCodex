@@ -89,7 +89,7 @@ for (const [label, makeStorage] of backends) {
     const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
     const [a, b, c] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo"), await makeUser(storage, "Cy")];
 
-    const invite = await h.call("createInvite", { userId: a });
+    const invite = await h.call("createInvite", { userId: a, body: { displayName: "Ada" } });
     assert.equal(invite.status, 201);
     assert.match(invite.body.path, /^\/circle\/join\//);
     assert.equal(await storage.getSoulCircleInviteByTokenHash(invite.body.token), undefined, "the raw token must not be a lookup key");
@@ -133,7 +133,7 @@ for (const [label, makeStorage] of backends) {
     const before = await h.call("getFriend", { userId: b, params: { id: linkId } });
     assert.equal(before.body.theirChartStatus, "not_shared");
     assert.equal(before.body.theirChart, null);
-    assert.equal(before.body.displayName, "Ada");
+    assert.equal(before.body.displayName, "Soul Circle friend", "no name until the friend chooses one");
 
     const consent = await h.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["sunSign", "risingSign", "lifePath"] } });
     assert.equal(consent.status, 200);
@@ -258,7 +258,7 @@ for (const [label, makeStorage] of backends) {
     const retry = await h.call("createInvite", { userId: a });
     assert.equal((await h.call("acceptInvite", { userId: b, body: { token: retry.body.token } })).status, 410);
 
-    assert.deepEqual((await h.call("listBlocks", { userId: b })).body.map((row: any) => row.displayName), ["Ada"]);
+    assert.deepEqual((await h.call("listBlocks", { userId: b })).body.map((row: any) => row.displayName), ["Soul Circle friend"]);
     assert.equal((await h.call("listBlocks", { userId: a })).body.length, 0);
     assert.equal((await h.call("unblock", { userId: a, params: { id: linkId } })).status, 404, "the blocked person cannot unblock");
     assert.equal((await h.call("unblock", { userId: b, params: { id: linkId } })).status, 204);
@@ -312,5 +312,64 @@ for (const [label, makeStorage] of backends) {
     assert.equal(await storage.getSoulCircleShare(a, b), undefined);
     assert.equal((await storage.listSoulCircleInvites(a)).length, 0);
     assert.equal((await h.call("listFriends", { userId: b })).body.length, 0);
+  });
+
+  t("account names from a sign-in provider are never shown unless chosen for this friend", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    // Google sign-in stores the provider's full display name as firstName.
+    const fullName = "Adaline Marie Lovelace-Quillfeather";
+    const google = await storage.getOrCreateGoogleUser(`sc-${randomUUID()}`, "private@example.com", fullName);
+    const b = await makeUser(storage, "Bo");
+    await makeVerifiedProfile(storage, google.id, "Ada");
+    await makeVerifiedProfile(storage, b, "Bo");
+
+    const invite = await h.call("createInvite", { userId: google.id });
+    const preview = await h.call("previewInvite", { userId: b, params: { token: invite.body.token } });
+    assert.equal(preview.body.inviterName, "Soul Circle friend");
+    const linkId = (await h.call("acceptInvite", { userId: b, body: { token: invite.body.token } })).body.id;
+
+    const everything = async () => JSON.stringify([
+      preview.body,
+      (await h.call("listFriends", { userId: b })).body,
+      (await h.call("getFriend", { userId: b, params: { id: linkId } })).body,
+      (await h.call("listFriends", { userId: google.id })).body,
+      (await h.call("listBlocks", { userId: b })).body,
+    ]);
+    // Even after sharing chart fields (but not a name), the account name must not appear.
+    await h.call("setShare", { userId: google.id, params: { id: linkId }, body: { fields: ["sunSign"] } });
+    for (const leak of [fullName, "Lovelace", "Quillfeather", "private@example.com"]) {
+      assert.ok(!(await everything()).includes(leak), `${leak} must not be exposed`);
+    }
+    await h.call("blockFriend", { userId: b, params: { id: linkId } });
+    for (const leak of [fullName, "Lovelace"]) assert.ok(!(await everything()).includes(leak), `${leak} must not be exposed in the block list`);
+  });
+
+  t("a consent write that was authorized before the friendship ended cannot outlive it", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    await makeVerifiedProfile(storage, a, "Ada");
+    const { linkId } = await pair(storage, h, a, b);
+
+    // Hold the share request after it passed the membership check, at the profile lookup.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const slow: IStorage = Object.create(storage);
+    slow.getProfileByUserId = async (userId: string) => { await gate; return storage.getProfileByUserId(userId); };
+    const slowHarness = makeHarness(slow, { now: new Date("2026-11-20T00:00:00Z") });
+
+    const pendingShare = slowHarness.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["sunSign"] } });
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.equal((await h.call("removeFriend", { userId: b, params: { id: linkId } })).status, 204);
+    release();
+    assert.equal((await pendingShare).status, 404, "the delayed share must be refused");
+    assert.equal(await storage.getSoulCircleShare(a, b), undefined, "no consent may be left behind");
+
+    // Becoming friends again starts private: nothing carried over.
+    const again = await pair(storage, h, a, b);
+    const view = await h.call("getFriend", { userId: b, params: { id: again.linkId } });
+    assert.equal(view.body.theirChartStatus, "not_shared");
+    assert.equal(view.body.theirChart, null);
   });
 }
