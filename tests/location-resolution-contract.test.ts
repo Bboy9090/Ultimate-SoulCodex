@@ -22,7 +22,7 @@ test("coordinate-derived timezone resolution identifies known birth locations", 
 test("create flow never substitutes the current device timezone for a remote birthplace", () => {
   assert.match(createFlow, /\/api\/location\/resolve/);
   assert.match(createFlow, /timezone:\s*""/);
-  assert.match(createFlow, /Your current device timezone is never substituted/);
+  assert.match(createFlow, /Soul Codex will not substitute your current device timezone/);
   assert.doesNotMatch(createFlow, /nominatim\.openstreetmap\.org/);
   assert.doesNotMatch(createFlow, /browserTimezone/);
   assert.doesNotMatch(createFlow, /timezone:\s*browserTimezone/);
