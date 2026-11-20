@@ -30,6 +30,26 @@ const verifiedSun = {
   internalCandidate: { longitude: 174.25 },
 };
 
+function verifiedProfile() {
+  return {
+    name: "Verified HD Test",
+    birthDate: new Date("1990-09-17T00:00:00.000Z"),
+    birthTime: "11:11",
+    birthLocation: "Bronx, NY",
+    astrologyData: { sun: verifiedSun },
+    humanDesignData: {
+      status: "verified",
+      ...humanDesignTrust,
+      candidate: {
+        type: "Reflector",
+        strategy: "Wait a lunar cycle",
+        authority: "Lunar Authority",
+        profile: "2/5",
+      },
+    } as Record<string, unknown>,
+  } as Record<string, any>;
+}
+
 function evidenceProfile() {
   return {
     name: "Evidence Test",
@@ -108,7 +128,7 @@ test("verified Human Design exposes only verified core fields", () => {
       candidate: {
         type: "Reflector",
         strategy: "Wait a lunar cycle",
-        authority: "Lunar",
+        authority: "Lunar Authority",
         profile: "2/5",
         incarnationCross: "must-not-pass-through",
       },
@@ -118,7 +138,7 @@ test("verified Human Design exposes only verified core fields", () => {
   assert.deepEqual(report.humanDesign, {
     type: "Reflector",
     strategy: "Wait a lunar cycle",
-    authority: "Lunar",
+    authority: "Lunar Authority",
     profile: "2/5",
   });
   assert.match(report.aiText.hdInterpretation, /verified trust record/i);
@@ -136,7 +156,7 @@ test("natal PDF rejects label-only verified astrology and Human Design", () => {
       candidate: {
         type: "Reflector",
         strategy: "Wait a lunar cycle",
-        authority: "Lunar",
+        authority: "Lunar Authority",
         profile: "2/5",
       },
     },
@@ -187,9 +207,12 @@ test("natal report withholds internally incoherent Human Design even with valid-
   const profile = verifiedProfile();
   profile.humanDesignData = {
     ...(profile.humanDesignData as Record<string, unknown>),
-    type: "Reflector",
-    strategy: "To Respond",
-    authority: "Sacral Authority",
+    candidate: {
+      type: "Reflector",
+      strategy: "To Respond",
+      authority: "Sacral Authority",
+      profile: "2/5",
+    },
   };
 
   const report = buildNatalReportInput(profile);
