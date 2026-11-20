@@ -59,23 +59,17 @@ test("monetization contract requires durable subscription entitlement truth", ()
 });
 
 
-test("connections surface distinguishes supported comparisons from planned dimensions", () => {
+test("connections surface shows only supported comparison dimensions and no roadmap tiles", () => {
   const compatibility = readFileSync(new URL("../client/src/pages/CompatibilityHubPage.tsx", import.meta.url), "utf8");
-  for (const label of [
-    "Communication",
-    "Emotional rhythm",
-    "Attraction & chemistry",
-    "Life direction",
-    "Human Design context",
-  ]) {
-    assert.ok(compatibility.includes(label), `missing relationship dimension: ${label}`);
+  assert.ok(compatibility.includes("Communication"), "missing supported dimension: Communication");
+  for (const removed of ["Emotional rhythm", "Attraction & chemistry", "Life direction", "Human Design context"]) {
+    assert.ok(!compatibility.includes(removed), `roadmap tile must not ship: ${removed}`);
   }
   assert.doesNotMatch(compatibility, /tierAllowsCapability\(tier, "advanced_connections"\)/);
   assert.doesNotMatch(compatibility, /const advancedConnections/);
-  assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
+  assert.doesNotMatch(compatibility, /PLANNED|Planned · not included/);
   assert.match(compatibility, /No universal verdict/);
   assert.match(compatibility, /Sun and optional Life Path comparison/);
-  assert.match(compatibility, /premium \? "PLANNED"/);
 });
 
 
