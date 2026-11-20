@@ -102,6 +102,54 @@ export const publicProfileShares = pgTable("public_profile_shares", {
   revokedAt: timestamp("revoked_at"),
 });
 
+// Soul Circle: consent-based friendship graph. Nothing here stores birth data;
+// a friend's chart is computed on read from the sharer's own verified profile and
+// only for the fields the sharer consented to. See docs/SOUL_CIRCLE.md.
+export const soulCircleInvites = pgTable("soul_circle_invites", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // SHA-256 of the invite token; the token itself is never stored.
+  tokenHash: varchar("token_hash", { length: 64 }).notNull().unique(),
+  inviterUserId: varchar("inviter_user_id").notNull(),
+  // The only name an invitee ever sees: chosen by the inviter for this invite, never the account name.
+  inviterDisplayName: text("inviter_display_name"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  acceptedByUserId: varchar("accepted_by_user_id"),
+  acceptedAt: timestamp("accepted_at"),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  inviterIndex: index("soul_circle_invites_inviter_idx").on(table.inviterUserId),
+}));
+
+export const soulCircleLinks = pgTable("soul_circle_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Canonical ordered pair (userLowId < userHighId) so a pair has exactly one row.
+  userLowId: varchar("user_low_id").notNull(),
+  userHighId: varchar("user_high_id").notNull(),
+  status: varchar("status", { length: 16 }).notNull().default("active"),
+  blockedByUserId: varchar("blocked_by_user_id"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  pairUnique: uniqueIndex("soul_circle_links_pair_unique").on(table.userLowId, table.userHighId),
+  highIndex: index("soul_circle_links_high_idx").on(table.userHighId),
+}));
+
+export const soulCircleShares = pgTable("soul_circle_shares", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ownerUserId: varchar("owner_user_id").notNull(),
+  friendUserId: varchar("friend_user_id").notNull(),
+  // The sharer's consent: which verified fields this one friend may see.
+  selection: jsonb("selection").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+}, (table) => ({
+  pairUnique: uniqueIndex("soul_circle_shares_pair_unique").on(table.ownerUserId, table.friendUserId),
+  friendIndex: index("soul_circle_shares_friend_idx").on(table.friendUserId),
+}));
+
 export const galacticCodeRecords = pgTable("galactic_code_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
@@ -342,6 +390,9 @@ export type Profile = typeof profiles.$inferSelect;
 export type InsertAssessment = z.infer<typeof insertAssessmentSchema>;
 export type Assessment = typeof assessmentResponses.$inferSelect;
 export type PublicProfileShare = typeof publicProfileShares.$inferSelect;
+export type SoulCircleInvite = typeof soulCircleInvites.$inferSelect;
+export type SoulCircleLink = typeof soulCircleLinks.$inferSelect;
+export type SoulCircleShare = typeof soulCircleShares.$inferSelect;
 export type GalacticCodeRecord = typeof galacticCodeRecords.$inferSelect;
 export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type BillingSubject = typeof billingSubjects.$inferSelect;

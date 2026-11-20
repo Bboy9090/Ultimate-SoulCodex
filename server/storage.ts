@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import {
   users,
   profiles,
@@ -7,6 +7,9 @@ import {
   accessCodeRedemptions,
   localUsers,
   publicProfileShares,
+  soulCircleInvites,
+  soulCircleLinks,
+  soulCircleShares,
   galacticCodeRecords,
   billingSubjects,
   billingTransactionEvents,
@@ -19,6 +22,9 @@ import {
   type Assessment,
   type InsertAssessment,
   type PublicProfileShare,
+  type SoulCircleInvite,
+  type SoulCircleLink,
+  type SoulCircleShare,
   type GalacticCodeRecord,
   type InsertGalacticCodeRecord,
   type BillingSubject,
@@ -29,6 +35,22 @@ import {
   type InsertEntitlementGrant,
   type InsertBillingVerificationReceipt,
 } from "@shared/schema";
+
+
+export type SoulCircleAcceptResult =
+  | { status: "linked"; link: SoulCircleLink; inviterUserId: string }
+  | { status: "not_found" | "expired" | "used" | "revoked" | "self" | "blocked" };
+
+/** A friend pair has exactly one canonical row, ordered by user id. */
+export function soulCirclePair(a: string, b: string): { userLowId: string; userHighId: string } {
+  return a < b ? { userLowId: a, userHighId: b } : { userLowId: b, userHighId: a };
+}
+
+export function soulCircleOtherUser(link: Pick<SoulCircleLink, "userLowId" | "userHighId">, userId: string): string | null {
+  if (link.userLowId === userId) return link.userHighId;
+  if (link.userHighId === userId) return link.userLowId;
+  return null;
+}
 
 function appleUsername(subject: string) {
   return `apple:${subject}`;
@@ -71,6 +93,23 @@ export interface IStorage {
   createBillingVerificationReceipt(receipt: InsertBillingVerificationReceipt): Promise<BillingVerificationReceipt>;
   createEntitlementGrant(grant: InsertEntitlementGrant): Promise<EntitlementGrant>;
   getLatestEntitlementGrant(userId: string, capability: string, environment?: "production" | "sandbox"): Promise<EntitlementGrant | undefined>;
+  createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName?: string | null): Promise<SoulCircleInvite>;
+  listSoulCircleInvites(inviterUserId: string): Promise<SoulCircleInvite[]>;
+  revokeSoulCircleInvite(inviterUserId: string, inviteId: string, now: Date): Promise<SoulCircleInvite | undefined>;
+  getSoulCircleInviteByTokenHash(tokenHash: string): Promise<SoulCircleInvite | undefined>;
+  acceptSoulCircleInvite(tokenHash: string, accepterUserId: string, now: Date): Promise<SoulCircleAcceptResult>;
+  getSoulCircleLinkById(linkId: string): Promise<SoulCircleLink | undefined>;
+  listSoulCircleLinksForUser(userId: string): Promise<SoulCircleLink[]>;
+  listSoulCircleBlockedByUser(userId: string): Promise<SoulCircleLink[]>;
+  removeSoulCircleLink(linkId: string): Promise<void>;
+  blockSoulCircleLink(linkId: string, blockedByUserId: string): Promise<SoulCircleLink | undefined>;
+  /** Writes consent only if the link is still active and the owner belongs to it, atomically with removal/blocking. */
+  upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined>;
+  getSoulCircleShare(ownerUserId: string, friendUserId: string): Promise<SoulCircleShare | undefined>;
+  listSoulCircleSharesTo(friendUserId: string): Promise<SoulCircleShare[]>;
+  listSoulCircleSharesFrom(ownerUserId: string): Promise<SoulCircleShare[]>;
+  revokeSoulCircleShare(ownerUserId: string, friendUserId: string, now: Date): Promise<SoulCircleShare | undefined>;
+  deleteSoulCircleDataForUser(userId: string): Promise<void>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -80,6 +119,9 @@ export class MemStorage implements IStorage {
   private profiles = new Map<string, Profile>();
   private assessments = new Map<string, Assessment>();
   private publicShares = new Map<string, PublicProfileShare>();
+  private soulCircleInvites = new Map<string, SoulCircleInvite>();
+  private soulCircleLinks = new Map<string, SoulCircleLink>();
+  private soulCircleShares = new Map<string, SoulCircleShare>();
   private galacticRecords = new Map<string, GalacticCodeRecord>();
   private billingSubjects = new Map<string, BillingSubject>();
   private billingEvents = new Map<string, BillingTransactionEvent>();
@@ -403,6 +445,125 @@ export class MemStorage implements IStorage {
         return occurrenceDelta || b.lastVerifiedAt.getTime() - a.lastVerifiedAt.getTime();
       })[0];
   }
+  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName: string | null = null): Promise<SoulCircleInvite> {
+    const invite: SoulCircleInvite = {
+      id: randomUUID(), tokenHash, inviterUserId, inviterDisplayName, createdAt: new Date(), expiresAt,
+      acceptedByUserId: null, acceptedAt: null, revokedAt: null,
+    };
+    this.soulCircleInvites.set(invite.id, invite);
+    return invite;
+  }
+  async listSoulCircleInvites(inviterUserId: string) {
+    return [...this.soulCircleInvites.values()]
+      .filter((invite) => invite.inviterUserId === inviterUserId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  async revokeSoulCircleInvite(inviterUserId: string, inviteId: string, now: Date) {
+    const invite = this.soulCircleInvites.get(inviteId);
+    if (!invite || invite.inviterUserId !== inviterUserId) return undefined;
+    if (invite.revokedAt) return invite;
+    const revoked = { ...invite, revokedAt: now };
+    this.soulCircleInvites.set(inviteId, revoked);
+    return revoked;
+  }
+  async getSoulCircleInviteByTokenHash(tokenHash: string) {
+    return [...this.soulCircleInvites.values()].find((invite) => invite.tokenHash === tokenHash);
+  }
+  async acceptSoulCircleInvite(tokenHash: string, accepterUserId: string, now: Date): Promise<SoulCircleAcceptResult> {
+    // No await between the checks and the writes below: this must stay atomic so two
+    // concurrent accepts cannot both consume the same single-use invite.
+    const invite = [...this.soulCircleInvites.values()].find((candidate) => candidate.tokenHash === tokenHash);
+    if (!invite) return { status: "not_found" };
+    if (invite.revokedAt) return { status: "revoked" };
+    if (invite.acceptedAt) return { status: "used" };
+    if (invite.expiresAt.getTime() <= now.getTime()) return { status: "expired" };
+    if (invite.inviterUserId === accepterUserId) return { status: "self" };
+    const pair = soulCirclePair(invite.inviterUserId, accepterUserId);
+    const existing = [...this.soulCircleLinks.values()].find((link) => link.userLowId === pair.userLowId && link.userHighId === pair.userHighId);
+    if (existing?.status === "blocked") return { status: "blocked" };
+    const link: SoulCircleLink = existing ?? {
+      id: randomUUID(), ...pair, status: "active", blockedByUserId: null, createdAt: now, updatedAt: now,
+    };
+    // A new friendship never inherits consent from an earlier one.
+    if (!existing) this.dropSoulCircleSharesBetween(pair.userLowId, pair.userHighId);
+    this.soulCircleLinks.set(link.id, link);
+    this.soulCircleInvites.set(invite.id, { ...invite, acceptedByUserId: accepterUserId, acceptedAt: now });
+    return { status: "linked", link, inviterUserId: invite.inviterUserId };
+  }
+  async getSoulCircleLinkById(linkId: string) {
+    return this.soulCircleLinks.get(linkId);
+  }
+  async listSoulCircleLinksForUser(userId: string) {
+    return [...this.soulCircleLinks.values()]
+      .filter((link) => link.status === "active" && (link.userLowId === userId || link.userHighId === userId))
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+  }
+  async listSoulCircleBlockedByUser(userId: string) {
+    return [...this.soulCircleLinks.values()].filter((link) => link.status === "blocked" && link.blockedByUserId === userId);
+  }
+  private dropSoulCircleSharesBetween(a: string, b: string) {
+    for (const [id, share] of this.soulCircleShares) {
+      if ((share.ownerUserId === a && share.friendUserId === b) || (share.ownerUserId === b && share.friendUserId === a)) {
+        this.soulCircleShares.delete(id);
+      }
+    }
+  }
+  async removeSoulCircleLink(linkId: string) {
+    const link = this.soulCircleLinks.get(linkId);
+    if (!link) return;
+    this.dropSoulCircleSharesBetween(link.userLowId, link.userHighId);
+    this.soulCircleLinks.delete(linkId);
+  }
+  async blockSoulCircleLink(linkId: string, blockedByUserId: string) {
+    const link = this.soulCircleLinks.get(linkId);
+    if (!link) return undefined;
+    this.dropSoulCircleSharesBetween(link.userLowId, link.userHighId);
+    const blocked: SoulCircleLink = { ...link, status: "blocked", blockedByUserId, updatedAt: new Date() };
+    this.soulCircleLinks.set(linkId, blocked);
+    return blocked;
+  }
+  async upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined> {
+    // No await between the link check and the write: removal and blocking are also
+    // synchronous, so a share can never be recreated for a link that was just deleted.
+    const link = this.soulCircleLinks.get(linkId);
+    if (!link || link.status !== "active") return undefined;
+    const friendUserId = soulCircleOtherUser(link, ownerUserId);
+    if (!friendUserId) return undefined;
+    const existing = [...this.soulCircleShares.values()].find((share) => share.ownerUserId === ownerUserId && share.friendUserId === friendUserId);
+    const now = new Date();
+    const share: SoulCircleShare = existing
+      ? { ...existing, selection, expiresAt, updatedAt: now, revokedAt: null }
+      : { id: randomUUID(), ownerUserId, friendUserId, selection, createdAt: now, updatedAt: now, expiresAt, revokedAt: null };
+    this.soulCircleShares.set(share.id, share);
+    return share;
+  }
+  async getSoulCircleShare(ownerUserId: string, friendUserId: string) {
+    return [...this.soulCircleShares.values()].find((share) => share.ownerUserId === ownerUserId && share.friendUserId === friendUserId);
+  }
+  async listSoulCircleSharesTo(friendUserId: string) {
+    return [...this.soulCircleShares.values()].filter((share) => share.friendUserId === friendUserId);
+  }
+  async listSoulCircleSharesFrom(ownerUserId: string) {
+    return [...this.soulCircleShares.values()].filter((share) => share.ownerUserId === ownerUserId);
+  }
+  async revokeSoulCircleShare(ownerUserId: string, friendUserId: string, now: Date) {
+    const existing = await this.getSoulCircleShare(ownerUserId, friendUserId);
+    if (!existing) return undefined;
+    const revoked = { ...existing, revokedAt: existing.revokedAt ?? now, updatedAt: now };
+    this.soulCircleShares.set(existing.id, revoked);
+    return revoked;
+  }
+  async deleteSoulCircleDataForUser(userId: string) {
+    for (const [id, invite] of this.soulCircleInvites) {
+      if (invite.inviterUserId === userId || invite.acceptedByUserId === userId) this.soulCircleInvites.delete(id);
+    }
+    for (const [id, link] of this.soulCircleLinks) {
+      if (link.userLowId === userId || link.userHighId === userId) this.soulCircleLinks.delete(id);
+    }
+    for (const [id, share] of this.soulCircleShares) {
+      if (share.ownerUserId === userId || share.friendUserId === userId) this.soulCircleShares.delete(id);
+    }
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const profileIds = [...this.profiles.values()]
       .filter((profile) => profile.sessionId === sessionId)
@@ -429,6 +590,7 @@ export class MemStorage implements IStorage {
       if (profileIds.includes(share.profileId)) this.publicShares.delete(token);
     }
     await this.deleteGalacticCodeRecordsForProfiles(profileIds);
+    await this.deleteSoulCircleDataForUser(userId);
     for (const [id, profile] of this.profiles) {
       if (profile.userId === userId) this.profiles.delete(id);
     }
@@ -436,7 +598,7 @@ export class MemStorage implements IStorage {
   }
 }
 
-class PostgresStorage implements IStorage {
+export class PostgresStorage implements IStorage {
   private async db() {
     return (await import("./db")).db;
   }
@@ -678,6 +840,151 @@ class PostgresStorage implements IStorage {
       .limit(1);
     return rows[0]?.grant;
   }
+  async createSoulCircleInvite(inviterUserId: string, tokenHash: string, expiresAt: Date, inviterDisplayName: string | null = null): Promise<SoulCircleInvite> {
+    const db = await this.db();
+    return (await db.insert(soulCircleInvites).values({ inviterUserId, tokenHash, expiresAt, inviterDisplayName }).returning())[0];
+  }
+  async listSoulCircleInvites(inviterUserId: string) {
+    const db = await this.db();
+    return db.select().from(soulCircleInvites)
+      .where(eq(soulCircleInvites.inviterUserId, inviterUserId))
+      .orderBy(desc(soulCircleInvites.createdAt));
+  }
+  async revokeSoulCircleInvite(inviterUserId: string, inviteId: string, now: Date) {
+    const db = await this.db();
+    const existing = (await db.select().from(soulCircleInvites)
+      .where(and(eq(soulCircleInvites.id, inviteId), eq(soulCircleInvites.inviterUserId, inviterUserId))).limit(1))[0];
+    if (!existing) return undefined;
+    if (existing.revokedAt) return existing;
+    return (await db.update(soulCircleInvites).set({ revokedAt: now })
+      .where(and(eq(soulCircleInvites.id, inviteId), eq(soulCircleInvites.inviterUserId, inviterUserId))).returning())[0];
+  }
+  async getSoulCircleInviteByTokenHash(tokenHash: string) {
+    const db = await this.db();
+    return (await db.select().from(soulCircleInvites).where(eq(soulCircleInvites.tokenHash, tokenHash)).limit(1))[0];
+  }
+  async acceptSoulCircleInvite(tokenHash: string, accepterUserId: string, now: Date): Promise<SoulCircleAcceptResult> {
+    const db = await this.db();
+    return db.transaction(async (tx) => {
+      // Row lock: two people racing to use the same single-use invite are serialized.
+      const invite = (await tx.select().from(soulCircleInvites)
+        .where(eq(soulCircleInvites.tokenHash, tokenHash)).limit(1).for("update"))[0];
+      if (!invite) return { status: "not_found" } as const;
+      if (invite.revokedAt) return { status: "revoked" } as const;
+      if (invite.acceptedAt) return { status: "used" } as const;
+      if (invite.expiresAt.getTime() <= now.getTime()) return { status: "expired" } as const;
+      if (invite.inviterUserId === accepterUserId) return { status: "self" } as const;
+
+      const pair = soulCirclePair(invite.inviterUserId, accepterUserId);
+      const existing = (await tx.select().from(soulCircleLinks)
+        .where(and(eq(soulCircleLinks.userLowId, pair.userLowId), eq(soulCircleLinks.userHighId, pair.userHighId))).limit(1))[0];
+      if (existing?.status === "blocked") return { status: "blocked" } as const;
+
+      // A new friendship never inherits consent from an earlier one.
+      if (!existing) await this.dropSoulCircleSharesBetween(tx, pair.userLowId, pair.userHighId);
+      const link = existing ?? (await tx.insert(soulCircleLinks).values({ ...pair, status: "active" })
+        .onConflictDoNothing().returning())[0]
+        ?? (await tx.select().from(soulCircleLinks)
+          .where(and(eq(soulCircleLinks.userLowId, pair.userLowId), eq(soulCircleLinks.userHighId, pair.userHighId))).limit(1))[0];
+      if (link.status === "blocked") return { status: "blocked" } as const;
+
+      await tx.update(soulCircleInvites).set({ acceptedByUserId: accepterUserId, acceptedAt: now })
+        .where(eq(soulCircleInvites.id, invite.id));
+      return { status: "linked", link, inviterUserId: invite.inviterUserId } as const;
+    });
+  }
+  async getSoulCircleLinkById(linkId: string) {
+    const db = await this.db();
+    return (await db.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1))[0];
+  }
+  async listSoulCircleLinksForUser(userId: string) {
+    const db = await this.db();
+    return db.select().from(soulCircleLinks)
+      .where(and(
+        eq(soulCircleLinks.status, "active"),
+        or(eq(soulCircleLinks.userLowId, userId), eq(soulCircleLinks.userHighId, userId)),
+      ))
+      .orderBy(soulCircleLinks.createdAt);
+  }
+  async listSoulCircleBlockedByUser(userId: string) {
+    const db = await this.db();
+    return db.select().from(soulCircleLinks)
+      .where(and(eq(soulCircleLinks.status, "blocked"), eq(soulCircleLinks.blockedByUserId, userId)));
+  }
+  private async dropSoulCircleSharesBetween(tx: any, a: string, b: string) {
+    await tx.delete(soulCircleShares).where(or(
+      and(eq(soulCircleShares.ownerUserId, a), eq(soulCircleShares.friendUserId, b)),
+      and(eq(soulCircleShares.ownerUserId, b), eq(soulCircleShares.friendUserId, a)),
+    ));
+  }
+  async removeSoulCircleLink(linkId: string) {
+    const db = await this.db();
+    await db.transaction(async (tx) => {
+      // Lock the link row so an in-flight consent write must wait and then see it gone.
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
+      if (!link) return;
+      await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
+      await tx.delete(soulCircleLinks).where(eq(soulCircleLinks.id, linkId));
+    });
+  }
+  async blockSoulCircleLink(linkId: string, blockedByUserId: string) {
+    const db = await this.db();
+    return db.transaction(async (tx) => {
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
+      if (!link) return undefined;
+      await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
+      return (await tx.update(soulCircleLinks)
+        .set({ status: "blocked", blockedByUserId, updatedAt: new Date() })
+        .where(eq(soulCircleLinks.id, linkId)).returning())[0];
+    });
+  }
+  async upsertSoulCircleShareForLink(linkId: string, ownerUserId: string, selection: unknown, expiresAt: Date): Promise<SoulCircleShare | undefined> {
+    const db = await this.db();
+    return db.transaction(async (tx) => {
+      // Same row lock as removal/blocking: whichever commits first wins, and a share can
+      // never be written for a link that was removed after the caller was authorized.
+      const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
+      if (!link || link.status !== "active") return undefined;
+      const friendUserId = soulCircleOtherUser(link, ownerUserId);
+      if (!friendUserId) return undefined;
+      const now = new Date();
+      return (await tx.insert(soulCircleShares)
+        .values({ ownerUserId, friendUserId, selection, expiresAt, updatedAt: now })
+        .onConflictDoUpdate({
+          target: [soulCircleShares.ownerUserId, soulCircleShares.friendUserId],
+          set: { selection, expiresAt, updatedAt: now, revokedAt: null },
+        }).returning())[0];
+    });
+  }
+  async getSoulCircleShare(ownerUserId: string, friendUserId: string) {
+    const db = await this.db();
+    return (await db.select().from(soulCircleShares)
+      .where(and(eq(soulCircleShares.ownerUserId, ownerUserId), eq(soulCircleShares.friendUserId, friendUserId))).limit(1))[0];
+  }
+  async listSoulCircleSharesTo(friendUserId: string) {
+    const db = await this.db();
+    return db.select().from(soulCircleShares).where(eq(soulCircleShares.friendUserId, friendUserId));
+  }
+  async listSoulCircleSharesFrom(ownerUserId: string) {
+    const db = await this.db();
+    return db.select().from(soulCircleShares).where(eq(soulCircleShares.ownerUserId, ownerUserId));
+  }
+  async revokeSoulCircleShare(ownerUserId: string, friendUserId: string, now: Date) {
+    const db = await this.db();
+    const existing = await this.getSoulCircleShare(ownerUserId, friendUserId);
+    if (!existing) return undefined;
+    if (existing.revokedAt) return existing;
+    return (await db.update(soulCircleShares).set({ revokedAt: now, updatedAt: now })
+      .where(eq(soulCircleShares.id, existing.id)).returning())[0];
+  }
+  async deleteSoulCircleDataForUser(userId: string) {
+    const db = await this.db();
+    await db.transaction(async (tx) => {
+      await tx.delete(soulCircleShares).where(or(eq(soulCircleShares.ownerUserId, userId), eq(soulCircleShares.friendUserId, userId)));
+      await tx.delete(soulCircleLinks).where(or(eq(soulCircleLinks.userLowId, userId), eq(soulCircleLinks.userHighId, userId)));
+      await tx.delete(soulCircleInvites).where(or(eq(soulCircleInvites.inviterUserId, userId), eq(soulCircleInvites.acceptedByUserId, userId)));
+    });
+  }
   async deleteSessionData(sessionId: string): Promise<void> {
     const db = await this.db();
     const ownedProfiles = await db.select({ id: profiles.id }).from(profiles).where(eq(profiles.sessionId, sessionId));
@@ -699,6 +1006,7 @@ class PostgresStorage implements IStorage {
       await db.delete(publicProfileShares).where(inArray(publicProfileShares.profileId, ids));
       await db.delete(galacticCodeRecords).where(inArray(galacticCodeRecords.profileId, ids));
     }
+    await this.deleteSoulCircleDataForUser(userId);
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
     await db.delete(profiles).where(eq(profiles.userId, userId));
     await db.delete(localUsers).where(eq(localUsers.id, userId));

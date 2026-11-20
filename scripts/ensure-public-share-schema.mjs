@@ -178,6 +178,48 @@ const statements = [
     ON "access_code_redemptions" ("session_id")`,
   `CREATE INDEX IF NOT EXISTS "public_profile_shares_profile_idx"
     ON "public_profile_shares" ("profile_id")`,
+  `CREATE TABLE IF NOT EXISTS "soul_circle_invites" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "token_hash" varchar(64) NOT NULL,
+    "inviter_user_id" varchar NOT NULL,
+    "inviter_display_name" text,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "expires_at" timestamp NOT NULL,
+    "accepted_by_user_id" varchar,
+    "accepted_at" timestamp,
+    "revoked_at" timestamp,
+    CONSTRAINT "soul_circle_invites_token_hash_unique" UNIQUE("token_hash")
+  )`,
+  `ALTER TABLE "soul_circle_invites" ADD COLUMN IF NOT EXISTS "inviter_display_name" text`,
+  `CREATE INDEX IF NOT EXISTS "soul_circle_invites_inviter_idx"
+    ON "soul_circle_invites" ("inviter_user_id")`,
+  `CREATE TABLE IF NOT EXISTS "soul_circle_links" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_low_id" varchar NOT NULL,
+    "user_high_id" varchar NOT NULL,
+    "status" varchar(16) DEFAULT 'active' NOT NULL,
+    "blocked_by_user_id" varchar,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "soul_circle_links_pair_unique"
+    ON "soul_circle_links" ("user_low_id", "user_high_id")`,
+  `CREATE INDEX IF NOT EXISTS "soul_circle_links_high_idx"
+    ON "soul_circle_links" ("user_high_id")`,
+  `CREATE TABLE IF NOT EXISTS "soul_circle_shares" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "owner_user_id" varchar NOT NULL,
+    "friend_user_id" varchar NOT NULL,
+    "selection" jsonb NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL,
+    "expires_at" timestamp NOT NULL,
+    "revoked_at" timestamp
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "soul_circle_shares_pair_unique"
+    ON "soul_circle_shares" ("owner_user_id", "friend_user_id")`,
+  `CREATE INDEX IF NOT EXISTS "soul_circle_shares_friend_idx"
+    ON "soul_circle_shares" ("friend_user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"
     ON "billing_subjects" ("user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"
@@ -241,6 +283,30 @@ const requiredSchema = {
     token: "character varying",
     profile_id: "character varying",
     snapshot: "jsonb",
+  },
+  soul_circle_invites: {
+    id: "character varying",
+    token_hash: "character varying",
+    inviter_user_id: "character varying",
+    inviter_display_name: "text",
+    expires_at: "timestamp without time zone",
+    accepted_by_user_id: "character varying",
+    revoked_at: "timestamp without time zone",
+  },
+  soul_circle_links: {
+    id: "character varying",
+    user_low_id: "character varying",
+    user_high_id: "character varying",
+    status: "character varying",
+    blocked_by_user_id: "character varying",
+  },
+  soul_circle_shares: {
+    id: "character varying",
+    owner_user_id: "character varying",
+    friend_user_id: "character varying",
+    selection: "jsonb",
+    expires_at: "timestamp without time zone",
+    revoked_at: "timestamp without time zone",
   },
   billing_subjects: {
     id: "character varying",
