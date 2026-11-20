@@ -35,13 +35,17 @@ test("shared text firewall prevents terminal one-line readings", () => {
   assert.match(cleanLine, /supports the pattern and another that contradicts it/);
 });
 
-test("Human Design output explains lived behavior and its limits", () => {
+test("Human Design output frames each type as a hypothesis to test against lived behavior", () => {
+  // Current contract: every type explanation names its limit (a symbolic hypothesis,
+  // not a fixed psychological fact) and tells the reader what lived evidence to compare.
   for (const source of [hdCore, hdRuntime]) {
-    assert.match(source, /best treated as a hypothesis/);
-    assert.match(source, /The benefit is/);
-    assert.match(source, /The tradeoff is/);
-    assert.match(source, /Other people may/);
-    assert.match(source, /A grounded experiment is/);
-    assert.match(source, /symbolic interpretation, not verified psychology/);
+    const block = source.slice(source.indexOf("TYPE_EXPLANATIONS"));
+    const explanations = block.match(/^\s+\w+: "A[n]? [^"]+",$/gm) ?? [];
+    assert.equal(explanations.length, 5, "all five Human Design types must be explained");
+    for (const line of explanations) {
+      assert.match(line, /can be used as a symbolic hypothesis/);
+      assert.match(line, /Compare it against/);
+      assert.match(line, /rather than treating it as a fixed psychological fact/);
+    }
   }
 });

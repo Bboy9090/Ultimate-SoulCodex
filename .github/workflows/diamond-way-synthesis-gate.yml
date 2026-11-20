@@ -71,6 +71,13 @@ jobs:
             tests/diamond-depth-engine.test.ts \
             tests/depth-reading-quality-contract.test.ts \
             tests/depth-reading-nonrepetition-contract.test.ts \
+            tests/foundation-local-astronomy-boundary.test.ts \
+            tests/natal-report-contract.test.ts \
+            tests/stored-profile-verification-plus-access.test.ts \
+            tests/release-toolchain-contract.test.ts \
+            tests/personal-chart-browser-workflow-contract.test.ts \
+            tests/human-depth-specialty-surfaces.test.ts \
+            tests/location-resolution-contract.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
             tests/diamond-experience-architecture.test.ts \
