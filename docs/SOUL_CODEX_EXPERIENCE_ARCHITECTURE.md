@@ -65,6 +65,8 @@ Primary dimensions:
 
 Each dimension must explain the actual supporting comparison and preserve uncertainty.
 
+Release note: the Foundation Compatibility Hub renders only dimensions with a shipped, evidence-backed implementation (currently Communication). The other dimensions above are design targets and must not appear as tiles, "planned", or "coming soon" in the production journey until their implementation exists (see AGENTS.md, Frontend Parity).
+
 ## Surface 4 — Why
 
 Every important insight needs a visible route to provenance.

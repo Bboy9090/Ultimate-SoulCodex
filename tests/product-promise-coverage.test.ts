@@ -71,7 +71,7 @@ test("planned capabilities are visibly excluded from the current paid promise", 
   assert.match(pricing, /Roadmap · not sold yet/);
   assert.match(pricing, /Planned, not included in the current paid promise/);
   assert.match(pricing, /Human Design Definition, centers, channels, activated gates, and deeper interaction synthesis/);
-  assert.match(compatibility, /Planned · not included in current Soul Codex\+/);
+  assert.doesNotMatch(compatibility, /Planned · not included in current Soul Codex\+/);
 });
 
 
