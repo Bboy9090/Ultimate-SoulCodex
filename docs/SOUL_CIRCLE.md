@@ -1,7 +1,7 @@
 # Soul Circle — consent-based friendship lane
 
-Status: **backend implemented and tested; client lane not yet built.** Nothing in the
-app calls these endpoints yet, so no user-visible behavior has changed.
+Status: **backend and client lane implemented and tested.** Reachable at `/circle`
+(entry card on the People page); invite links open `/circle/join/:token`.
 
 Soul Circle lets two people who both have Soul Codex accounts see each other's
 verified chart signs **without either typing anything about the other**. It is built
@@ -25,6 +25,22 @@ authorization against cross-user reads. No contact upload, no public birth detai
    re-verifying a chart updates what friends see and revoking cuts access instantly.
 5. **Leave any time.** Revoke sharing, remove the friend (deletes the link and both
    consents), or block. Deleting an account removes every invite, link and consent.
+
+## The client lane
+
+- `/circle`: your circle (each friend with the signs they share), and invite creation.
+  An invite can carry a name you choose for that invite; the link is shown once.
+- `/circle/join/:token`: shows who invited you and exactly what joining does, then joins.
+  Signed-out visitors are sent to account settings and the invite is remembered for the
+  session (`sessionStorage`) so they can continue after signing in.
+- `/circle/:id`: what they share with you; what you share with them (per-field
+  checkboxes, presets, a live "they can see right now" preview that is recomputed from
+  your verified profile); stop sharing, remove, block.
+- **Comparison happens on the viewer's device.** The friend's shared placements are
+  compared (existing `compareFriendCharts` and Conversation Lab) with the viewer's own
+  locally saved verified chart, so a person never has to share their chart to compare.
+  Free keeps the existing first-look limits; Soul Codex+ opens the rest. No billing or
+  entitlement behavior changed.
 
 ## What may be shared (doctrine)
 
@@ -78,19 +94,28 @@ script `scripts/ensure-public-share-schema.mjs` that production runs before boot
 
 ## Validation (actually run)
 
-`tests/soul-circle-routes.test.ts`: 14 scenarios against `MemStorage` and the same 14
-against `PostgresStorage` on a real local PostgreSQL 16 (28/28). The CI gate runs the
-in-memory half; the Postgres half runs wherever `DATABASE_URL` is set. The invite race
-was repeated six times and the removal-during-share race five times against Postgres. The SQL migration and the startup schema script
-were applied to clean databases, and the script was re-run to confirm it is idempotent.
+- `tests/soul-circle-routes.test.ts`: 14 scenarios against `MemStorage` and the same 14
+  against `PostgresStorage` on a real local PostgreSQL 16 (28/28). The in-memory half is in
+  the CI gate; the Postgres half runs wherever `DATABASE_URL` is set. Invite and
+  removal-during-share races were repeated against Postgres. The SQL migration and the
+  idempotent startup script were applied to clean databases.
+- `tests/soul-circle-client.test.ts` (8 tests, in the CI gate): share-selection rules,
+  presets, chips never inventing values, safe invite URLs, error mapping, and a source
+  contract that the pages never read birth data, never store friends on-device, never touch
+  Human Design or contacts, and keep the entitlement gate.
+- **Real browser run (Chromium, mobile viewport, production build, real PostgreSQL 16):**
+  two real email accounts with seeded verified profiles went through invite, join, consent,
+  live preview, on-device comparison with the Conversation Lab, revoke, and block: 17/17
+  checks, including that a full account name, birth time, birthplace, coordinates, email,
+  and unconsented fields never appear on the friend's screen. This harness lives outside the
+  repository and is **not** part of CI. Verification data was seeded directly because the
+  independent ephemeris is unreachable from the sandbox.
 
 ## Not included / open
 
-- **Client lane** (invite screen, friends list, per-friend consent sheet, comparison):
-  not built. The existing `friendChartCompatibility` and the Conversation Lab are the
-  intended comparison surface.
-- Push/notification when a friend joins or shares: not built.
-- Group views, and a shareable "join my circle" landing page for signed-out visitors:
-  not built; joining requires an account.
-- Production has not run this against its real database; the Postgres evidence is a
-  local PostgreSQL 16 only.
+- Signed-out visitors cannot sign in from the invite page itself; they are sent to account
+  settings. An inline sign-in is not built.
+- Push or in-app notification when a friend joins or shares: not built.
+- Group views, and per-friend naming nudges: not built.
+- Production has not run this against its real database; the Postgres evidence is a local
+  PostgreSQL 16 only.

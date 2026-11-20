@@ -80,6 +80,7 @@ jobs:
             tests/location-resolution-contract.test.ts \
             tests/integration-config.test.ts \
             tests/soul-circle-routes.test.ts \
+            tests/soul-circle-client.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
             tests/diamond-experience-architecture.test.ts \

@@ -258,7 +258,17 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
       try {
         const member = await memberLink(userId, req.params.id);
         if (!member) return notFound(res);
-        res.json(await describeFriend(userId, member.link, member.friendUserId, clock()));
+        const now = clock();
+        const friend = await describeFriend(userId, member.link, member.friendUserId, now);
+        // Transparency: exactly what this friend can see of me right now, recomputed live.
+        let myPreview: ReturnType<typeof projectSharedChart> = null;
+        if (friend.iShare) {
+          const mine = await storage.getSoulCircleShare(userId, member.friendUserId);
+          if (soulCircleShareIsActive(mine, now)) {
+            myPreview = projectSharedChart(await storage.getProfileByUserId(userId), parseStoredSelection(mine.selection));
+          }
+        }
+        res.json({ ...friend, myPreview });
       } catch (error) {
         console.error("[SoulCircle] getFriend failed:", error);
         res.status(500).json({ message: "Could not load this friend." });
