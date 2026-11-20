@@ -5,6 +5,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupSession } from "./session";
 import { registerConsumerAuthRoutes } from "./routes/consumer-auth";
+import { registerSoulCircleRoutes } from "./routes/soul-circle";
 import { profileBelongsToActor } from "./lib/profile-ownership";
 import {
   durableFeatureUnavailable,
@@ -103,6 +104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerBillingRoutes(app);
   app.post("/api/profiles/:id/verify-systems", rateLimit({ windowMs: 60_000, max: 5 }), storedProfileVerificationHandler({ storage, requireDurableFeature }));
   registerProfileGalacticCodeRoute(app, { storage, requireDurableFeature });
+  registerSoulCircleRoutes(app, { storage, requireDurableFeature });
 
   app.get("/api/access", async (req: any, res) => {
     try {
