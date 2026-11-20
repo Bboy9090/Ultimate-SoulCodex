@@ -37,6 +37,10 @@ const SIGN_GLYPH: Record<string, string> = {
   Libra: "♎", Scorpio: "♏", Sagittarius: "♐", Capricorn: "♑", Aquarius: "♒", Pisces: "♓",
 };
 
+function validLongitude(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value < 360;
+}
+
 function pointFor(longitude: number, ascendant: number, radius: number) {
   const screenDegrees = longitude - ascendant + 180;
   const radians = (screenDegrees * Math.PI) / 180;
@@ -85,9 +89,14 @@ function VerifiedNatalChartContent({
   // Never orient verified geometry from an unverified Rising candidate.
   const ascendant = verifiedAscendantLongitude(synthesis.houseCusps);
 
-  const drawablePlacements = synthesis.placements.filter((placement) => placement.longitude !== null);
+  const drawablePlacements = synthesis.placements.filter((placement) => validLongitude(placement.longitude));
 
-  if (ascendant === null || synthesis.houseCusps.length !== 12 || drawablePlacements.length < 3) {
+  if (
+    ascendant === null ||
+    synthesis.houseCusps.length !== 12 ||
+    !synthesis.houseCusps.every((house) => validLongitude(house.longitude)) ||
+    drawablePlacements.length < 3
+  ) {
     return (
       <section className="sc-panel p-6" data-testid="verified-natal-chart-unavailable">
         <p className="sc-eyebrow">Verified natal wheel</p>
