@@ -127,9 +127,17 @@ test("native distributable versions agree with the canonical release manifest", 
   const androidVersion = capture(androidGradle, /versionName\s+"([^"]+)"/, "Android version");
   const androidBuild = capture(androidGradle, /versionCode\s+(\d+)/, "Android build");
 
-  assert.equal(iosVersion, releaseVersion);
-  assert.equal(androidVersion, releaseVersion);
-  assert.match(iosProject, new RegExp(`MARKETING_VERSION = ${releaseVersion.replaceAll(".", "\\.")};`));
+  // Release policy: the web/backend manifest stays on its own version while native
+  // distributables advance patch releases within the same major.minor line.
+  const [manifestMajor, manifestMinor, manifestPatch] = releaseVersion.split(".").map(Number);
+  for (const nativeVersion of [iosVersion, androidVersion]) {
+    const [major, minor, patch] = nativeVersion.split(".").map(Number);
+    assert.equal(major, manifestMajor, `native ${nativeVersion} must share the manifest major version`);
+    assert.equal(minor, manifestMinor, `native ${nativeVersion} must share the manifest minor version`);
+    assert.ok(patch >= manifestPatch, `native ${nativeVersion} must not trail manifest ${releaseVersion}`);
+  }
+  assert.equal(iosVersion, androidVersion, "iOS and Android native versions must agree");
+  assert.match(iosProject, new RegExp(`MARKETING_VERSION = ${iosVersion.replaceAll(".", "\\.")};`));
   assert.match(iosProject, new RegExp(`CURRENT_PROJECT_VERSION = ${iosBuild};`));
   assert.ok(Number(iosBuild) >= 4_000_004);
   assert.ok(Number(androidBuild) >= 4_000_004);

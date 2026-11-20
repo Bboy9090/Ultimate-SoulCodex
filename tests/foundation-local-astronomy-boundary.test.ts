@@ -36,7 +36,7 @@ test("known birth time does not authorize fabricated local Moon, Rising, planets
   assert.doesNotMatch(serialized, /offline\.astrology\.sun/);
   assert.doesNotMatch(serialized, /offline\.astrology\.moon/);
   assert.doesNotMatch(serialized, /offline\.astrology\.rising/);
-  assert.match(serialized, /Sun sign candidate .* excluded from synthesis/);
+  assert.match(serialized, /Sun sign candidate .* retained for display only until verified or admitted/);
   assert.match(serialized, /Moon sign is unavailable in local mode/);
   assert.match(serialized, /Planetary positions, houses, aspects, nodes, Chiron, and Midheaven are unavailable/);
   assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
@@ -62,7 +62,7 @@ test("local calendar Sun stays unresolved near ingress and never shapes local sy
   const profile = generateFoundationOfflineCodexProfile(
     {
       ...baseInput,
-      birthDate: "1987-01-19",
+      birthDate: "1987-01-20",
       birthTime: "",
     },
     { id: "local-ingress", generatedAt: "2026-09-30T00:00:00.000Z", currentYear: 2026 },
@@ -72,7 +72,7 @@ test("local calendar Sun stays unresolved near ingress and never shapes local sy
   assert.match(profile.biography, /Sun remains unresolved locally/);
   assert.match(profile.archetypeData.title, /Foundation Numerology Signature/);
   assert.doesNotMatch(profile.archetypeData.title, /Capricorn|Aquarius/);
-  assert.match(JSON.stringify(profile.depthInterpretation), /Sun sign is unresolved locally near a sign-ingress boundary/);
+  assert.match(JSON.stringify(profile.depthInterpretation), /Sun sign is unresolved locally because the exact civil time or full-day sign stability could not be established/);
 });
 
 test("production create and Identity surfaces use the Foundation-safe path and never render the random chart", () => {

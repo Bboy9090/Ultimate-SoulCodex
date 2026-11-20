@@ -28,7 +28,8 @@ test("Plus verification may narrate and return qualified HD and full-name numero
         capability: "soul_codex_plus",
         status: "active",
         effectiveAt: new Date("2026-10-01T00:00:00.000Z"),
-        expiresAt: new Date("2026-11-01T00:00:00.000Z"),
+        // Far-future expiry so the grant stays active regardless of the wall clock.
+        expiresAt: new Date("2099-01-01T00:00:00.000Z"),
         revokedAt: null,
         sourceProvider: "apple",
         plan: "monthly",
