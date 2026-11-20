@@ -38,7 +38,8 @@ test("shared motion primitives provide reveal, stagger, and interactive behavior
 
 test("Aureon responds to the active experience rather than staying static", () => {
   assert.match(aureon, /"observing" \| "focusing" \| "explaining" \| "comparing" \| "confirming" \| "warning"/);
-  assert.match(natal, /AureonAvatar state=\{selection \? "explaining" : "observing"\}/);
+  assert.match(natal, /const aureonChartState: AureonState = !selection\s*\? "observing"/);
+  assert.match(natal, /AureonAvatar state=\{aureonChartState\}/);
   assert.match(compatibility, /AureonAvatar state=\{selectedDimension \? "explaining" : "comparing"\}/);
   assert.match(compatibility, /const aureonState: AureonState/);
   assert.match(compatibility, /\? "warning"/);

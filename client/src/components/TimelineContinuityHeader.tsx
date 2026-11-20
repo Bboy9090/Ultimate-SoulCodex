@@ -19,7 +19,7 @@ export default function TimelineContinuityHeader() {
           <p className="text-[11px] font-bold uppercase tracking-[0.18em]">Living timeline</p>
         </div>
         <h1 id="timeline-continuity-title" className="mb-2 font-serif text-2xl sm:text-3xl">
-          {name} history should explain change, not freeze identity.
+          {name}'s history should explain change, not freeze identity.
         </h1>
         <p className="max-w-3xl text-sm leading-6 text-white/65 sm:text-base">
           Cycles are context. Add real events, decisions, and reflections over time so symbolic timing can be compared with what actually happened.

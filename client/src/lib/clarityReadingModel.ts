@@ -85,7 +85,7 @@ const FALLBACKS = {
     "In relationships, the work is to make the hidden need speak plainly before another person is forced to interpret the behavior.",
 };
 
-const EXPRESSION_THEMES: Record<number, NumberTheme> = {
+export const EXPRESSION_THEMES: Record<number, NumberTheme> = {
   1: { label: "Independence", drive: "self-directed initiation and leadership", pull: "choose the direction and move in your own way", risk: "treating collaboration as interference when autonomy feels threatened" },
   2: { label: "Cooperation", drive: "mediation, partnership, and relational awareness", pull: "build agreement before forcing movement", risk: "over-adjusting to preserve connection" },
   3: { label: "Expression", drive: "creative communication and visible self-expression", pull: "turn experience into something that can be shared", risk: "opening new expressions faster than they can be completed" },
@@ -100,7 +100,7 @@ const EXPRESSION_THEMES: Record<number, NumberTheme> = {
   33: { label: "Teaching", drive: "service, example, and compassionate leadership", pull: "make experience useful to other people", risk: "becoming responsible for everybody else's growth" },
 };
 
-const SOUL_URGE_THEMES: Record<number, NumberTheme> = {
+export const SOUL_URGE_THEMES: Record<number, NumberTheme> = {
   1: { label: "Autonomy", drive: "inner independence and self-definition", pull: "know that the final choice is genuinely yours", risk: "withdrawing when closeness begins to feel like control" },
   2: { label: "Belonging", drive: "emotional reciprocity and partnership", pull: "feel mutuality rather than carrying connection alone", risk: "silencing a preference to keep the bond calm" },
   3: { label: "Joy", drive: "expression, play, and emotional visibility", pull: "feel free to say, create, and enjoy what is alive", risk: "using stimulation to outrun disappointment or depth" },
@@ -290,7 +290,7 @@ function numerologyTension(expression: number | undefined, soulUrge: number | un
   const soulTheme = soulUrge ? SOUL_URGE_THEMES[soulUrge] : undefined;
   if (!expression || !soulUrge || !expressionTheme || !soulTheme) return undefined;
 
-  return `Two different pulls may be active at once: ${expressionTheme.pull} and ${soulTheme.pull}. The useful question is which one you are choosing on purpose, and which one is quietly making the decision for you.`;
+  return `Two different pulls may be active at once: one to ${expressionTheme.pull}, and another to ${soulTheme.pull}. The useful question is which one you are choosing on purpose, and which one is quietly making the decision for you.`;
 }
 
 export function buildClarityReadingModel(
@@ -408,7 +408,7 @@ export function buildClarityReadingModel(
     sectionText(depth.behaviorPattern),
     archetype.strengths?.[0],
     archetype.gifts?.[0],
-  ) ?? identityReading?.meaning ?? (lifePathTheme ? `In the Life Path ${lifePath} tradition, ${lifePathTheme.drive} is a theme to examine. Check whether ${lifePathTheme.pull} actually describes a recent choice; the number does not establish your behavior.` : FALLBACKS.visiblePattern);
+  ) ?? identityReading?.meaning ?? (lifePathTheme ? `In the Life Path ${lifePath} tradition, the central themes are ${lifePathTheme.drive}. Check whether a recent choice shows a pull to ${lifePathTheme.pull}; the number does not establish your behavior.` : FALLBACKS.visiblePattern);
   const baseProtective = protectiveBehavioralSupport
     ? firstSupportedText(sectionText(depth.protectiveFunction)) ?? FALLBACKS.protectiveFunction
     : FALLBACKS.protectiveFunction;
@@ -417,13 +417,13 @@ export function buildClarityReadingModel(
     sectionText(depth.healthyExpression),
     archetype.gifts?.[0],
     archetype.strengths?.[0],
-  ) ?? identityReading?.gift ?? (lifePathTheme ? `Life Path ${lifePath} frames ${lifePathTheme.drive} as a potential strength. Its value depends on how you choose to apply it, not the label.` : FALLBACKS.gift);
+  ) ?? identityReading?.gift ?? (lifePathTheme ? `Life Path ${lifePath} frames ${lifePathTheme.drive} as potential strengths. Their value depends on how you choose to apply them, not the label.` : FALLBACKS.gift);
   const baseCost = firstSupportedText(
     sectionText(depth.cost),
     sectionText(depth.shadow),
     archetype.shadows?.[0],
     archetype.growthAreas?.[0],
-  ) ?? (emotionalReading ?? identityReading)?.tension ?? (lifePathTheme ? `A Life Path ${lifePath} reflection asks whether ${lifePathTheme.risk}. This is a possible tradeoff, not an inferred fact about you.` : FALLBACKS.cost);
+  ) ?? (emotionalReading ?? identityReading)?.tension ?? (lifePathTheme ? `A Life Path ${lifePath} reflection asks about the risk of ${lifePathTheme.risk}. This is a possible tradeoff, not an inferred fact about you.` : FALLBACKS.cost);
   const baseRelationship = firstSupportedText(
     sectionText(depth.relationshipImpact),
     sectionText(depth.relationships),
@@ -442,7 +442,7 @@ export function buildClarityReadingModel(
     gift: appendTheme(
       baseGift,
       expression && expressionTheme
-        ? `Expression ${expression} is strongest when ${expressionTheme.drive} becomes a chosen skill instead of ${expressionTheme.risk}.`
+        ? `Expression ${expression} is strongest when ${expressionTheme.drive} become chosen skills instead of ${expressionTheme.risk}.`
         : undefined,
     ),
     cost: appendTheme(
@@ -454,7 +454,7 @@ export function buildClarityReadingModel(
     relationshipImpact: appendTheme(
       baseRelationship,
       expression && soulUrge && expressionTheme && soulTheme
-        ? `One side may pull toward ${expressionTheme.pull}; another toward ${soulTheme.pull}. Relationships make it easier to see which pull you are choosing and which one has become an unspoken demand.`
+        ? `One side may pull you to ${expressionTheme.pull}; another to ${soulTheme.pull}. Relationships make it easier to see which pull you are choosing and which one has become an unspoken demand.`
         : soulUrge && soulTheme
           ? `Soul Urge ${soulUrge} points toward ${soulTheme.drive}. In relationships, watch for ${soulTheme.risk}.`
           : undefined,
