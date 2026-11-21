@@ -164,6 +164,8 @@ export const soulCircleEvents = pgTable("soul_circle_events", {
 }, (table) => ({
   userIndex: index("soul_circle_events_user_idx").on(table.userId, table.createdAt),
   linkIndex: index("soul_circle_events_link_idx").on(table.linkId),
+  // The database, not application code, guarantees one unread update per kind and friendship.
+  unreadUnique: uniqueIndex("soul_circle_events_unread_unique").on(table.userId, table.kind, table.linkId).where(sql`${table.readAt} is null`),
 }));
 
 export const galacticCodeRecords = pgTable("galactic_code_records", {

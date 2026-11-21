@@ -10,3 +10,5 @@ CREATE TABLE "soul_circle_events" (
 CREATE INDEX "soul_circle_events_user_idx" ON "soul_circle_events" USING btree ("user_id","created_at");
 --> statement-breakpoint
 CREATE INDEX "soul_circle_events_link_idx" ON "soul_circle_events" USING btree ("link_id");
+--> statement-breakpoint
+CREATE UNIQUE INDEX "soul_circle_events_unread_unique" ON "soul_circle_events" USING btree ("user_id","kind","link_id") WHERE "read_at" IS NULL;

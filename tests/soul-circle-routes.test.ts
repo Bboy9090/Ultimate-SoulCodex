@@ -490,4 +490,18 @@ for (const [label, makeStorage] of backends) {
     const shown = (await h.call("listNotifications", { userId: a })).body.items;
     assert.ok(shown.every((item: any) => item.linkId === linkId), "events pointing at friendships that do not exist are filtered out");
   });
+
+  t("concurrent requests cannot create duplicate unread updates", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    const { linkId } = await pair(storage, h, a, b);
+    // Eight requests racing to announce the same thing for the same friendship.
+    const results = await Promise.all(Array.from({ length: 8 }, () => storage.createSoulCircleEvent(b, "friend_shared", linkId, new Date("2026-11-20T00:00:00Z"))));
+    assert.equal(results.filter(Boolean).length, 1, "exactly one request creates the update");
+    assert.equal((await storage.listSoulCircleEvents(b, 50)).filter((event) => event.kind === "friend_shared").length, 1);
+    // Once read, the same news can be announced again.
+    await storage.markSoulCircleEventsRead(b, "all", new Date("2026-11-20T00:00:01Z"));
+    assert.ok(await storage.createSoulCircleEvent(b, "friend_shared", linkId, new Date("2026-11-20T00:00:02Z")));
+  });
 }

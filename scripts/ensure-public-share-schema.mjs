@@ -232,6 +232,13 @@ const statements = [
     ON "soul_circle_events" ("user_id", "created_at")`,
   `CREATE INDEX IF NOT EXISTS "soul_circle_events_link_idx"
     ON "soul_circle_events" ("link_id")`,
+  // Collapse any duplicate unread updates from before the constraint existed, then enforce it.
+  `DELETE FROM "soul_circle_events" a USING "soul_circle_events" b
+    WHERE a."read_at" IS NULL AND b."read_at" IS NULL
+      AND a."user_id" = b."user_id" AND a."kind" = b."kind" AND a."link_id" = b."link_id"
+      AND a."id" > b."id"`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "soul_circle_events_unread_unique"
+    ON "soul_circle_events" ("user_id", "kind", "link_id") WHERE "read_at" IS NULL`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"
     ON "billing_subjects" ("user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"

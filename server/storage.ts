@@ -1035,10 +1035,11 @@ export class PostgresStorage implements IStorage {
   }
   private async insertSoulCircleEvent(tx: any, userId: string, kind: string, linkId: string, now: Date): Promise<SoulCircleEvent | undefined> {
     // One unread event per kind and friendship: repeated actions do not stack up.
-    const duplicate = (await tx.select({ id: soulCircleEvents.id }).from(soulCircleEvents)
-      .where(and(eq(soulCircleEvents.userId, userId), eq(soulCircleEvents.kind, kind), eq(soulCircleEvents.linkId, linkId), isNull(soulCircleEvents.readAt))).limit(1))[0];
-    if (duplicate) return undefined;
-    const created = (await tx.insert(soulCircleEvents).values({ userId, kind, linkId, createdAt: now }).returning())[0] as SoulCircleEvent;
+    // Enforced by the partial unique index on unread events: concurrent inserts for the
+    // same news conflict and only one survives, so no separate check can race.
+    const created = (await tx.insert(soulCircleEvents).values({ userId, kind, linkId, createdAt: now })
+      .onConflictDoNothing().returning())[0] as SoulCircleEvent | undefined;
+    if (!created) return undefined;
     const keep = await tx.select({ id: soulCircleEvents.id }).from(soulCircleEvents)
       .where(eq(soulCircleEvents.userId, userId)).orderBy(desc(soulCircleEvents.createdAt)).limit(SOUL_CIRCLE_MAX_EVENTS_PER_USER);
     if (keep.length >= SOUL_CIRCLE_MAX_EVENTS_PER_USER) {
