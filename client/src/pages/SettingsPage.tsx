@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { currentDeps, disablePhoneAlertsOnSignOut } from "@/lib/phoneAlerts";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Capacitor } from "@capacitor/core";
@@ -86,6 +87,8 @@ export default function SettingsPage() {
   };
 
   const logout = async () => {
+    // Stop alerts for this phone while still signed in; never blocks or fails sign-out.
+    await disablePhoneAlertsOnSignOut(currentDeps());
     await apiRequest("POST", "/api/auth/logout");
     queryClient.setQueryData(["/api/auth/user"], null);
     queryClient.setQueryData(["/api/user"], null);

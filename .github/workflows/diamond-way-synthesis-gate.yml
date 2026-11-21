@@ -83,6 +83,7 @@ jobs:
             tests/soul-circle-client.test.ts \
             tests/push-delivery.test.ts \
             tests/push-routes.test.ts \
+            tests/phone-alerts.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
             tests/diamond-experience-architecture.test.ts \

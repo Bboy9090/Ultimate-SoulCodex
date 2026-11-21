@@ -1,7 +1,7 @@
 # Phone push notifications (Soul Circle) — server side
 
-Status: **server side built, dormant, and not yet verified against Apple or Google.** The native
-app code, the Firebase/Apple console steps and a new store build are still open (see below).
+Status: **server side merged (dormant); app-side JavaScript lane built behind a switch; native plugin,
+console steps and a new store build still open.** Nothing has been verified against Apple or Google.
 
 ## What exists
 
@@ -11,6 +11,37 @@ app code, the Firebase/Apple console steps and a new store build are still open 
   `POST /api/soul-circle/push/register`, `POST /api/soul-circle/push/unregister`.
 - `push_devices` table (`migrations/0006_push_devices.sql`, also ensured at container start by
   `scripts/ensure-public-share-schema.mjs`).
+
+## App side (JavaScript lane, behind a switch)
+
+- `client/src/lib/phoneAlerts.ts`: opt-in, token registration, launch refresh, sign-out cleanup,
+  alert-tap routing (only ever opens `/circle`).
+- `client/src/components/PhoneAlertsCard.tsx` (Soul Circle page), `PhoneAlertsBootstrap.tsx`
+  (mounted in `App.tsx`), sign-out hook in `SettingsPage.tsx`.
+- The native plugin is reached through `registerPlugin("FirebaseMessaging")`, so this code builds and
+  runs with or without the plugin in the native project.
+
+The switch has three conditions, all required before anything is shown or requested: native iOS/Android,
+a build that contains the `FirebaseMessaging` plugin, and the server reporting `available: true`
+(i.e. the three Railway variables are set). On the web, in a build without the plugin, or with the
+server unconfigured, the card is not rendered and nothing is sent.
+
+Behavior: turning on asks for notification permission, then registers this device's token. Turning off
+(or signing out) removes only this device's token and deletes the OS token. Launch re-registers a
+rotated token only for the account that opted in on this device and never prompts. A different account
+on the same phone is not enrolled.
+
+## Native steps still needed (not done, not verifiable from the Linux sandbox)
+
+1. `npm install @capacitor-firebase/messaging@8` and `npx cap sync`; confirm `CapApp-SPM/Package.swift`
+   and the Android project pick it up and both still build.
+2. iOS: add the `aps-environment` entitlement, add `GoogleService-Info.plist` from the CI secret, and
+   follow the plugin's AppDelegate setup (`FirebaseApp.configure()` and APNs token forwarding), guarded so a
+   build without the plist cannot crash at launch.
+3. Android: add `google-services.json` from the CI secret (`android/app/build.gradle` already applies the
+   Google services plugin only when the file exists) and confirm the Android 13+ notification permission.
+4. Test on real devices: permission prompt, token registration, delivery, tap opens Soul Circle, sign-out
+   stops alerts, and APNs delivery through Firebase.
 
 ## When a phone is alerted
 
@@ -53,6 +84,10 @@ toggle calling register/unregister (and unregister on sign-out), and a new store
 
 ## Validation actually run
 
+- `tests/phone-alerts.test.ts` (7): switch visibility, permission flow, failure states, device-only
+  removal, offline disable, sign-out, launch refresh account scoping, tap-route allowlist. Plugin and
+  API are fakes. `vite build` and the PWA output validator pass; `tsc` clean.
+
 - `tests/push-delivery.test.ts` (7): configuration resolution, constant message, RS256 JWT structure
   and signature verified against a throwaway key, token caching/refresh, error classification,
   re-auth once, dead-token removal, no tokens in logs. Network is a fake.
@@ -65,5 +100,5 @@ toggle calling register/unregister (and unregister on sign-out), and a new store
 ## Not verified
 
 - Real delivery to Google/Apple (unreachable from the build sandbox; no credentials exist).
-- Any native client behavior, token refresh on device, or notification tap routing.
+- Everything on a real device: the native plugin, permission prompt, token refresh, delivery and tap routing.
 - Production database behavior.
