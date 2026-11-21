@@ -153,6 +153,24 @@ jobs:
           npm run build:capacitor
           npx cap sync android
           npm run mobile:validate:android
+      - name: Install Firebase Android config (optional)
+        shell: bash
+        env:
+          ANDROID_GOOGLE_SERVICES_JSON: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}
+        run: |
+          if [[ -z "$ANDROID_GOOGLE_SERVICES_JSON" ]]; then
+            echo "No ANDROID_GOOGLE_SERVICES_JSON secret: building without Firebase config. Phone alerts will not work in this build."
+            exit 0
+          fi
+          umask 077
+          printf '%s' "$ANDROID_GOOGLE_SERVICES_JSON" > android/app/google-services.json
+          # Fail closed on a wrong or malformed file. Never print its contents.
+          node -e "
+            const j = JSON.parse(require('fs').readFileSync('android/app/google-services.json', 'utf8'));
+            const ok = (j.client || []).some((c) => c?.client_info?.android_client_info?.package_name === 'soulcodex.app');
+            if (!ok) { console.error('google-services.json has no client for package soulcodex.app'); process.exit(1); }
+          "
+          echo "Firebase Android config installed for soulcodex.app."
       - name: Detect Android signing credentials
         id: signing
         shell: bash

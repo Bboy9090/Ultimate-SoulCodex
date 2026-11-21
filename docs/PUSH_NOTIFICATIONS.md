@@ -32,17 +32,39 @@ rotated token only for the account that opted in on this device and never prompt
 on the same phone is not enrolled. If the server is temporarily unconfigured, the saved choice is kept so
 the device can still be revoked later.
 
-## Native steps still needed (not done, not verifiable from the Linux sandbox)
+## Native integration status
 
-1. `npm install @capacitor-firebase/messaging@8` and `npx cap sync`; confirm `CapApp-SPM/Package.swift`
-   and the Android project pick it up and both still build.
-2. iOS: add the `aps-environment` entitlement, add `GoogleService-Info.plist` from the CI secret, and
-   follow the plugin's AppDelegate setup (`FirebaseApp.configure()` and APNs token forwarding), guarded so a
-   build without the plist cannot crash at launch.
-3. Android: add `google-services.json` from the CI secret (`android/app/build.gradle` already applies the
-   Google services plugin only when the file exists) and confirm the Android 13+ notification permission.
-4. Test on real devices: permission prompt, token registration, delivery, tap opens Soul Circle, sign-out
-   stops alerts, and APNs delivery through Firebase.
+**Android: plugin bundled, awaiting config and a real-device test.**
+- `@capacitor-firebase/messaging` is a dependency; `npx cap sync android` adds it to
+  `android/capacitor.settings.gradle` and `android/app/capacitor.build.gradle` (committed). Its manifest
+  adds the `MessagingService` and the `POST_NOTIFICATIONS` permission (Android 13+ runtime prompt).
+- `google-services.json` is supplied by the `ANDROID_GOOGLE_SERVICES_JSON` GitHub secret (the whole file
+  as text). The `android-store` job in `store-4.0.0-release.yml` writes it to `android/app/` only if the
+  secret exists, fails the build if it has no client for `soulcodex.app`, and never prints it. Without the
+  secret the build still succeeds and phone alerts are simply unavailable.
+  `android/app/build.gradle` already applies the Google services plugin only when the file exists.
+- **Dormant until opt-in:** the Android manifest sets `firebase_messaging_auto_init_enabled` and
+  `firebase_analytics_collection_enabled` to `false`, so no token is generated and nothing is uploaded to
+  Firebase before the person turns alerts on. The plugin's `getToken()` re-enables auto-init at opt-in.
+  Known limit: the plugin has no call to switch auto-init back off, so after someone turns alerts off,
+  Firebase may mint a new (unregistered, unused) token on the next launch. Our server holds none, so no
+  alerts are sent; fixing it needs a small custom native call and a device test.
+- Google Play: adding the permission and Firebase Messaging means the **Data safety** answers must declare
+  device identifiers (push token) before this build is submitted.
+
+**iOS: deliberately not bundled yet.** `capacitor.config.ts` pins `ios.includePlugins` to the five existing
+plugins, because Xcode Cloud runs `cap sync ios` and then a hand-maintained patch script
+(`scripts/patch-capapp-spm-vendored-packages.mjs`) that would fail on an unknown plugin. Adding the plugin
+to iOS also pulls in the Firebase iOS SDK. Still to do, on a Mac (not verifiable from the Linux sandbox):
+1. Add the plugin to the iOS Swift package graph and extend the patch script and `ci_post_clone.sh` checks.
+2. Add the `aps-environment` entitlement and make sure the provisioning profile has Push enabled.
+3. Provide `GoogleService-Info.plist` from a CI secret (ignored by git) and make the app configure Firebase
+   only when it is present, so a build without it cannot crash at launch.
+4. Forward the APNs token from `AppDelegate` as the plugin documents, then archive and test.
+Until then the iOS app shows no phone-alerts card (no plugin), and nothing is sent to Apple.
+
+Real-device checklist (both platforms): permission prompt, token registration, delivery, tap opens Soul
+Circle, sign-out stops alerts, token rotation.
 
 ## When a phone is alerted
 
@@ -102,4 +124,5 @@ toggle calling register/unregister (and unregister on sign-out), and a new store
 
 - Real delivery to Google/Apple (unreachable from the build sandbox; no credentials exist).
 - Everything on a real device: the native plugin, permission prompt, token refresh, delivery and tap routing.
+- The Android Gradle build with the new plugin (no Android SDK in the sandbox; the `android-store` CI job is the first compile).
 - Production database behavior.

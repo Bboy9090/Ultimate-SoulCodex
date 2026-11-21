@@ -65,3 +65,7 @@ create_pr_and_files.sh
 
 # Ignore generated credentials from google-github-actions/auth
 gha-creds-*.json
+
+# Firebase client config is supplied by CI secrets, never committed
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
