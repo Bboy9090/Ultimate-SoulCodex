@@ -9,6 +9,7 @@ import {
   buildShareSelection,
   chartChips,
   comparablePlacements,
+  disclosedChips,
   explainSoulCircleError,
   inviteMessage,
   inviteUrl,
@@ -47,6 +48,21 @@ test("chips show only what was shared, in a stable order, never inventing values
     ["Sun:Virgo", "Rising:Scorpio", "Life Path:9", "Archetype:The Builder"],
   );
   assert.deepEqual(chartChips({ lifePath: 0 }).map((chip) => chip.value), ["0"]);
+});
+
+test("the consent preview describes every disclosed field, not just signs", () => {
+  assert.deepEqual(disclosedChips(null), []);
+  assert.deepEqual(disclosedChips({}), []);
+  // Sharing only planets and houses, or only a name, is still a disclosure.
+  assert.deepEqual(disclosedChips({ comparisonChart: [{ key: "moon", sign: "Leo", house: 4 }, { key: "venus", sign: "Libra", house: 2 }] }).map((chip) => `${chip.label}:${chip.value}`), ["Planets & houses:2 shared"]);
+  assert.deepEqual(disclosedChips({ displayName: "Ada B." }).map((chip) => `${chip.label}:${chip.value}`), ["Name:Ada B."]);
+  assert.deepEqual(
+    disclosedChips({ displayName: "Ada B.", sunSign: "Virgo", comparisonChart: [{ key: "moon", sign: "Leo", house: 4 }] }).map((chip) => chip.key),
+    ["name", "sun", "placements"],
+  );
+  assert.deepEqual(disclosedChips({ comparisonChart: [] }), [], "an empty chart is not a disclosure");
+  // The sign-only helper is unchanged for the friend cards.
+  assert.deepEqual(chartChips({ displayName: "Ada B.", comparisonChart: [{ key: "moon", sign: "Leo", house: 4 }] }), []);
 });
 
 test("comparison input drops unknown signs instead of guessing and feeds the shared comparison", () => {

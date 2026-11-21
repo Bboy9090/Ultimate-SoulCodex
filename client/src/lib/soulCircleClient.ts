@@ -140,6 +140,20 @@ export function chartChips(chart: SoulCircleChart | null | undefined): ChartChip
   return chips;
 }
 
+/**
+ * Everything a friend can currently see of the caller, including the fields that are not
+ * signs (a chosen name, shared planets and houses). The consent preview must describe the
+ * full disclosure, so emptiness is decided from this, never from signs alone.
+ */
+export function disclosedChips(chart: SoulCircleChart | null | undefined): ChartChip[] {
+  if (!chart) return [];
+  const chips = chartChips(chart);
+  if (chart.displayName) chips.unshift({ key: "name", label: "Name", value: chart.displayName });
+  const placements = chart.comparisonChart?.length ?? 0;
+  if (placements > 0) chips.push({ key: "placements", label: "Planets & houses", value: `${placements} shared` });
+  return chips;
+}
+
 const SIGN_SET = new Set<string>(ATLAS_SIGNS);
 
 /** Placements a friend shared, shaped for compareFriendCharts. Unknown signs are dropped, not guessed. */

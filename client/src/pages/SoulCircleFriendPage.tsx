@@ -14,6 +14,7 @@ import {
   buildShareSelection,
   chartChips,
   comparablePlacements,
+  disclosedChips,
   needsVerification,
   soulCircleApi,
   toggleField,
@@ -22,8 +23,8 @@ import {
   type SoulCircleFriend,
 } from "@/lib/soulCircleClient";
 
-function ChipRow({ chart, label }: { chart: SoulCircleChart | null | undefined; label: string }) {
-  const chips = chartChips(chart);
+function ChipRow({ chart, label, all = false }: { chart: SoulCircleChart | null | undefined; label: string; all?: boolean }) {
+  const chips = all ? disclosedChips(chart) : chartChips(chart);
   if (chips.length === 0) return null;
   return (
     <div className="mt-3 flex flex-wrap gap-2" aria-label={label}>
@@ -171,8 +172,8 @@ export default function SoulCircleFriendPage() {
               {friend.iShare ? (
                 <div className="mt-4 rounded-xl border border-[var(--sc-line-gold)] p-3" data-testid="circle-my-preview">
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">They can see right now</p>
-                  <ChipRow chart={saved ?? friend.myPreview} label="What this friend sees of you" />
-                  {chartChips(saved ?? friend.myPreview).length === 0 ? <p className="mt-2 text-xs text-[var(--sc-stone)]">Nothing yet. None of your picks are independently verified.</p> : null}
+                  <ChipRow chart={saved ?? friend.myPreview} label="What this friend sees of you" all />
+                  {disclosedChips(saved ?? friend.myPreview).length === 0 ? <p className="mt-2 text-xs text-[var(--sc-stone)]">Nothing yet. None of your picks are independently verified.</p> : null}
                   <p className="mt-2 text-xs text-[var(--sc-stone)]">Sharing renews every 180 days and ends if either of you leaves.</p>
                 </div>
               ) : null}
