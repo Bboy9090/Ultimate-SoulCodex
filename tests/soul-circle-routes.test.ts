@@ -77,7 +77,7 @@ for (const [label, makeStorage] of backends) {
 
   t("every endpoint requires a signed-in user", async () => {
     const h = makeHarness(makeStorage(), { now: new Date("2026-11-20T00:00:00Z") });
-    for (const name of ["createInvite", "listInvites", "revokeInvite", "previewInvite", "acceptInvite", "listFriends", "getFriend", "setShare", "revokeShare", "removeFriend", "blockFriend", "listBlocks", "unblock"] as const) {
+    for (const name of ["createInvite", "listInvites", "revokeInvite", "previewInvite", "acceptInvite", "listFriends", "getFriend", "setShare", "revokeShare", "removeFriend", "blockFriend", "listBlocks", "unblock", "listNotifications", "markNotificationsRead"] as const) {
       const reply = await h.call(name, { userId: null, params: { id: "x", token: "x" } });
       assert.equal(reply.status, 401, `${name} must reject anonymous callers`);
       assert.equal(reply.headers["cache-control"], "private, no-store, max-age=0");
@@ -376,5 +376,143 @@ for (const [label, makeStorage] of backends) {
     const view = await h.call("getFriend", { userId: b, params: { id: again.linkId } });
     assert.equal(view.body.theirChartStatus, "not_shared");
     assert.equal(view.body.theirChart, null);
+  });
+
+  t("a friend joining notifies only the inviter, with an event that carries no personal data", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    const { linkId } = await pair(storage, h, a, b);
+
+    const inviter = (await h.call("listNotifications", { userId: a })).body;
+    assert.equal(inviter.unread, 1);
+    assert.deepEqual(inviter.items.map((item: any) => [item.kind, item.linkId, item.friendName, item.read]), [["friend_joined", linkId, "Soul Circle friend", false]]);
+    assert.equal((await h.call("listNotifications", { userId: b })).body.items.length, 0, "the person who joined is not notified about themselves");
+
+    // What is stored is only what happened and where: no name, sign, or chart data.
+    const stored = await storage.listSoulCircleEvents(a, 10);
+    assert.deepEqual(Object.keys(stored[0]).sort(), ["createdAt", "id", "kind", "linkId", "readAt", "userId"]);
+  });
+
+  t("a friend starting to share notifies once, not on tweaks, and never when sharing stops", async () => {
+    const storage = makeStorage();
+    const clock = { now: new Date("2026-11-20T00:00:00Z") };
+    const h = makeHarness(storage, clock);
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    await makeVerifiedProfile(storage, a, "Ada");
+    const { linkId } = await pair(storage, h, a, b);
+    const bUpdates = async () => (await h.call("listNotifications", { userId: b })).body;
+    assert.equal((await bUpdates()).items.length, 0, "joining alone tells Bo nothing");
+
+    await h.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["displayName", "sunSign"], displayName: "Ada B." } });
+    let updates = await bUpdates();
+    assert.deepEqual(updates.items.map((item: any) => [item.kind, item.friendName]), [["friend_shared", "Ada B."]]);
+    assert.equal(updates.unread, 1);
+
+    // Tweaking the same active share does not stack more updates.
+    await h.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["displayName", "sunSign", "moonSign"], displayName: "Ada B." } });
+    assert.equal((await bUpdates()).items.length, 1);
+    await h.call("markNotificationsRead", { userId: b, body: { all: true } });
+    await h.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["sunSign"] } });
+    assert.equal((await bUpdates()).items.length, 1, "an update to an already-active share is not news");
+
+    // Stopping is silent: nothing is created that could reveal it.
+    await h.call("revokeShare", { userId: a, params: { id: linkId } });
+    assert.equal((await bUpdates()).items.length, 1);
+    // Starting again is news again.
+    await h.call("setShare", { userId: a, params: { id: linkId }, body: { fields: ["sunSign"] } });
+    updates = await bUpdates();
+    assert.equal(updates.items.length, 2);
+    assert.equal(updates.unread, 1);
+  });
+
+  t("removing, blocking or deleting an account leaves no update behind and never tells the other person", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b, c] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo"), await makeUser(storage, "Cy")];
+    await makeVerifiedProfile(storage, a, "Ada");
+    const ab = await pair(storage, h, a, b);
+    await h.call("setShare", { userId: a, params: { id: ab.linkId }, body: { fields: ["sunSign"] } });
+    assert.equal((await h.call("listNotifications", { userId: b })).body.items.length, 1);
+    assert.equal((await h.call("listNotifications", { userId: a })).body.items.length, 1);
+
+    // Blocking: no new update for the blocked person, and the link's updates vanish for both.
+    await h.call("blockFriend", { userId: b, params: { id: ab.linkId } });
+    assert.equal((await storage.listSoulCircleEvents(a, 10)).length, 0);
+    assert.equal((await storage.listSoulCircleEvents(b, 10)).length, 0);
+
+    // Removing a friend clears updates for the pair.
+    const ac = await pair(storage, h, a, c);
+    await h.call("setShare", { userId: a, params: { id: ac.linkId }, body: { fields: ["sunSign"] } });
+    assert.equal((await storage.listSoulCircleEvents(c, 10)).length, 1);
+    await h.call("removeFriend", { userId: a, params: { id: ac.linkId } });
+    assert.equal((await storage.listSoulCircleEvents(a, 10)).length, 0);
+    assert.equal((await storage.listSoulCircleEvents(c, 10)).length, 0);
+
+    // Deleting an account removes the updates that other people had about it.
+    const ca = await pair(storage, h, c, a);
+    assert.equal((await storage.listSoulCircleEvents(c, 10)).length, 1);
+    await storage.deleteUserAccount(a);
+    assert.equal((await storage.listSoulCircleEvents(c, 10)).length, 0);
+    assert.equal(await storage.getSoulCircleLinkById(ca.linkId), undefined);
+  });
+
+  t("marking updates read is scoped to the caller and validated", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b, c] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo"), await makeUser(storage, "Cy")];
+    await pair(storage, h, a, b);
+    await pair(storage, h, a, c);
+    const aItems = (await h.call("listNotifications", { userId: a })).body.items;
+    assert.equal(aItems.length, 2);
+
+    // Bo tries to mark Ada's updates read: nothing changes for Ada.
+    assert.equal((await h.call("markNotificationsRead", { userId: b, body: { ids: aItems.map((item: any) => item.id) } })).body.marked, 0);
+    assert.equal((await h.call("listNotifications", { userId: a })).body.unread, 2);
+
+    assert.equal((await h.call("markNotificationsRead", { userId: a, body: { ids: [aItems[0].id] } })).body.marked, 1);
+    assert.equal((await h.call("listNotifications", { userId: a })).body.unread, 1);
+    assert.equal((await h.call("markNotificationsRead", { userId: a, body: { all: true } })).body.marked, 1);
+    assert.equal((await h.call("listNotifications", { userId: a })).body.unread, 0);
+
+    for (const bad of [{}, { ids: [] }, { all: false }, { ids: ["x"], all: true }, { ids: "x" }]) {
+      assert.equal((await h.call("markNotificationsRead", { userId: a, body: bad })).status, 400, JSON.stringify(bad));
+    }
+  });
+
+  t("updates are capped per person and updates for a vanished friendship are never shown", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    const { linkId } = await pair(storage, h, a, b);
+    for (let i = 0; i < 105; i++) await storage.createSoulCircleEvent(a, "friend_shared", `ghost-${i}`, new Date(2026, 10, 20, 0, 0, i));
+    assert.equal((await storage.listSoulCircleEvents(a, 500)).length, 100, "oldest updates are dropped beyond the cap");
+    const shown = (await h.call("listNotifications", { userId: a })).body.items;
+    assert.ok(shown.every((item: any) => item.linkId === linkId), "events pointing at friendships that do not exist are filtered out");
+  });
+
+  t("concurrent requests cannot create duplicate unread updates", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const [a, b] = [await makeUser(storage, "Ada"), await makeUser(storage, "Bo")];
+    const { linkId } = await pair(storage, h, a, b);
+    // Eight requests racing to announce the same thing for the same friendship.
+    const results = await Promise.all(Array.from({ length: 8 }, () => storage.createSoulCircleEvent(b, "friend_shared", linkId, new Date("2026-11-20T00:00:00Z"))));
+    assert.equal(results.filter(Boolean).length, 1, "exactly one request creates the update");
+    assert.equal((await storage.listSoulCircleEvents(b, 50)).filter((event) => event.kind === "friend_shared").length, 1);
+    // Once read, the same news can be announced again.
+    await storage.markSoulCircleEventsRead(b, "all", new Date("2026-11-20T00:00:01Z"));
+    assert.ok(await storage.createSoulCircleEvent(b, "friend_shared", linkId, new Date("2026-11-20T00:00:02Z")));
+  });
+
+  t("every update is reachable: more than 50 are returned", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const a = await makeUser(storage, "Ada");
+    for (let i = 0; i < 55; i++) await pair(storage, h, a, await makeUser(storage, `Friend${i}`));
+    const result = (await h.call("listNotifications", { userId: a })).body;
+    assert.equal(result.items.length, 55, "no update is cut off by a lower display limit");
+    assert.equal(result.unread, 55);
+    assert.ok(result.items.every((item: any) => item.kind === "friend_joined"));
   });
 }

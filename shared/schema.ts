@@ -150,6 +150,24 @@ export const soulCircleShares = pgTable("soul_circle_shares", {
   friendIndex: index("soul_circle_shares_friend_idx").on(table.friendUserId),
 }));
 
+// Soul Circle updates for one recipient. An event stores only what happened and which
+// friendship it belongs to: never a name, a sign, or any chart data. Display text is
+// built at read time from what the other person currently consents to show, so
+// revoking, removing or blocking leaves nothing behind (events for the link are deleted).
+export const soulCircleEvents = pgTable("soul_circle_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  kind: varchar("kind", { length: 32 }).notNull(),
+  linkId: varchar("link_id").notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  readAt: timestamp("read_at"),
+}, (table) => ({
+  userIndex: index("soul_circle_events_user_idx").on(table.userId, table.createdAt),
+  linkIndex: index("soul_circle_events_link_idx").on(table.linkId),
+  // The database, not application code, guarantees one unread update per kind and friendship.
+  unreadUnique: uniqueIndex("soul_circle_events_unread_unique").on(table.userId, table.kind, table.linkId).where(sql`${table.readAt} is null`),
+}));
+
 export const galacticCodeRecords = pgTable("galactic_code_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
@@ -393,6 +411,7 @@ export type PublicProfileShare = typeof publicProfileShares.$inferSelect;
 export type SoulCircleInvite = typeof soulCircleInvites.$inferSelect;
 export type SoulCircleLink = typeof soulCircleLinks.$inferSelect;
 export type SoulCircleShare = typeof soulCircleShares.$inferSelect;
+export type SoulCircleEvent = typeof soulCircleEvents.$inferSelect;
 export type GalacticCodeRecord = typeof galacticCodeRecords.$inferSelect;
 export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type BillingSubject = typeof billingSubjects.$inferSelect;

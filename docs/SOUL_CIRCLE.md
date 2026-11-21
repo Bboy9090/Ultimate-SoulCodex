@@ -42,6 +42,41 @@ authorization against cross-user reads. No contact upload, no public birth detai
   Free keeps the existing first-look limits; Soul Codex+ opens the rest. No billing or
   entitlement behavior changed.
 
+## Updates (in-app notifications)
+
+Built and tested: a per-person feed of Soul Circle updates, shown as an "Updates" list on
+`/circle` and an unread badge on the People entry card. It works in the web app and the
+native apps because it needs no outside provider.
+
+- **When an update is created:** the inviter is told when a friend accepts their invite
+  (`friend_joined`); a friend is told when someone starts or resumes sharing with them
+  (`friend_shared`). Tweaking an already-active share, revoking, removing, blocking, and
+  expiry create **no** update, so nothing can reveal that someone stopped or blocked.
+- **What an update stores:** only the kind, the friendship it belongs to, and timestamps.
+  Never a name, a sign, or chart data. Display text is built when it is read, from what the
+  other person currently consents to show (a name they chose, else "Soul Circle friend").
+- **No stacking:** one unread update per kind and friendship; at most 100 per person.
+- **Cleanup:** removing a friend or blocking deletes that friendship's updates for both
+  people; deleting an account deletes every update about it. Updates whose friendship no
+  longer exists are never shown.
+- **Scoped:** marking read only ever affects the caller's own updates.
+
+### Email, SMS and phone push: not built, and what each needs
+
+An audit of the repo found no email provider, no SMS provider, no native push plugin, and no
+push handling in the client or service worker. The only push code is a legacy root file whose
+routes are non-canonical and that falls back to temporary placeholder VAPID keys, which must
+not be reused. Shipping any of these without a real provider would be a simulated feature, so
+none exist. All of them should be consumers of the same updates above, with generic content
+only ("You have a new Soul Circle update", never a name or sign) and an opt-in per channel.
+
+| Channel | Needs before it can be built |
+| --- | --- |
+| Email | A chosen provider (for example SES, Resend, Postmark) with a verified sending domain and credentials; per-user opt-in with address confirmation and one-click unsubscribe. |
+| Phone push (native apps) | A Capacitor push plugin, Apple APNs key and Firebase/FCM project credentials, native entitlements, and a new store build for each platform. |
+| Web push (browsers, installed PWA) | Real VAPID keys in production (no temporary keys), a subscription table, a service-worker push handler. It does not reach the native iPhone/Android apps. |
+| SMS | Collecting phone numbers (new sensitive data), carrier registration and per-message cost. Not recommended for this app. |
+
 ## What may be shared (doctrine)
 
 The projection is the same one used for public share links
@@ -94,12 +129,12 @@ script `scripts/ensure-public-share-schema.mjs` that production runs before boot
 
 ## Validation (actually run)
 
-- `tests/soul-circle-routes.test.ts`: 14 scenarios against `MemStorage` and the same 14
-  against `PostgresStorage` on a real local PostgreSQL 16 (28/28). The in-memory half is in
+- `tests/soul-circle-routes.test.ts`: 19 scenarios against `MemStorage` and the same 19
+  against `PostgresStorage` on a real local PostgreSQL 16 (38/38). The in-memory half is in
   the CI gate; the Postgres half runs wherever `DATABASE_URL` is set. Invite and
   removal-during-share races were repeated against Postgres. The SQL migration and the
   idempotent startup script were applied to clean databases.
-- `tests/soul-circle-client.test.ts` (8 tests, in the CI gate): share-selection rules,
+- `tests/soul-circle-client.test.ts` (10 tests, in the CI gate): share-selection rules,
   presets, chips never inventing values, safe invite URLs, error mapping, and a source
   contract that the pages never read birth data, never store friends on-device, never touch
   Human Design or contacts, and keep the entitlement gate.
@@ -115,7 +150,7 @@ script `scripts/ensure-public-share-schema.mjs` that production runs before boot
 
 - Signed-out visitors cannot sign in from the invite page itself; they are sent to account
   settings. An inline sign-in is not built.
-- Push or in-app notification when a friend joins or shares: not built.
+- Email, SMS and phone push notifications: not built (see the table above).
 - Group views, and per-friend naming nudges: not built.
 - Production has not run this against its real database; the Postgres evidence is a local
   PostgreSQL 16 only.

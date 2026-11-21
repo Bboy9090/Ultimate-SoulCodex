@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import type { IStorage } from "../storage";
-import { soulCircleOtherUser } from "../storage";
+import { SOUL_CIRCLE_MAX_EVENTS_PER_USER, soulCircleOtherUser } from "../storage";
 import {
   SOUL_CIRCLE_INVITE_TTL_MS,
   SOUL_CIRCLE_MAX_ACTIVE_INVITES,
@@ -33,6 +33,9 @@ type SoulCircleStorage = Pick<
   | "upsertSoulCircleShareForLink"
   | "getSoulCircleShare"
   | "revokeSoulCircleShare"
+  | "createSoulCircleEvent"
+  | "listSoulCircleEvents"
+  | "markSoulCircleEventsRead"
 >;
 
 export interface SoulCircleDependencies {
@@ -44,6 +47,11 @@ export interface SoulCircleDependencies {
 const ANONYMOUS_FRIEND_NAME = "Soul Circle friend";
 
 // The only name an invitee sees is one the inviter typed for this invite.
+const markReadSchema = z.union([
+  z.object({ all: z.literal(true) }).strict(),
+  z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(100) }).strict(),
+]);
+
 const inviteOptionsSchema = z.object({ displayName: z.string().trim().min(1).max(80).optional() }).strict();
 
 function noStore(res: Response) {
@@ -304,8 +312,15 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         const expiresAt = new Date(clock().getTime() + SOUL_CIRCLE_SHARE_TTL_MS);
         // The link is re-checked under a lock with the write, so a friendship removed or
         // blocked while we were verifying cannot be left with a consent behind.
+        const now = clock();
+        const before = await storage.getSoulCircleShare(userId, member.friendUserId);
         const saved = await storage.upsertSoulCircleShareForLink(member.link.id, userId, selection.data, expiresAt);
         if (!saved) return notFound(res);
+        // Tell the friend only when sharing starts or resumes, never on later tweaks, and
+        // never when sharing stops: the event carries no name or data.
+        if (!soulCircleShareIsActive(before, now)) {
+          await storage.createSoulCircleEvent(member.friendUserId, "friend_shared", member.link.id, now);
+        }
         // Echo exactly what the friend can see so consent is informed.
         res.status(200).json({ fields: selection.data.fields, expiresAt, preview });
       } catch (error) {
@@ -359,6 +374,54 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
       } catch (error) {
         console.error("[SoulCircle] blockFriend failed:", error);
         res.status(500).json({ message: "Could not block this person." });
+      }
+    },
+
+    async listNotifications(req: Request, res: Response) {
+      noStore(res);
+      if (!dependencies.requireDurableFeature(res)) return;
+      const userId = signedInUserId(req, res);
+      if (!userId) return;
+      try {
+        const now = clock();
+        // Everything the store keeps (it caps at the same number), so no unread update is unreachable.
+        const events = await storage.listSoulCircleEvents(userId, SOUL_CIRCLE_MAX_EVENTS_PER_USER);
+        const items = (await Promise.all(events.map(async (event) => {
+          // An update only exists while the friendship does; otherwise it is dropped.
+          const member = await memberLink(userId, event.linkId);
+          if (!member) return null;
+          const theirs = await storage.getSoulCircleShare(member.friendUserId, userId);
+          const selection = soulCircleShareIsActive(theirs, now) ? parseStoredSelection(theirs.selection) : null;
+          return {
+            id: event.id,
+            kind: event.kind,
+            linkId: event.linkId,
+            createdAt: event.createdAt,
+            read: Boolean(event.readAt),
+            friendName: friendName(selection),
+          };
+        }))).filter((item): item is NonNullable<typeof item> => item !== null);
+        res.json({ unread: items.filter((item) => !item.read).length, items });
+      } catch (error) {
+        console.error("[SoulCircle] listNotifications failed:", error);
+        res.status(500).json({ message: "Could not load your updates." });
+      }
+    },
+
+    async markNotificationsRead(req: Request, res: Response) {
+      noStore(res);
+      if (!dependencies.requireDurableFeature(res)) return;
+      const userId = signedInUserId(req, res);
+      if (!userId) return;
+      try {
+        const body = markReadSchema.safeParse(req.body ?? {});
+        if (!body.success) return res.status(400).json({ message: "Invalid request", code: "invalid_request" });
+        // Scoped to the caller: ids belonging to anyone else are simply not matched.
+        const marked = await storage.markSoulCircleEventsRead(userId, "all" in body.data ? "all" : body.data.ids, clock());
+        res.json({ marked });
+      } catch (error) {
+        console.error("[SoulCircle] markNotificationsRead failed:", error);
+        res.status(500).json({ message: "Could not update your updates." });
       }
     },
 
@@ -433,6 +496,8 @@ export function registerSoulCircleRoutes(app: Express, dependencies: SoulCircleD
   app.delete("/api/soul-circle/friends/:id/share", writeLimiter, handlers.revokeShare);
   app.delete("/api/soul-circle/friends/:id", writeLimiter, handlers.removeFriend);
   app.post("/api/soul-circle/friends/:id/block", writeLimiter, handlers.blockFriend);
+  app.get("/api/soul-circle/notifications", readLimiter, handlers.listNotifications);
+  app.post("/api/soul-circle/notifications/read", writeLimiter, handlers.markNotificationsRead);
   app.get("/api/soul-circle/blocks", readLimiter, handlers.listBlocks);
   app.delete("/api/soul-circle/blocks/:id", writeLimiter, handlers.unblock);
 }

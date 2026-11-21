@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { Link } from "wouter";
 import { BookOpen, HeartHandshake, LockKeyhole, Mail, MessageCircle, PlusCircle, Search, Share2, UserRoundPlus } from "lucide-react";
 import Navigation from "@/components/navigation";
+import SoulCircleEntryCard from "@/components/SoulCircleEntryCard";
 import { SoulInteractive, SoulReveal, SoulStagger, SoulStaggerItem } from "@/components/SoulMotion";
 import { ATLAS_SIGNS, personalPlacementMeaning, type AtlasSign } from "@/lib/astrologyAtlas";
 import {
@@ -112,11 +113,7 @@ export default function ConnectionsPage() {
   return <div className="sc-app-shell"><Navigation /><main className="sc-page mx-auto max-w-4xl pb-24">
     <SoulReveal>
     <header className="mb-7"><p className="sc-eyebrow">Connections</p><h1 className="sc-display mt-4 text-4xl sm:text-6xl">Your people. Their consent. A clearer comparison.</h1><p className="sc-lede mt-4">Choose friends or family from your contacts, invite them to Soul Codex, and compare only the chart details each person chooses to share.</p></header>
-    <Link href="/circle" className="sc-panel sc-panel-gold sc-card-link mb-6 block p-5 text-[var(--sc-ivory)] no-underline" data-testid="people-soul-circle-entry">
-      <p className="sc-eyebrow">Soul Circle</p>
-      <strong className="mt-2 block font-serif text-2xl">Friends who already have Soul Codex</strong>
-      <span className="mt-2 block text-sm leading-6 text-[var(--sc-stone)]">Invite them once. Their verified signs appear on their own when they choose to share, so there is nothing to type.</span>
-    </Link>
+    <SoulCircleEntryCard />
     </SoulReveal>
     <SoulReveal>
     <section className="sc-panel p-5"><div className="flex gap-3"><LockKeyhole className="mt-1 h-5 w-5 shrink-0 text-[var(--sc-teal)]"/><div><h2 className="font-semibold">Contacts stay on this device</h2><p className="mt-1 text-sm leading-6 text-[var(--sc-stone)]">Soul Codex opens the device contact picker only after you tap Import. Selected names, phone numbers, and emails remain in local app storage and are not uploaded for account matching. A person is never labeled as a member or chart source until they deliberately share their own Soul Codex card.</p></div></div></section>

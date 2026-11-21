@@ -220,6 +220,25 @@ const statements = [
     ON "soul_circle_shares" ("owner_user_id", "friend_user_id")`,
   `CREATE INDEX IF NOT EXISTS "soul_circle_shares_friend_idx"
     ON "soul_circle_shares" ("friend_user_id")`,
+  `CREATE TABLE IF NOT EXISTS "soul_circle_events" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" varchar NOT NULL,
+    "kind" varchar(32) NOT NULL,
+    "link_id" varchar NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "read_at" timestamp
+  )`,
+  `CREATE INDEX IF NOT EXISTS "soul_circle_events_user_idx"
+    ON "soul_circle_events" ("user_id", "created_at")`,
+  `CREATE INDEX IF NOT EXISTS "soul_circle_events_link_idx"
+    ON "soul_circle_events" ("link_id")`,
+  // Collapse any duplicate unread updates from before the constraint existed, then enforce it.
+  `DELETE FROM "soul_circle_events" a USING "soul_circle_events" b
+    WHERE a."read_at" IS NULL AND b."read_at" IS NULL
+      AND a."user_id" = b."user_id" AND a."kind" = b."kind" AND a."link_id" = b."link_id"
+      AND a."id" > b."id"`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "soul_circle_events_unread_unique"
+    ON "soul_circle_events" ("user_id", "kind", "link_id") WHERE "read_at" IS NULL`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"
     ON "billing_subjects" ("user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"
@@ -299,6 +318,14 @@ const requiredSchema = {
     user_high_id: "character varying",
     status: "character varying",
     blocked_by_user_id: "character varying",
+  },
+  soul_circle_events: {
+    id: "character varying",
+    user_id: "character varying",
+    kind: "character varying",
+    link_id: "character varying",
+    created_at: "timestamp without time zone",
+    read_at: "timestamp without time zone",
   },
   soul_circle_shares: {
     id: "character varying",

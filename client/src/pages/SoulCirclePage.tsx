@@ -8,9 +8,12 @@ import {
   chartChips,
   inviteMessage,
   inviteUrl,
+  notificationText,
   soulCircleApi,
+  splitUpdates,
   type SoulCircleFriend,
   type SoulCircleInviteRow,
+  type SoulCircleNotifications,
 } from "@/lib/soulCircleClient";
 
 type CurrentUser = { id: string } | null;
@@ -36,6 +39,8 @@ export default function SoulCirclePage() {
   const { data: user, isLoading: userLoading } = useQuery<CurrentUser>({ queryKey: ["/api/auth/user"], refetchOnMount: true });
   const [friends, setFriends] = useState<SoulCircleFriend[] | null>(null);
   const [invites, setInvites] = useState<SoulCircleInviteRow[]>([]);
+  const [updates, setUpdates] = useState<SoulCircleNotifications>({ unread: 0, items: [] });
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [error, setError] = useState("");
   const [inviterName, setInviterName] = useState("");
   const [createdLink, setCreatedLink] = useState("");
@@ -46,9 +51,14 @@ export default function SoulCirclePage() {
 
   const load = useCallback(async () => {
     try {
-      const [friendRows, inviteRows] = await Promise.all([soulCircleApi.listFriends(), soulCircleApi.listInvites()]);
+      const [friendRows, inviteRows, updateRows] = await Promise.all([
+        soulCircleApi.listFriends(),
+        soulCircleApi.listInvites(),
+        soulCircleApi.listNotifications(),
+      ]);
       setFriends(friendRows);
       setInvites(inviteRows);
+      setUpdates(updateRows);
       setError("");
     } catch (failure) {
       setError(failure instanceof SoulCircleError ? failure.message : "Soul Circle could not be loaded.");
@@ -77,6 +87,11 @@ export default function SoulCirclePage() {
   async function shareLink() {
     try { await navigator.share({ title: "Join my Soul Codex circle", text: inviteMessage(createdLink) }); }
     catch { /* dismissing the share sheet is not an error */ }
+  }
+
+  async function markRead(ids: string[] | "all") {
+    try { await soulCircleApi.markNotificationsRead(ids); await load(); }
+    catch { /* the list refreshes on the next visit; reading is not critical */ }
   }
 
   async function cancelInvite(id: string) {
@@ -122,6 +137,40 @@ export default function SoulCirclePage() {
                 <Link href={`/circle/join/${pendingToken}`} className="sc-panel sc-panel-gold block p-4 text-sm text-[var(--sc-ivory)] no-underline" data-testid="circle-pending-invite">
                   You have an invite waiting. Continue to join →
                 </Link>
+              ) : null}
+              {updates.items.length > 0 ? (
+                <div className="sc-panel p-4" data-testid="circle-updates">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-xs font-bold uppercase tracking-[.12em] text-[var(--sc-stone)]">Updates{updates.unread > 0 ? ` · ${updates.unread} new` : ""}</h3>
+                    {updates.unread > 0 ? <button type="button" onClick={() => markRead("all")} className="text-xs text-[var(--sc-gold-bright)] underline" data-testid="circle-updates-read-all">Mark all read</button> : null}
+                  </div>
+                  <ul className="mt-3 space-y-2">
+                    {splitUpdates(updates.items, showAllUpdates).visible.map((item) => (
+                      <li key={item.id}>
+                        <Link
+                          href={`/circle/${item.linkId}`}
+                          onClick={() => { if (!item.read) void markRead([item.id]); }}
+                          className={`block text-sm no-underline ${item.read ? "text-[var(--sc-stone)]" : "font-semibold text-[var(--sc-ivory)]"}`}
+                          data-testid={`circle-update-${item.id}`}
+                        >
+                          {item.read ? null : <span aria-hidden="true" className="mr-2 inline-block h-2 w-2 rounded-full bg-[var(--sc-gold)]" />}
+                          {notificationText(item)}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  {(() => {
+                    const { hiddenCount, hiddenUnread } = splitUpdates(updates.items, showAllUpdates);
+                    if (showAllUpdates) {
+                      return updates.items.length > 10 ? <button type="button" onClick={() => setShowAllUpdates(false)} className="mt-3 text-xs text-[var(--sc-gold-bright)] underline">Show fewer</button> : null;
+                    }
+                    return hiddenCount > 0 ? (
+                      <button type="button" onClick={() => setShowAllUpdates(true)} className="mt-3 text-xs text-[var(--sc-gold-bright)] underline" data-testid="circle-updates-show-all">
+                        Show {hiddenCount} earlier {hiddenCount === 1 ? "update" : "updates"}{hiddenUnread > 0 ? ` (${hiddenUnread} unread)` : ""}
+                      </button>
+                    ) : null;
+                  })()}
+                </div>
               ) : null}
               {friends === null ? <p className="text-sm text-[var(--sc-stone)]">Loading…</p> : null}
               {friends?.length === 0 ? (

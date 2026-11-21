@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray, or } from "drizzle-orm";
 import {
   users,
   profiles,
@@ -10,6 +10,7 @@ import {
   soulCircleInvites,
   soulCircleLinks,
   soulCircleShares,
+  soulCircleEvents,
   galacticCodeRecords,
   billingSubjects,
   billingTransactionEvents,
@@ -25,6 +26,7 @@ import {
   type SoulCircleInvite,
   type SoulCircleLink,
   type SoulCircleShare,
+  type SoulCircleEvent,
   type GalacticCodeRecord,
   type InsertGalacticCodeRecord,
   type BillingSubject,
@@ -40,6 +42,8 @@ import {
 export type SoulCircleAcceptResult =
   | { status: "linked"; link: SoulCircleLink; inviterUserId: string }
   | { status: "not_found" | "expired" | "used" | "revoked" | "self" | "blocked" };
+
+export const SOUL_CIRCLE_MAX_EVENTS_PER_USER = 100;
 
 /** A friend pair has exactly one canonical row, ordered by user id. */
 export function soulCirclePair(a: string, b: string): { userLowId: string; userHighId: string } {
@@ -109,6 +113,9 @@ export interface IStorage {
   listSoulCircleSharesTo(friendUserId: string): Promise<SoulCircleShare[]>;
   listSoulCircleSharesFrom(ownerUserId: string): Promise<SoulCircleShare[]>;
   revokeSoulCircleShare(ownerUserId: string, friendUserId: string, now: Date): Promise<SoulCircleShare | undefined>;
+  createSoulCircleEvent(userId: string, kind: string, linkId: string, now: Date): Promise<SoulCircleEvent | undefined>;
+  listSoulCircleEvents(userId: string, limit: number): Promise<SoulCircleEvent[]>;
+  markSoulCircleEventsRead(userId: string, ids: string[] | "all", now: Date): Promise<number>;
   deleteSoulCircleDataForUser(userId: string): Promise<void>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
@@ -122,6 +129,7 @@ export class MemStorage implements IStorage {
   private soulCircleInvites = new Map<string, SoulCircleInvite>();
   private soulCircleLinks = new Map<string, SoulCircleLink>();
   private soulCircleShares = new Map<string, SoulCircleShare>();
+  private soulCircleEvents = new Map<string, SoulCircleEvent>();
   private galacticRecords = new Map<string, GalacticCodeRecord>();
   private billingSubjects = new Map<string, BillingSubject>();
   private billingEvents = new Map<string, BillingTransactionEvent>();
@@ -488,6 +496,8 @@ export class MemStorage implements IStorage {
     if (!existing) this.dropSoulCircleSharesBetween(pair.userLowId, pair.userHighId);
     this.soulCircleLinks.set(link.id, link);
     this.soulCircleInvites.set(invite.id, { ...invite, acceptedByUserId: accepterUserId, acceptedAt: now });
+    // The inviter is told a friend joined. The event carries no name or data.
+    if (!existing) this.insertSoulCircleEvent(invite.inviterUserId, "friend_joined", link.id, now);
     return { status: "linked", link, inviterUserId: invite.inviterUserId };
   }
   async getSoulCircleLinkById(linkId: string) {
@@ -512,12 +522,14 @@ export class MemStorage implements IStorage {
     const link = this.soulCircleLinks.get(linkId);
     if (!link) return;
     this.dropSoulCircleSharesBetween(link.userLowId, link.userHighId);
+    this.dropSoulCircleEventsForLink(linkId);
     this.soulCircleLinks.delete(linkId);
   }
   async blockSoulCircleLink(linkId: string, blockedByUserId: string) {
     const link = this.soulCircleLinks.get(linkId);
     if (!link) return undefined;
     this.dropSoulCircleSharesBetween(link.userLowId, link.userHighId);
+    this.dropSoulCircleEventsForLink(linkId);
     const blocked: SoulCircleLink = { ...link, status: "blocked", blockedByUserId, updatedAt: new Date() };
     this.soulCircleLinks.set(linkId, blocked);
     return blocked;
@@ -553,12 +565,52 @@ export class MemStorage implements IStorage {
     this.soulCircleShares.set(existing.id, revoked);
     return revoked;
   }
+  private insertSoulCircleEvent(userId: string, kind: string, linkId: string, now: Date): SoulCircleEvent | undefined {
+    // One unread event per kind and friendship: repeated actions do not stack up.
+    const duplicate = [...this.soulCircleEvents.values()].some((event) =>
+      event.userId === userId && event.kind === kind && event.linkId === linkId && !event.readAt);
+    if (duplicate) return undefined;
+    const event: SoulCircleEvent = { id: randomUUID(), userId, kind, linkId, createdAt: now, readAt: null };
+    this.soulCircleEvents.set(event.id, event);
+    const mine = [...this.soulCircleEvents.values()].filter((row) => row.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    for (const stale of mine.slice(SOUL_CIRCLE_MAX_EVENTS_PER_USER)) this.soulCircleEvents.delete(stale.id);
+    return event;
+  }
+  private dropSoulCircleEventsForLink(linkId: string) {
+    for (const [id, event] of this.soulCircleEvents) {
+      if (event.linkId === linkId) this.soulCircleEvents.delete(id);
+    }
+  }
+  async createSoulCircleEvent(userId: string, kind: string, linkId: string, now: Date) {
+    return this.insertSoulCircleEvent(userId, kind, linkId, now);
+  }
+  async listSoulCircleEvents(userId: string, limit: number) {
+    return [...this.soulCircleEvents.values()].filter((event) => event.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()).slice(0, limit);
+  }
+  async markSoulCircleEventsRead(userId: string, ids: string[] | "all", now: Date) {
+    let changed = 0;
+    for (const [id, event] of this.soulCircleEvents) {
+      if (event.userId !== userId || event.readAt) continue;
+      if (ids !== "all" && !ids.includes(id)) continue;
+      this.soulCircleEvents.set(id, { ...event, readAt: now });
+      changed += 1;
+    }
+    return changed;
+  }
   async deleteSoulCircleDataForUser(userId: string) {
     for (const [id, invite] of this.soulCircleInvites) {
       if (invite.inviterUserId === userId || invite.acceptedByUserId === userId) this.soulCircleInvites.delete(id);
     }
     for (const [id, link] of this.soulCircleLinks) {
-      if (link.userLowId === userId || link.userHighId === userId) this.soulCircleLinks.delete(id);
+      if (link.userLowId === userId || link.userHighId === userId) {
+        this.dropSoulCircleEventsForLink(id);
+        this.soulCircleLinks.delete(id);
+      }
+    }
+    for (const [id, event] of this.soulCircleEvents) {
+      if (event.userId === userId) this.soulCircleEvents.delete(id);
     }
     for (const [id, share] of this.soulCircleShares) {
       if (share.ownerUserId === userId || share.friendUserId === userId) this.soulCircleShares.delete(id);
@@ -890,6 +942,8 @@ export class PostgresStorage implements IStorage {
 
       await tx.update(soulCircleInvites).set({ acceptedByUserId: accepterUserId, acceptedAt: now })
         .where(eq(soulCircleInvites.id, invite.id));
+      // The inviter is told a friend joined. The event carries no name or data.
+      if (!existing) await this.insertSoulCircleEvent(tx, invite.inviterUserId, "friend_joined", link.id, now);
       return { status: "linked", link, inviterUserId: invite.inviterUserId } as const;
     });
   }
@@ -924,6 +978,7 @@ export class PostgresStorage implements IStorage {
       const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
       if (!link) return;
       await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
+      await tx.delete(soulCircleEvents).where(eq(soulCircleEvents.linkId, linkId));
       await tx.delete(soulCircleLinks).where(eq(soulCircleLinks.id, linkId));
     });
   }
@@ -933,6 +988,7 @@ export class PostgresStorage implements IStorage {
       const link = (await tx.select().from(soulCircleLinks).where(eq(soulCircleLinks.id, linkId)).limit(1).for("update"))[0];
       if (!link) return undefined;
       await this.dropSoulCircleSharesBetween(tx, link.userLowId, link.userHighId);
+      await tx.delete(soulCircleEvents).where(eq(soulCircleEvents.linkId, linkId));
       return (await tx.update(soulCircleLinks)
         .set({ status: "blocked", blockedByUserId, updatedAt: new Date() })
         .where(eq(soulCircleLinks.id, linkId)).returning())[0];
@@ -977,9 +1033,52 @@ export class PostgresStorage implements IStorage {
     return (await db.update(soulCircleShares).set({ revokedAt: now, updatedAt: now })
       .where(eq(soulCircleShares.id, existing.id)).returning())[0];
   }
+  private async insertSoulCircleEvent(tx: any, userId: string, kind: string, linkId: string, now: Date): Promise<SoulCircleEvent | undefined> {
+    // One unread event per kind and friendship: repeated actions do not stack up.
+    // Enforced by the partial unique index on unread events: concurrent inserts for the
+    // same news conflict and only one survives, so no separate check can race.
+    const created = (await tx.insert(soulCircleEvents).values({ userId, kind, linkId, createdAt: now })
+      .onConflictDoNothing().returning())[0] as SoulCircleEvent | undefined;
+    if (!created) return undefined;
+    const keep = await tx.select({ id: soulCircleEvents.id }).from(soulCircleEvents)
+      .where(eq(soulCircleEvents.userId, userId)).orderBy(desc(soulCircleEvents.createdAt)).limit(SOUL_CIRCLE_MAX_EVENTS_PER_USER);
+    if (keep.length >= SOUL_CIRCLE_MAX_EVENTS_PER_USER) {
+      await tx.delete(soulCircleEvents).where(and(
+        eq(soulCircleEvents.userId, userId),
+        notInArray(soulCircleEvents.id, keep.map((row: { id: string }) => row.id)),
+      ));
+    }
+    return created;
+  }
+  async createSoulCircleEvent(userId: string, kind: string, linkId: string, now: Date) {
+    const db = await this.db();
+    return db.transaction((tx) => this.insertSoulCircleEvent(tx, userId, kind, linkId, now));
+  }
+  async listSoulCircleEvents(userId: string, limit: number) {
+    const db = await this.db();
+    return db.select().from(soulCircleEvents).where(eq(soulCircleEvents.userId, userId))
+      .orderBy(desc(soulCircleEvents.createdAt)).limit(limit);
+  }
+  async markSoulCircleEventsRead(userId: string, ids: string[] | "all", now: Date) {
+    const db = await this.db();
+    if (ids !== "all" && ids.length === 0) return 0;
+    const rows = await db.update(soulCircleEvents).set({ readAt: now })
+      .where(and(
+        eq(soulCircleEvents.userId, userId),
+        isNull(soulCircleEvents.readAt),
+        ids === "all" ? undefined : inArray(soulCircleEvents.id, ids),
+      )).returning({ id: soulCircleEvents.id });
+    return rows.length;
+  }
   async deleteSoulCircleDataForUser(userId: string) {
     const db = await this.db();
     await db.transaction(async (tx) => {
+      const linkRows = await tx.select({ id: soulCircleLinks.id }).from(soulCircleLinks)
+        .where(or(eq(soulCircleLinks.userLowId, userId), eq(soulCircleLinks.userHighId, userId)));
+      const linkIds = linkRows.map((row) => row.id);
+      await tx.delete(soulCircleEvents).where(linkIds.length
+        ? or(eq(soulCircleEvents.userId, userId), inArray(soulCircleEvents.linkId, linkIds))
+        : eq(soulCircleEvents.userId, userId));
       await tx.delete(soulCircleShares).where(or(eq(soulCircleShares.ownerUserId, userId), eq(soulCircleShares.friendUserId, userId)));
       await tx.delete(soulCircleLinks).where(or(eq(soulCircleLinks.userLowId, userId), eq(soulCircleLinks.userHighId, userId)));
       await tx.delete(soulCircleInvites).where(or(eq(soulCircleInvites.inviterUserId, userId), eq(soulCircleInvites.acceptedByUserId, userId)));
