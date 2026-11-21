@@ -168,6 +168,24 @@ export const soulCircleEvents = pgTable("soul_circle_events", {
   unreadUnique: uniqueIndex("soul_circle_events_unread_unique").on(table.userId, table.kind, table.linkId).where(sql`${table.readAt} is null`),
 }));
 
+// A phone or tablet that agreed to receive push notifications. The token is needed to send,
+// so it is stored, but it is never returned by any API. A token belongs to exactly one account:
+// registering it again from another account moves it, so a shared device never alerts the
+// previous person. Deleted with the account.
+export const pushDevices = pgTable("push_devices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  platform: varchar("platform", { length: 16 }).notNull(),
+  token: text("token").notNull(),
+  // SHA-256 of the token: lets one token map to one account without indexing the secret itself.
+  tokenHash: varchar("token_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
+}, (table) => ({
+  tokenUnique: uniqueIndex("push_devices_token_hash_unique").on(table.tokenHash),
+  userIndex: index("push_devices_user_idx").on(table.userId),
+}));
+
 export const galacticCodeRecords = pgTable("galactic_code_records", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   profileId: varchar("profile_id").notNull(),
@@ -412,6 +430,7 @@ export type SoulCircleInvite = typeof soulCircleInvites.$inferSelect;
 export type SoulCircleLink = typeof soulCircleLinks.$inferSelect;
 export type SoulCircleShare = typeof soulCircleShares.$inferSelect;
 export type SoulCircleEvent = typeof soulCircleEvents.$inferSelect;
+export type PushDevice = typeof pushDevices.$inferSelect;
 export type GalacticCodeRecord = typeof galacticCodeRecords.$inferSelect;
 export type InsertGalacticCodeRecord = typeof galacticCodeRecords.$inferInsert;
 export type BillingSubject = typeof billingSubjects.$inferSelect;

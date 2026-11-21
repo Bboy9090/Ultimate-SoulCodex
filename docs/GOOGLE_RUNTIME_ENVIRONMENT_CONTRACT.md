@@ -26,6 +26,14 @@ FIREBASE_IOS_BUNDLE_ID=app.soulcodex.ios
 FIREBASE_WEB_APP_ORIGIN=https://soulcodex.up.railway.app
 ```
 
+## Firebase Cloud Messaging (Soul Circle phone alerts)
+
+```text
+FIREBASE_SERVICE_ACCOUNT_JSON=   # Railway secret; full service-account JSON with the FCM sender role
+```
+
+Push stays off unless `FIREBASE_ENABLED=true`, `FIREBASE_PROJECT_ID` and this secret are all set. See `docs/PUSH_NOTIFICATIONS.md`.
+
 ## Google Analytics
 
 ```text

@@ -73,7 +73,7 @@ only ("You have a new Soul Circle update", never a name or sign) and an opt-in p
 | Channel | Needs before it can be built |
 | --- | --- |
 | Email | A chosen provider (for example SES, Resend, Postmark) with a verified sending domain and credentials; per-user opt-in with address confirmation and one-click unsubscribe. |
-| Phone push (native apps) | A Capacitor push plugin, Apple APNs key and Firebase/FCM project credentials, native entitlements, and a new store build for each platform. |
+| Phone push (native apps) | Server side is built and dormant (`docs/PUSH_NOTIFICATIONS.md`). Still needs a Capacitor push plugin, Apple APNs key and Firebase/FCM credentials, native entitlements, and a new store build for each platform. |
 | Web push (browsers, installed PWA) | Real VAPID keys in production (no temporary keys), a subscription table, a service-worker push handler. It does not reach the native iPhone/Android apps. |
 | SMS | Collecting phone numbers (new sensitive data), carrier registration and per-message cost. Not recommended for this app. |
 
@@ -150,7 +150,7 @@ script `scripts/ensure-public-share-schema.mjs` that production runs before boot
 
 - Signed-out visitors cannot sign in from the invite page itself; they are sent to account
   settings. An inline sign-in is not built.
-- Email, SMS and phone push notifications: not built (see the table above).
+- Email and SMS: not built. Phone push: server side built but dormant and unverified; no native client yet (see `docs/PUSH_NOTIFICATIONS.md`).
 - Group views, and per-friend naming nudges: not built.
 - Production has not run this against its real database; the Postgres evidence is a local
   PostgreSQL 16 only.

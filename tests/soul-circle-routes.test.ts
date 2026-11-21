@@ -77,7 +77,7 @@ for (const [label, makeStorage] of backends) {
 
   t("every endpoint requires a signed-in user", async () => {
     const h = makeHarness(makeStorage(), { now: new Date("2026-11-20T00:00:00Z") });
-    for (const name of ["createInvite", "listInvites", "revokeInvite", "previewInvite", "acceptInvite", "listFriends", "getFriend", "setShare", "revokeShare", "removeFriend", "blockFriend", "listBlocks", "unblock", "listNotifications", "markNotificationsRead"] as const) {
+    for (const name of ["createInvite", "listInvites", "revokeInvite", "previewInvite", "acceptInvite", "listFriends", "getFriend", "setShare", "revokeShare", "removeFriend", "blockFriend", "listBlocks", "unblock", "listNotifications", "markNotificationsRead", "pushStatus", "registerPushDevice", "unregisterPushDevice"] as const) {
       const reply = await h.call(name, { userId: null, params: { id: "x", token: "x" } });
       assert.equal(reply.status, 401, `${name} must reject anonymous callers`);
       assert.equal(reply.headers["cache-control"], "private, no-store, max-age=0");

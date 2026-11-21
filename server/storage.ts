@@ -11,6 +11,7 @@ import {
   soulCircleLinks,
   soulCircleShares,
   soulCircleEvents,
+  pushDevices,
   galacticCodeRecords,
   billingSubjects,
   billingTransactionEvents,
@@ -27,6 +28,7 @@ import {
   type SoulCircleLink,
   type SoulCircleShare,
   type SoulCircleEvent,
+  type PushDevice,
   type GalacticCodeRecord,
   type InsertGalacticCodeRecord,
   type BillingSubject,
@@ -40,10 +42,11 @@ import {
 
 
 export type SoulCircleAcceptResult =
-  | { status: "linked"; link: SoulCircleLink; inviterUserId: string }
+  | { status: "linked"; link: SoulCircleLink; inviterUserId: string; /** true when this accept created the friendship (not an idempotent repeat) */ created: boolean }
   | { status: "not_found" | "expired" | "used" | "revoked" | "self" | "blocked" };
 
 export const SOUL_CIRCLE_MAX_EVENTS_PER_USER = 100;
+export const MAX_PUSH_DEVICES_PER_USER = 10;
 
 /** A friend pair has exactly one canonical row, ordered by user id. */
 export function soulCirclePair(a: string, b: string): { userLowId: string; userHighId: string } {
@@ -117,6 +120,11 @@ export interface IStorage {
   listSoulCircleEvents(userId: string, limit: number): Promise<SoulCircleEvent[]>;
   markSoulCircleEventsRead(userId: string, ids: string[] | "all", now: Date): Promise<number>;
   deleteSoulCircleDataForUser(userId: string): Promise<void>;
+  upsertPushDevice(userId: string, platform: string, token: string, tokenHash: string, now: Date): Promise<PushDevice>;
+  listPushDevices(userId: string): Promise<PushDevice[]>;
+  deletePushDevice(userId: string, tokenHash: string): Promise<number>;
+  deleteAllPushDevices(userId: string): Promise<number>;
+  deletePushDeviceByTokenHash(tokenHash: string): Promise<void>;
   deleteSessionData(sessionId: string): Promise<void>;
   deleteUserAccount(userId: string): Promise<void>;
 }
@@ -130,6 +138,7 @@ export class MemStorage implements IStorage {
   private soulCircleLinks = new Map<string, SoulCircleLink>();
   private soulCircleShares = new Map<string, SoulCircleShare>();
   private soulCircleEvents = new Map<string, SoulCircleEvent>();
+  private pushDevices = new Map<string, PushDevice>();
   private galacticRecords = new Map<string, GalacticCodeRecord>();
   private billingSubjects = new Map<string, BillingSubject>();
   private billingEvents = new Map<string, BillingTransactionEvent>();
@@ -498,7 +507,7 @@ export class MemStorage implements IStorage {
     this.soulCircleInvites.set(invite.id, { ...invite, acceptedByUserId: accepterUserId, acceptedAt: now });
     // The inviter is told a friend joined. The event carries no name or data.
     if (!existing) this.insertSoulCircleEvent(invite.inviterUserId, "friend_joined", link.id, now);
-    return { status: "linked", link, inviterUserId: invite.inviterUserId };
+    return { status: "linked", link, inviterUserId: invite.inviterUserId, created: !existing };
   }
   async getSoulCircleLinkById(linkId: string) {
     return this.soulCircleLinks.get(linkId);
@@ -599,6 +608,41 @@ export class MemStorage implements IStorage {
     }
     return changed;
   }
+  async upsertPushDevice(userId: string, platform: string, token: string, tokenHash: string, now: Date): Promise<PushDevice> {
+    // A token belongs to one account: registering it again moves it to the caller.
+    const existing = [...this.pushDevices.values()].find((device) => device.tokenHash === tokenHash);
+    const device: PushDevice = existing
+      ? { ...existing, userId, platform, token, updatedAt: now }
+      : { id: randomUUID(), userId, platform, token, tokenHash, createdAt: now, updatedAt: now };
+    this.pushDevices.set(device.id, device);
+    const mine = [...this.pushDevices.values()].filter((row) => row.userId === userId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    for (const stale of mine.slice(MAX_PUSH_DEVICES_PER_USER)) this.pushDevices.delete(stale.id);
+    return device;
+  }
+  async listPushDevices(userId: string) {
+    return [...this.pushDevices.values()].filter((device) => device.userId === userId)
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+  async deletePushDevice(userId: string, tokenHash: string) {
+    let removed = 0;
+    for (const [id, device] of this.pushDevices) {
+      if (device.userId === userId && device.tokenHash === tokenHash) { this.pushDevices.delete(id); removed += 1; }
+    }
+    return removed;
+  }
+  async deleteAllPushDevices(userId: string) {
+    let removed = 0;
+    for (const [id, device] of this.pushDevices) {
+      if (device.userId === userId) { this.pushDevices.delete(id); removed += 1; }
+    }
+    return removed;
+  }
+  async deletePushDeviceByTokenHash(tokenHash: string) {
+    for (const [id, device] of this.pushDevices) {
+      if (device.tokenHash === tokenHash) this.pushDevices.delete(id);
+    }
+  }
   async deleteSoulCircleDataForUser(userId: string) {
     for (const [id, invite] of this.soulCircleInvites) {
       if (invite.inviterUserId === userId || invite.acceptedByUserId === userId) this.soulCircleInvites.delete(id);
@@ -643,6 +687,7 @@ export class MemStorage implements IStorage {
     }
     await this.deleteGalacticCodeRecordsForProfiles(profileIds);
     await this.deleteSoulCircleDataForUser(userId);
+    await this.deleteAllPushDevices(userId);
     for (const [id, profile] of this.profiles) {
       if (profile.userId === userId) this.profiles.delete(id);
     }
@@ -944,7 +989,7 @@ export class PostgresStorage implements IStorage {
         .where(eq(soulCircleInvites.id, invite.id));
       // The inviter is told a friend joined. The event carries no name or data.
       if (!existing) await this.insertSoulCircleEvent(tx, invite.inviterUserId, "friend_joined", link.id, now);
-      return { status: "linked", link, inviterUserId: invite.inviterUserId } as const;
+      return { status: "linked", link, inviterUserId: invite.inviterUserId, created: !existing } as const;
     });
   }
   async getSoulCircleLinkById(linkId: string) {
@@ -1070,6 +1115,38 @@ export class PostgresStorage implements IStorage {
       )).returning({ id: soulCircleEvents.id });
     return rows.length;
   }
+  async upsertPushDevice(userId: string, platform: string, token: string, tokenHash: string, now: Date): Promise<PushDevice> {
+    const db = await this.db();
+    return db.transaction(async (tx) => {
+      // The unique token hash moves the token to the caller if another account had it.
+      const device = (await tx.insert(pushDevices).values({ userId, platform, token, tokenHash, createdAt: now, updatedAt: now })
+        .onConflictDoUpdate({ target: pushDevices.tokenHash, set: { userId, platform, token, updatedAt: now } }).returning())[0];
+      const keep = await tx.select({ id: pushDevices.id }).from(pushDevices)
+        .where(eq(pushDevices.userId, userId)).orderBy(desc(pushDevices.updatedAt)).limit(MAX_PUSH_DEVICES_PER_USER);
+      if (keep.length >= MAX_PUSH_DEVICES_PER_USER) {
+        await tx.delete(pushDevices).where(and(eq(pushDevices.userId, userId), notInArray(pushDevices.id, keep.map((row) => row.id))));
+      }
+      return device;
+    });
+  }
+  async listPushDevices(userId: string) {
+    const db = await this.db();
+    return db.select().from(pushDevices).where(eq(pushDevices.userId, userId)).orderBy(desc(pushDevices.updatedAt));
+  }
+  async deletePushDevice(userId: string, tokenHash: string) {
+    const db = await this.db();
+    const rows = await db.delete(pushDevices).where(and(eq(pushDevices.userId, userId), eq(pushDevices.tokenHash, tokenHash))).returning({ id: pushDevices.id });
+    return rows.length;
+  }
+  async deleteAllPushDevices(userId: string) {
+    const db = await this.db();
+    const rows = await db.delete(pushDevices).where(eq(pushDevices.userId, userId)).returning({ id: pushDevices.id });
+    return rows.length;
+  }
+  async deletePushDeviceByTokenHash(tokenHash: string) {
+    const db = await this.db();
+    await db.delete(pushDevices).where(eq(pushDevices.tokenHash, tokenHash));
+  }
   async deleteSoulCircleDataForUser(userId: string) {
     const db = await this.db();
     await db.transaction(async (tx) => {
@@ -1106,6 +1183,7 @@ export class PostgresStorage implements IStorage {
       await db.delete(galacticCodeRecords).where(inArray(galacticCodeRecords.profileId, ids));
     }
     await this.deleteSoulCircleDataForUser(userId);
+    await db.delete(pushDevices).where(eq(pushDevices.userId, userId));
     await db.delete(accessCodeRedemptions).where(eq(accessCodeRedemptions.userId, userId));
     await db.delete(profiles).where(eq(profiles.userId, userId));
     await db.delete(localUsers).where(eq(localUsers.id, userId));
