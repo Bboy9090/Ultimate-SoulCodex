@@ -55,6 +55,9 @@ const AccountDeletionPage = lazyRoute(() => import("./pages/AccountDeletionPage"
 const PricingPage = lazyRoute(() => import("./pages/PricingPage"), "pricing");
 const ConnectionsPage = lazyRoute(() => import("./pages/ConnectionsPage"), "people");
 const PublicSharedProfilePage = lazyRoute(() => import("./pages/PublicSharedProfilePage"), "shared-profile");
+const SoulCirclePage = lazyRoute(() => import("./pages/SoulCirclePage"), "soul-circle");
+const SoulCircleJoinPage = lazyRoute(() => import("./pages/SoulCircleJoinPage"), "soul-circle-join");
+const SoulCircleFriendPage = lazyRoute(() => import("./pages/SoulCircleFriendPage"), "soul-circle-friend");
 
 type RouteErrorBoundaryState = { error: Error | null };
 
@@ -156,6 +159,9 @@ function Router() {
       <Route path="/connections" component={ConnectionsPage} />
       {/* Preserve historical People deep links alongside the canonical /connections path. */}
       <Route path="/people" component={ConnectionsPage} />
+      <Route path="/circle" component={SoulCirclePage} />
+      <Route path="/circle/join/:token" component={SoulCircleJoinPage} />
+      <Route path="/circle/:id" component={SoulCircleFriendPage} />
       <Route path="/timeline" component={TimelineRoute} />
       <Route path="/tools" component={CodexToolsPage} />
       <Route path="/systems/atlas" component={AstrologyAtlasPage} />

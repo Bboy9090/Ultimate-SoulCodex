@@ -147,6 +147,11 @@ for (const [label, makeStorage] of backends) {
       assert.ok(!wire.includes(secret), `friend response must not contain ${secret}`);
     }
 
+    // Transparency: Ada can see exactly what Bo currently sees of her, live.
+    const adaView = await h.call("getFriend", { userId: a, params: { id: linkId } });
+    assert.deepEqual(adaView.body.myPreview, { sunSign: "Virgo", risingSign: "Scorpio", lifePath: 9 });
+    assert.equal(after.body.myPreview, null, "Bo shared nothing, so there is nothing to preview");
+
     // Consent is one-directional: Bo shared nothing, so Ada sees nothing of Bo.
     const reverse = await h.call("getFriend", { userId: a, params: { id: linkId } });
     assert.equal(reverse.body.theirChartStatus, "not_shared");
