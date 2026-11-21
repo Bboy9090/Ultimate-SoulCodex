@@ -47,6 +47,7 @@
     "billing:qualification:evidence": "node scripts/validate-billing-qualification-evidence.mjs"
   },
   "dependencies": {
+    "@capacitor-firebase/messaging": "^8.6.0",
     "@capacitor/android": "8.6.0",
     "@capacitor/contacts": "^1.0.1",
     "@capacitor/core": "8.6.0",
