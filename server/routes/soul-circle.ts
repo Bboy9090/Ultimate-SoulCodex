@@ -54,6 +54,16 @@ export interface SoulCircleDependencies {
 const ANONYMOUS_FRIEND_NAME = "Soul Circle friend";
 
 // The only name an invitee sees is one the inviter typed for this invite.
+/**
+ * Database driver errors embed query parameters (here, a device token) in their message and
+ * params. Log only the error class and SQLSTATE code so a device token never reaches the logs.
+ */
+function describeStorageFailure(error: unknown): string {
+  const name = error instanceof Error ? error.name : "UnknownError";
+  const code = (error as { code?: unknown; cause?: { code?: unknown } } | null)?.code ?? (error as any)?.cause?.code;
+  return typeof code === "string" && /^[A-Z0-9]{5}$/.test(code) ? `${name} (${code})` : name;
+}
+
 const registerPushSchema = z.object({ platform: pushPlatformSchema, token: pushTokenSchema }).strict();
 const unregisterPushSchema = z.union([
   z.object({ token: pushTokenSchema }).strict(),
@@ -476,7 +486,7 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         await storage.upsertPushDevice(userId, body.data.platform, body.data.token, hashPushToken(body.data.token), clock());
         res.json({ registered: true });
       } catch (error) {
-        console.error("[SoulCircle] registerPushDevice failed:", error);
+        console.error("[SoulCircle] registerPushDevice failed:", describeStorageFailure(error));
         res.status(500).json({ message: "Could not turn on phone alerts." });
       }
     },
@@ -492,7 +502,7 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         const removed = "all" in body.data ? await storage.deleteAllPushDevices(userId) : await storage.deletePushDevice(userId, hashPushToken(body.data.token));
         res.json({ removed });
       } catch (error) {
-        console.error("[SoulCircle] unregisterPushDevice failed:", error);
+        console.error("[SoulCircle] unregisterPushDevice failed:", describeStorageFailure(error));
         res.status(500).json({ message: "Could not turn off phone alerts." });
       }
     },

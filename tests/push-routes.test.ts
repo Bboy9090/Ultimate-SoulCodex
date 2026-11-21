@@ -187,4 +187,27 @@ for (const [label, makeStorage] of backends) {
       assert.equal(accepted.status, 200);
     }
   });
+
+  t("a failed registration never writes the device token to the logs", async () => {
+    const storage = makeStorage();
+    const userId = await makeUser(storage, "Ada");
+    const secret = token("leak");
+    // Mimics a driver error that embeds query parameters, as Drizzle's does.
+    (storage as any).upsertPushDevice = async (_u: string, _p: string, tok: string) => {
+      throw Object.assign(new Error(`Failed query: insert into push_devices params: ${tok}`), { params: [tok], code: "23505" });
+    };
+    (storage as any).deleteAllPushDevices = async () => { throw Object.assign(new Error(`boom ${secret}`), { params: [secret] }); };
+    const h = makeHarness(storage, makeFakePush(true).service);
+    const logged: unknown[][] = [];
+    const original = console.error;
+    console.error = (...args: unknown[]) => { logged.push(args); };
+    try {
+      assert.equal((await h.call("registerPushDevice", { userId, body: { platform: "ios", token: secret } })).status, 500);
+      assert.equal((await h.call("unregisterPushDevice", { userId, body: { all: true } })).status, 500);
+    } finally { console.error = original; }
+    assert.equal(logged.length, 2);
+    const text = logged.map((args) => args.map((a) => (typeof a === "string" ? a : JSON.stringify(a, Object.getOwnPropertyNames(Object(a))))).join(" ")).join("\n");
+    assert.ok(!text.includes(secret), "the token must not appear in logs");
+    assert.match(text, /Error \(23505\)/);
+  });
 }

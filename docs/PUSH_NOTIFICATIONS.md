@@ -56,10 +56,10 @@ toggle calling register/unregister (and unregister on sign-out), and a new store
 - `tests/push-delivery.test.ts` (7): configuration resolution, constant message, RS256 JWT structure
   and signature verified against a throwaway key, token caching/refresh, error classification,
   re-auth once, dead-token removal, no tokens in logs. Network is a fake.
-- `tests/push-routes.test.ts` (8 scenarios per backend): auth, 409 when unavailable, validation,
+- `tests/push-routes.test.ts` (9 scenarios per backend): auth, 409 when unavailable, validation,
   token reassignment, cap of ten, unregister rules, account deletion, trigger rules, provider failure
-  isolation. Run on MemStorage and on local PostgreSQL 16 (16/16 together with the existing 42
-  Soul Circle scenarios: 58/58).
+  isolation. Run on MemStorage and on local PostgreSQL 16 (18/18 together with the existing 42
+  Soul Circle scenarios: 60/60).
 - Migration `0006` applied to an empty database; schema script run on a fresh database.
 
 ## Not verified
