@@ -40,3 +40,14 @@ test("Firebase client config comes from CI secrets only and is never committed o
   assert.match(step, /exit 0/, "a build without the secret must still succeed (alerts simply unavailable)");
   assert.ok(!/echo[^\n]*\$ANDROID_GOOGLE_SERVICES_JSON|cat android\/app\/google-services\.json/.test(step), "the config must never be printed");
 });
+
+test("Firebase stays dormant on Android until the person opts in", () => {
+  const manifest = read("android/app/src/main/AndroidManifest.xml");
+  assert.match(manifest, /firebase_messaging_auto_init_enabled" android:value="false"/);
+  assert.match(manifest, /firebase_analytics_collection_enabled" android:value="false"/);
+  // The only code path that turns auto-init on is the plugin's getToken(), which the app calls
+  // only from the explicit opt-in and the opted-in launch refresh.
+  const lane = read("client/src/lib/phoneAlerts.ts");
+  assert.equal((lane.match(/getToken\(\)/g) ?? []).length >= 3, true);
+  assert.match(lane, /if \(deps\.store\.get\(\) !== userId\) return "skipped"/, "launch refresh never runs for a device that has not opted in");
+});

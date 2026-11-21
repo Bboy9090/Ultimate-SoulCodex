@@ -43,6 +43,12 @@ the device can still be revoked later.
   secret exists, fails the build if it has no client for `soulcodex.app`, and never prints it. Without the
   secret the build still succeeds and phone alerts are simply unavailable.
   `android/app/build.gradle` already applies the Google services plugin only when the file exists.
+- **Dormant until opt-in:** the Android manifest sets `firebase_messaging_auto_init_enabled` and
+  `firebase_analytics_collection_enabled` to `false`, so no token is generated and nothing is uploaded to
+  Firebase before the person turns alerts on. The plugin's `getToken()` re-enables auto-init at opt-in.
+  Known limit: the plugin has no call to switch auto-init back off, so after someone turns alerts off,
+  Firebase may mint a new (unregistered, unused) token on the next launch. Our server holds none, so no
+  alerts are sent; fixing it needs a small custom native call and a device test.
 - Google Play: adding the permission and Firebase Messaging means the **Data safety** answers must declare
   device identifiers (push token) before this build is submitted.
 
