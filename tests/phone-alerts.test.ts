@@ -123,7 +123,12 @@ test("launch refresh re-registers only for the account that opted in, never prom
 
   const unavailable = harness({ stored: "user-1", permission: "granted", registerError: "unavailable" });
   assert.equal(await refreshPhoneAlertToken(unavailable.deps, "user-1"), "failed");
-  assert.equal(unavailable.stored(), null, "the choice is dropped when the server stops offering alerts");
+  assert.equal(unavailable.stored(), "user-1", "a temporarily unconfigured server must not make the device forget its opt-in");
+
+  // ...so a later sign-out or clear-data can still revoke this device.
+  await disablePhoneAlertsOnSignOut(unavailable.deps);
+  assert.ok(unavailable.log.includes("unregister:tok-1") && unavailable.log.includes("deleteToken"));
+  assert.equal(unavailable.stored(), null);
 });
 
 test("a tapped alert can only open the Soul Circle page", () => {

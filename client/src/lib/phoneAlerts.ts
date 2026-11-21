@@ -194,7 +194,8 @@ export async function refreshPhoneAlertToken(deps: PhoneAlertsDeps, userId: stri
     await deps.api.register(deps.platform, token);
     return "refreshed";
   } catch (error) {
-    if (error instanceof PhoneAlertsError && error.code === "unavailable") deps.store.clear();
+    // Includes "unavailable": the server may only be temporarily unconfigured. The choice is kept so
+    // the card, sign-out and clear-data can still revoke this device; nothing is forgotten.
     return "failed";
   }
 }

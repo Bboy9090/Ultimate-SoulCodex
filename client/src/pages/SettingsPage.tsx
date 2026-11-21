@@ -66,6 +66,8 @@ export default function SettingsPage() {
     if (!confirmed) return;
 
     try {
+      // Revoke this phone's alerts before the saved choice is wiped, or it would keep receiving them.
+      await disablePhoneAlertsOnSignOut(currentDeps());
       await clearOfflineProfiles();
       clearActiveProfile();
       clearDailyPulseEntries();

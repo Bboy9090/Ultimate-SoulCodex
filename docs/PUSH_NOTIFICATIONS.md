@@ -17,7 +17,7 @@ console steps and a new store build still open.** Nothing has been verified agai
 - `client/src/lib/phoneAlerts.ts`: opt-in, token registration, launch refresh, sign-out cleanup,
   alert-tap routing (only ever opens `/circle`).
 - `client/src/components/PhoneAlertsCard.tsx` (Soul Circle page), `PhoneAlertsBootstrap.tsx`
-  (mounted in `App.tsx`), sign-out hook in `SettingsPage.tsx`.
+  (mounted in `App.tsx`), cleanup hooks in `SettingsPage.tsx` (sign-out and "clear data from this device") and `AccountDeletionPage.tsx`, each run before the saved choice is wiped.
 - The native plugin is reached through `registerPlugin("FirebaseMessaging")`, so this code builds and
   runs with or without the plugin in the native project.
 
@@ -29,7 +29,8 @@ server unconfigured, the card is not rendered and nothing is sent.
 Behavior: turning on asks for notification permission, then registers this device's token. Turning off
 (or signing out) removes only this device's token and deletes the OS token. Launch re-registers a
 rotated token only for the account that opted in on this device and never prompts. A different account
-on the same phone is not enrolled.
+on the same phone is not enrolled. If the server is temporarily unconfigured, the saved choice is kept so
+the device can still be revoked later.
 
 ## Native steps still needed (not done, not verifiable from the Linux sandbox)
 
