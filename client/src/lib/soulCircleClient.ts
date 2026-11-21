@@ -223,3 +223,15 @@ export function notificationText(item: Pick<SoulCircleNotification, "kind" | "fr
     default: return "You have a new Soul Circle update.";
   }
 }
+
+export const UPDATES_COLLAPSED_COUNT = 10;
+
+/**
+ * Splits updates into what is shown and what is folded away. Anything unread that is folded
+ * away is counted, so the unread badge can never point at updates the person cannot reach.
+ */
+export function splitUpdates<T extends { read: boolean }>(items: T[], showAll: boolean, collapsed = UPDATES_COLLAPSED_COUNT) {
+  const visible = showAll ? items : items.slice(0, collapsed);
+  const hidden = showAll ? [] : items.slice(collapsed);
+  return { visible, hiddenCount: hidden.length, hiddenUnread: hidden.filter((item) => !item.read).length };
+}

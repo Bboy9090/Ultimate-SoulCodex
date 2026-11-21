@@ -504,4 +504,15 @@ for (const [label, makeStorage] of backends) {
     await storage.markSoulCircleEventsRead(b, "all", new Date("2026-11-20T00:00:01Z"));
     assert.ok(await storage.createSoulCircleEvent(b, "friend_shared", linkId, new Date("2026-11-20T00:00:02Z")));
   });
+
+  t("every update is reachable: more than 50 are returned", async () => {
+    const storage = makeStorage();
+    const h = makeHarness(storage, { now: new Date("2026-11-20T00:00:00Z") });
+    const a = await makeUser(storage, "Ada");
+    for (let i = 0; i < 55; i++) await pair(storage, h, a, await makeUser(storage, `Friend${i}`));
+    const result = (await h.call("listNotifications", { userId: a })).body;
+    assert.equal(result.items.length, 55, "no update is cut off by a lower display limit");
+    assert.equal(result.unread, 55);
+    assert.ok(result.items.every((item: any) => item.kind === "friend_joined"));
+  });
 }

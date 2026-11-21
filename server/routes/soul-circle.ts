@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
 import type { IStorage } from "../storage";
-import { soulCircleOtherUser } from "../storage";
+import { SOUL_CIRCLE_MAX_EVENTS_PER_USER, soulCircleOtherUser } from "../storage";
 import {
   SOUL_CIRCLE_INVITE_TTL_MS,
   SOUL_CIRCLE_MAX_ACTIVE_INVITES,
@@ -384,7 +384,8 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
       if (!userId) return;
       try {
         const now = clock();
-        const events = await storage.listSoulCircleEvents(userId, 50);
+        // Everything the store keeps (it caps at the same number), so no unread update is unreachable.
+        const events = await storage.listSoulCircleEvents(userId, SOUL_CIRCLE_MAX_EVENTS_PER_USER);
         const items = (await Promise.all(events.map(async (event) => {
           // An update only exists while the friendship does; otherwise it is dropped.
           const member = await memberLink(userId, event.linkId);

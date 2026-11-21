@@ -10,6 +10,7 @@ import {
   inviteUrl,
   notificationText,
   soulCircleApi,
+  splitUpdates,
   type SoulCircleFriend,
   type SoulCircleInviteRow,
   type SoulCircleNotifications,
@@ -39,6 +40,7 @@ export default function SoulCirclePage() {
   const [friends, setFriends] = useState<SoulCircleFriend[] | null>(null);
   const [invites, setInvites] = useState<SoulCircleInviteRow[]>([]);
   const [updates, setUpdates] = useState<SoulCircleNotifications>({ unread: 0, items: [] });
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [error, setError] = useState("");
   const [inviterName, setInviterName] = useState("");
   const [createdLink, setCreatedLink] = useState("");
@@ -143,7 +145,7 @@ export default function SoulCirclePage() {
                     {updates.unread > 0 ? <button type="button" onClick={() => markRead("all")} className="text-xs text-[var(--sc-gold-bright)] underline" data-testid="circle-updates-read-all">Mark all read</button> : null}
                   </div>
                   <ul className="mt-3 space-y-2">
-                    {updates.items.slice(0, 10).map((item) => (
+                    {splitUpdates(updates.items, showAllUpdates).visible.map((item) => (
                       <li key={item.id}>
                         <Link
                           href={`/circle/${item.linkId}`}
@@ -157,6 +159,17 @@ export default function SoulCirclePage() {
                       </li>
                     ))}
                   </ul>
+                  {(() => {
+                    const { hiddenCount, hiddenUnread } = splitUpdates(updates.items, showAllUpdates);
+                    if (showAllUpdates) {
+                      return updates.items.length > 10 ? <button type="button" onClick={() => setShowAllUpdates(false)} className="mt-3 text-xs text-[var(--sc-gold-bright)] underline">Show fewer</button> : null;
+                    }
+                    return hiddenCount > 0 ? (
+                      <button type="button" onClick={() => setShowAllUpdates(true)} className="mt-3 text-xs text-[var(--sc-gold-bright)] underline" data-testid="circle-updates-show-all">
+                        Show {hiddenCount} earlier {hiddenCount === 1 ? "update" : "updates"}{hiddenUnread > 0 ? ` (${hiddenUnread} unread)` : ""}
+                      </button>
+                    ) : null;
+                  })()}
                 </div>
               ) : null}
               {friends === null ? <p className="text-sm text-[var(--sc-stone)]">Loading…</p> : null}

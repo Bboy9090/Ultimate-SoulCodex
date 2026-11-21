@@ -15,6 +15,7 @@ import {
   inviteUrl,
   needsVerification,
   notificationText,
+  splitUpdates,
   toggleField,
 } from "../client/src/lib/soulCircleClient";
 import { compareFriendCharts } from "../client/src/lib/friendChartCompatibility";
@@ -84,6 +85,17 @@ test("update text is plain, consent-based and never echoes unknown data", () => 
   assert.equal(notificationText({ kind: "friend_shared", friendName: "Soul Circle friend" }), "A friend started sharing with you.");
   assert.equal(notificationText({ kind: "friend_shared", friendName: "Ada B." }), "Ada B. started sharing with you.");
   assert.equal(notificationText({ kind: "something_new", friendName: "<script>" }), "You have a new Soul Circle update.");
+});
+
+test("folded-away updates are counted, so an unread badge never points at unreachable updates", () => {
+  const items = Array.from({ length: 14 }, (_, index) => ({ id: index, read: index < 12 }));
+  const collapsed = splitUpdates(items, false);
+  assert.equal(collapsed.visible.length, 10);
+  assert.equal(collapsed.hiddenCount, 4);
+  assert.equal(collapsed.hiddenUnread, 2, "the unread ones are in the folded part and are counted");
+  const expanded = splitUpdates(items, true);
+  assert.deepEqual([expanded.visible.length, expanded.hiddenCount, expanded.hiddenUnread], [14, 0, 0]);
+  assert.deepEqual(splitUpdates(items.slice(0, 3), false), { visible: items.slice(0, 3), hiddenCount: 0, hiddenUnread: 0 });
 });
 
 test("invite links are built only from a safe origin and a server-shaped path", () => {
