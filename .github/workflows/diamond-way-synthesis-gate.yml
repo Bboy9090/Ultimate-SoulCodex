@@ -85,6 +85,7 @@ jobs:
             tests/push-routes.test.ts \
             tests/phone-alerts.test.ts \
             tests/phone-alerts-native-contract.test.ts \
+            tests/privacy-phone-alerts-disclosure.test.ts \
             tests/ultimate-codex-synthesis.test.ts \
             tests/ultimate-codex-ui-contract.test.ts \
             tests/diamond-experience-architecture.test.ts \
