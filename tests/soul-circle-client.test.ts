@@ -14,6 +14,7 @@ import {
   inviteMessage,
   inviteUrl,
   needsVerification,
+  notificationText,
   toggleField,
 } from "../client/src/lib/soulCircleClient";
 import { compareFriendCharts } from "../client/src/lib/friendChartCompatibility";
@@ -77,6 +78,14 @@ test("comparison input drops unknown signs instead of guessing and feeds the sha
   assert.deepEqual(comparablePlacements(undefined), []);
 });
 
+test("update text is plain, consent-based and never echoes unknown data", () => {
+  assert.equal(notificationText({ kind: "friend_joined", friendName: "Soul Circle friend" }), "A friend accepted your invite and joined your circle.");
+  assert.equal(notificationText({ kind: "friend_joined", friendName: "Ada B." }), "Ada B. joined your circle.");
+  assert.equal(notificationText({ kind: "friend_shared", friendName: "Soul Circle friend" }), "A friend started sharing with you.");
+  assert.equal(notificationText({ kind: "friend_shared", friendName: "Ada B." }), "Ada B. started sharing with you.");
+  assert.equal(notificationText({ kind: "something_new", friendName: "<script>" }), "You have a new Soul Circle update.");
+});
+
 test("invite links are built only from a safe origin and a server-shaped path", () => {
   const token = "A".repeat(43);
   assert.equal(inviteUrl("https://soulcodex.up.railway.app", `/circle/join/${token}`), `https://soulcodex.up.railway.app/circle/join/${token}`);
@@ -100,6 +109,7 @@ test("errors map to plain language and verification errors are recognized", () =
 
 test("pages stay on the consent-based path and never ask for a friend's details", () => {
   const pages = ["SoulCirclePage", "SoulCircleJoinPage", "SoulCircleFriendPage"].map((name) => read(`client/src/pages/${name}.tsx`));
+  pages.push(read("client/src/components/SoulCircleEntryCard.tsx"));
   const all = pages.join("\n");
   assert.doesNotMatch(all, /humanDesign|Human Design/i, "Human Design is excluded from friend sharing");
   assert.doesNotMatch(all, /birthDate|birthTime|birthLocation|latitude|longitude/, "no birth data is read or sent");
@@ -120,5 +130,6 @@ test("routes and entry points are wired", () => {
   assert.match(app, /path="\/circle\/join\/:token"/);
   assert.match(app, /path="\/circle\/:id"/);
   assert.ok(app.indexOf('path="/circle/join/:token"') < app.indexOf('path="/circle/:id"'), "join must be matched before :id");
-  assert.match(read("client/src/pages/ConnectionsPage.tsx"), /href="\/circle"/);
+  assert.match(read("client/src/pages/ConnectionsPage.tsx"), /<SoulCircleEntryCard \/>/);
+  assert.match(read("client/src/components/SoulCircleEntryCard.tsx"), /href="\/circle"/);
 });

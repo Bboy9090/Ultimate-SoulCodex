@@ -50,6 +50,18 @@ export type SoulCircleInviteRow = {
   status: "open" | "accepted" | "expired" | "cancelled";
 };
 
+export type SoulCircleNotification = {
+  id: string;
+  kind: "friend_joined" | "friend_shared" | string;
+  linkId: string;
+  createdAt: string;
+  read: boolean;
+  /** Display-ready and consent-based: a chosen name or the anonymous label, never an account name. */
+  friendName: string;
+};
+
+export type SoulCircleNotifications = { unread: number; items: SoulCircleNotification[] };
+
 export class SoulCircleError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
@@ -87,6 +99,9 @@ export const soulCircleApi = {
   stopSharing: (id: string) => request<void>("DELETE", `/friends/${encodeURIComponent(id)}/share`),
   removeFriend: (id: string) => request<void>("DELETE", `/friends/${encodeURIComponent(id)}`),
   blockFriend: (id: string) => request<void>("POST", `/friends/${encodeURIComponent(id)}/block`),
+  listNotifications: () => request<SoulCircleNotifications>("GET", "/notifications"),
+  markNotificationsRead: (ids: string[] | "all") =>
+    request<{ marked: number }>("POST", "/notifications/read", ids === "all" ? { all: true } : { ids }),
 };
 
 export type ShareSelection = { fields: SoulCircleField[]; displayName?: string };
@@ -195,4 +210,16 @@ export function explainSoulCircleError(status: number, code?: unknown, message?:
 /** Whether a failure means the person should go verify their chart rather than retry. */
 export function needsVerification(error: unknown): boolean {
   return error instanceof SoulCircleError && (error.code === "verified_profile_required" || error.code === "no_verified_fields");
+}
+
+const ANONYMOUS_FRIEND = "Soul Circle friend";
+
+/** Plain-language text for an update. Unknown kinds degrade to a neutral line, never to raw data. */
+export function notificationText(item: Pick<SoulCircleNotification, "kind" | "friendName">): string {
+  const named = item.friendName && item.friendName !== ANONYMOUS_FRIEND;
+  switch (item.kind) {
+    case "friend_joined": return named ? `${item.friendName} joined your circle.` : "A friend accepted your invite and joined your circle.";
+    case "friend_shared": return named ? `${item.friendName} started sharing with you.` : "A friend started sharing with you.";
+    default: return "You have a new Soul Circle update.";
+  }
 }
