@@ -4,6 +4,7 @@ import Navigation from "@/components/navigation";
 import { IconAlert, IconArrowLeft, IconLock } from "../components/Icons";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { clearOfflineProfiles } from "../lib/offlineProfileStore";
+import { currentDeps, disablePhoneAlertsOnSignOut } from "../lib/phoneAlerts";
 
 const DELETE_CONFIRMATION = "DELETE";
 const deletionItems = [
@@ -31,6 +32,9 @@ export default function AccountDeletionPage() {
 
   const clearThisDeviceAfterDeletion = async (): Promise<boolean> => {
     try {
+      // The server already removed this account's device tokens; also drop the OS token so the
+      // phone stops receiving for it. Must run before localStorage is cleared.
+      await disablePhoneAlertsOnSignOut(currentDeps());
       await clearOfflineProfiles();
       queryClient.clear();
       localStorage.clear();

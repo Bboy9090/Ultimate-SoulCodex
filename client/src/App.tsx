@@ -9,6 +9,7 @@ import Navigation from "@/components/navigation";
 import CosmicAtmosphere from "@/components/CosmicAtmosphere";
 import ProfileClarityLauncher from "@/components/ProfileClarityLauncher";
 import TimelineContinuityHeader from "@/components/TimelineContinuityHeader";
+import PhoneAlertsBootstrap from "@/components/PhoneAlertsBootstrap";
 import NotFound from "./pages/not-found";
 import Home from "./pages/home";
 
@@ -213,7 +214,7 @@ function App() {
   return (
     <MotionConfig reducedMotion="user">
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider><Toaster /><div className="sc-cosmic-root"><CosmicAtmosphere /><div className="sc-cosmic-content"><Router /></div></div></TooltipProvider>
+        <TooltipProvider><Toaster /><div className="sc-cosmic-root"><CosmicAtmosphere /><div className="sc-cosmic-content"><PhoneAlertsBootstrap /><Router /></div></div></TooltipProvider>
       </QueryClientProvider>
     </MotionConfig>
   );

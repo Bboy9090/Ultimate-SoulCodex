@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import PhoneAlertsCard from "@/components/PhoneAlertsCard";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Copy, Share2, UsersRound } from "lucide-react";
@@ -138,6 +139,7 @@ export default function SoulCirclePage() {
                   You have an invite waiting. Continue to join →
                 </Link>
               ) : null}
+              <PhoneAlertsCard userId={user!.id} />
               {updates.items.length > 0 ? (
                 <div className="sc-panel p-4" data-testid="circle-updates">
                   <div className="flex items-center justify-between gap-2">
