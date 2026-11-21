@@ -84,7 +84,7 @@ Delivery is fire-and-forget: a slow or failing provider never delays or fails th
   account, is deleted with the account, and is never returned by any API or written to logs.
 - Tokens are refused (`409 push_unavailable`) until delivery is configured, so nothing is collected
   that cannot be used. Tokens Google reports as unregistered or invalid are deleted automatically.
-- Privacy policy and store privacy answers must mention device tokens **before** the native build ships.
+- The in-app and hosted privacy policies disclose Soul Circle and phone-alert data (push token, Firebase Cloud Messaging) as of November 21, 2026. The **store privacy answers** (Play Data safety: device or other IDs; App Store privacy labels) are console forms the owner must update before a build with push ships.
 
 ## Switching it on (owner steps; secrets never go in the repo)
 
