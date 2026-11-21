@@ -239,6 +239,19 @@ const statements = [
       AND a."id" > b."id"`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "soul_circle_events_unread_unique"
     ON "soul_circle_events" ("user_id", "kind", "link_id") WHERE "read_at" IS NULL`,
+  `CREATE TABLE IF NOT EXISTS "push_devices" (
+    "id" varchar PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+    "user_id" varchar NOT NULL,
+    "platform" varchar(16) NOT NULL,
+    "token" text NOT NULL,
+    "token_hash" varchar(64) NOT NULL,
+    "created_at" timestamp DEFAULT now() NOT NULL,
+    "updated_at" timestamp DEFAULT now() NOT NULL
+  )`,
+  `CREATE UNIQUE INDEX IF NOT EXISTS "push_devices_token_hash_unique"
+    ON "push_devices" ("token_hash")`,
+  `CREATE INDEX IF NOT EXISTS "push_devices_user_idx"
+    ON "push_devices" ("user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_subjects_user_unique"
     ON "billing_subjects" ("user_id")`,
   `CREATE UNIQUE INDEX IF NOT EXISTS "billing_transaction_events_provider_event_unique"
@@ -318,6 +331,14 @@ const requiredSchema = {
     user_high_id: "character varying",
     status: "character varying",
     blocked_by_user_id: "character varying",
+  },
+  push_devices: {
+    id: "character varying",
+    user_id: "character varying",
+    platform: "character varying",
+    token: "text",
+    token_hash: "character varying",
+    updated_at: "timestamp without time zone",
   },
   soul_circle_events: {
     id: "character varying",

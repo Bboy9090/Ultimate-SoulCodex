@@ -16,6 +16,7 @@ import {
   soulCircleShareIsActive,
   soulCircleShareSelectionSchema,
 } from "../lib/soul-circle";
+import { hashPushToken, pushPlatformSchema, pushTokenSchema, type PushService } from "../lib/push-delivery";
 
 type SoulCircleStorage = Pick<
   IStorage,
@@ -36,17 +37,39 @@ type SoulCircleStorage = Pick<
   | "createSoulCircleEvent"
   | "listSoulCircleEvents"
   | "markSoulCircleEventsRead"
+  | "upsertPushDevice"
+  | "listPushDevices"
+  | "deletePushDevice"
+  | "deleteAllPushDevices"
 >;
 
 export interface SoulCircleDependencies {
   storage: SoulCircleStorage;
   requireDurableFeature(res: Response): boolean;
   now?: () => Date;
+  /** Phone push. Absent or unconfigured means no tokens are accepted and nothing is sent. */
+  push?: PushService;
 }
 
 const ANONYMOUS_FRIEND_NAME = "Soul Circle friend";
 
 // The only name an invitee sees is one the inviter typed for this invite.
+/**
+ * Database driver errors embed query parameters (here, a device token) in their message and
+ * params. Log only the error class and SQLSTATE code so a device token never reaches the logs.
+ */
+function describeStorageFailure(error: unknown): string {
+  const name = error instanceof Error ? error.name : "UnknownError";
+  const code = (error as { code?: unknown; cause?: { code?: unknown } } | null)?.code ?? (error as any)?.cause?.code;
+  return typeof code === "string" && /^[A-Z0-9]{5}$/.test(code) ? `${name} (${code})` : name;
+}
+
+const registerPushSchema = z.object({ platform: pushPlatformSchema, token: pushTokenSchema }).strict();
+const unregisterPushSchema = z.union([
+  z.object({ token: pushTokenSchema }).strict(),
+  z.object({ all: z.literal(true) }).strict(),
+]);
+
 const markReadSchema = z.union([
   z.object({ all: z.literal(true) }).strict(),
   z.object({ ids: z.array(z.string().min(1).max(64)).min(1).max(100) }).strict(),
@@ -73,6 +96,11 @@ function notFound(res: Response) {
 export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
   const { storage } = dependencies;
   const clock = () => (dependencies.now ?? (() => new Date()))();
+
+  // Fire and forget: a slow or failing push provider must never delay or fail the request.
+  function notifyInBackground(userId: string) {
+    try { void Promise.resolve(dependencies.push?.notifyUpdate(userId)).catch(() => undefined); } catch { /* never blocks the request */ }
+  }
 
   async function memberLink(userId: string, linkId: unknown) {
     if (typeof linkId !== "string" || !linkId) return null;
@@ -227,6 +255,8 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
 
         const result = await storage.acceptSoulCircleInvite(tokenHash, userId, clock());
         if (result.status === "linked") {
+          // Tell the inviter's phone only when this accept actually created the friendship.
+          if (result.created) notifyInBackground(result.inviterUserId);
           // Joining a circle shares nothing by itself: each person separately chooses what to share.
           return res.status(200).json({ id: result.link.id });
         }
@@ -319,7 +349,9 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
         // Tell the friend only when sharing starts or resumes, never on later tweaks, and
         // never when sharing stops: the event carries no name or data.
         if (!soulCircleShareIsActive(before, now)) {
-          await storage.createSoulCircleEvent(member.friendUserId, "friend_shared", member.link.id, now);
+          const created = await storage.createSoulCircleEvent(member.friendUserId, "friend_shared", member.link.id, now);
+          // A phone alert goes out only when a new update was actually created (not a duplicate).
+          if (created) notifyInBackground(member.friendUserId);
         }
         // Echo exactly what the friend can see so consent is informed.
         res.status(200).json({ fields: selection.data.fields, expiresAt, preview });
@@ -425,6 +457,56 @@ export function createSoulCircleHandlers(dependencies: SoulCircleDependencies) {
       }
     },
 
+    async pushStatus(req: Request, res: Response) {
+      noStore(res);
+      if (!dependencies.requireDurableFeature(res)) return;
+      const userId = signedInUserId(req, res);
+      if (!userId) return;
+      try {
+        const devices = await storage.listPushDevices(userId);
+        res.json({ available: Boolean(dependencies.push?.isAvailable()), registered: devices.length > 0, deviceCount: devices.length });
+      } catch (error) {
+        console.error("[SoulCircle] pushStatus failed:", error);
+        res.status(500).json({ message: "Could not load phone alert settings." });
+      }
+    },
+
+    async registerPushDevice(req: Request, res: Response) {
+      noStore(res);
+      if (!dependencies.requireDurableFeature(res)) return;
+      const userId = signedInUserId(req, res);
+      if (!userId) return;
+      try {
+        const body = registerPushSchema.safeParse(req.body ?? {});
+        if (!body.success) return res.status(400).json({ message: "Invalid device", code: "invalid_device" });
+        // No tokens are collected until delivery really works.
+        if (!dependencies.push?.isAvailable()) {
+          return res.status(409).json({ message: "Phone alerts are not switched on for this app yet.", code: "push_unavailable" });
+        }
+        await storage.upsertPushDevice(userId, body.data.platform, body.data.token, hashPushToken(body.data.token), clock());
+        res.json({ registered: true });
+      } catch (error) {
+        console.error("[SoulCircle] registerPushDevice failed:", describeStorageFailure(error));
+        res.status(500).json({ message: "Could not turn on phone alerts." });
+      }
+    },
+
+    async unregisterPushDevice(req: Request, res: Response) {
+      noStore(res);
+      if (!dependencies.requireDurableFeature(res)) return;
+      const userId = signedInUserId(req, res);
+      if (!userId) return;
+      try {
+        const body = unregisterPushSchema.safeParse(req.body ?? {});
+        if (!body.success) return res.status(400).json({ message: "Invalid request", code: "invalid_request" });
+        const removed = "all" in body.data ? await storage.deleteAllPushDevices(userId) : await storage.deletePushDevice(userId, hashPushToken(body.data.token));
+        res.json({ removed });
+      } catch (error) {
+        console.error("[SoulCircle] unregisterPushDevice failed:", describeStorageFailure(error));
+        res.status(500).json({ message: "Could not turn off phone alerts." });
+      }
+    },
+
     async listBlocks(req: Request, res: Response) {
       noStore(res);
       if (!dependencies.requireDurableFeature(res)) return;
@@ -498,6 +580,9 @@ export function registerSoulCircleRoutes(app: Express, dependencies: SoulCircleD
   app.post("/api/soul-circle/friends/:id/block", writeLimiter, handlers.blockFriend);
   app.get("/api/soul-circle/notifications", readLimiter, handlers.listNotifications);
   app.post("/api/soul-circle/notifications/read", writeLimiter, handlers.markNotificationsRead);
+  app.get("/api/soul-circle/push/status", readLimiter, handlers.pushStatus);
+  app.post("/api/soul-circle/push/register", writeLimiter, handlers.registerPushDevice);
+  app.post("/api/soul-circle/push/unregister", writeLimiter, handlers.unregisterPushDevice);
   app.get("/api/soul-circle/blocks", readLimiter, handlers.listBlocks);
   app.delete("/api/soul-circle/blocks/:id", writeLimiter, handlers.unblock);
 }
