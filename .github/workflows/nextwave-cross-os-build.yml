@@ -1,0 +1,91 @@
+name: Next Wave Cross-OS Desktop Release (Windows, macOS, Linux)
+
+on:
+  push:
+    tags:
+      - 'desktop-v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to create or update'
+        required: false
+        default: 'desktop-v1.0.0-offline-preview'
+
+permissions:
+  contents: write
+
+jobs:
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform_name: windows
+          - os: macos-latest
+            platform_name: macos
+          - os: ubuntu-latest
+            platform_name: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build real Vite frontend
+        run: npm install --legacy-peer-deps --ignore-scripts && npx vite build
+      - name: Install Linux WebView dependencies
+        if: matrix.platform_name == 'linux'
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-webkit2-4.1 libcairo2-dev libgirepository1.0-dev
+      - name: Install Python build dependencies
+        run: python -m pip install --upgrade pip pyinstaller pywebview flask psutil pillow
+      - name: Mandatory ZIES v1.0 Integrity Gate
+        run: python scripts/zies_gate.py
+      - name: Build & Self-Test Windows .exe
+        if: matrix.platform_name == 'windows'
+        env:
+          CI: 'true'
+        run: python desktop_suite/build_windows_exe.py
+      - name: Build macOS / Linux parity package
+        if: matrix.platform_name != 'windows'
+        run: bash desktop_suite/build_macos_linux.sh
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.platform_name }}
+          path: |
+            dist_windows/*.exe
+            dist_macos/*-macOS.zip
+            dist_linux/*-Linux-x86_64.tar.gz
+
+  publish-release:
+    needs: build-desktop
+    if: always() && (needs.build-desktop.result == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download all OS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release_assets
+          merge-multiple: true
+      - name: Generate SHA256SUMS-cross-os.txt
+        run: |
+          cd release_assets
+          sha256sum * > SHA256SUMS-cross-os.txt
+          cat SHA256SUMS-cross-os.txt
+      - name: Upload Cross-OS Release Assets (Windows .exe + macOS .zip + Linux .tar.gz)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release_assets/* --clobber
+          else
+            gh release create "$TAG" release_assets/* --prerelease \
+              --title "Cross-OS Desktop Release ($TAG) — Windows, macOS & Linux" \
+              --notes-file REALITY_AUDIT.md
+          fi

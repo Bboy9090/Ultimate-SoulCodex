@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ultimate SoulCodex</title>
+<style>
+  :root {
+    --bg: #070614;
+    --surface: #120E2B;
+    --surface2: #1C1642;
+    --primary: #E5B95C;
+    --accent: #A66BFF;
+    --secondary: #38D9FF;
+    --text: #F6F3FF;
+    --muted: #B5A8D9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: radial-gradient(circle at top right, #1B1242 0%, var(--bg) 60%);
+    color: var(--text);
+    height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+  }
+  #splash {
+    position: fixed; inset: 0; z-index: 9999;
+    background: radial-gradient(circle at center, rgba(18,14,43,0.4), rgba(7,6,20,0.96)),
+                url('/assets/splash_1280x720.jpg') center/cover no-repeat;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+  }
+  #splash.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+  .splash-box {
+    background: rgba(7,6,20,0.82); backdrop-filter: blur(18px);
+    border: 1px solid rgba(229,185,92,0.55); border-radius: 24px;
+    padding: 28px 42px; text-align: center;
+    box-shadow: 0 24px 70px rgba(0,0,0,0.75), 0 0 50px rgba(166,107,255,0.28);
+  }
+  .splash-box img { width: 92px; height: 92px; border-radius: 22px; margin-bottom: 14px; box-shadow: 0 0 30px rgba(229,185,92,0.45); }
+  .splash-box h1 { font-size: 28px; letter-spacing: 1px; color: var(--primary); }
+  .splash-box p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .bar { width: 320px; height: 6px; background: rgba(255,255,255,0.12); border-radius: 99px; margin: 16px auto 0; overflow: hidden; }
+  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--accent), var(--secondary)); transition: width 0.25s; }
+
+  header {
+    height: 62px; background: rgba(18,14,43,0.88); backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(229,185,92,0.28);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand img { width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(229,185,92,0.6); }
+  .brand h2 { font-size: 18px; color: var(--primary); letter-spacing: 0.5px; }
+  .tabs { display: flex; gap: 8px; }
+  .tab {
+    background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid rgba(229,185,92,0.2);
+    padding: 7px 14px; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 13px;
+  }
+  .tab.active { background: linear-gradient(135deg, var(--primary), #C48A2B); color: #070614; border-color: transparent; }
+
+  main { flex: 1; overflow-y: auto; padding: 22px; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .hero {
+    background: linear-gradient(135deg, rgba(18,14,43,0.92), rgba(28,22,66,0.75)),
+                url('/assets/splash_1280x720.jpg') center/cover no-repeat;
+    border: 1px solid rgba(229,185,92,0.38); border-radius: 20px; padding: 22px; margin-bottom: 18px;
+    display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: center;
+  }
+  .form-row { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: 10px; margin-top: 12px; }
+  input, textarea, select {
+    background: rgba(7,6,20,0.82); border: 1px solid rgba(166,107,255,0.38);
+    color: var(--text); padding: 10px 12px; border-radius: 10px; font-size: 13px; width: 100%;
+  }
+  .btn {
+    background: linear-gradient(135deg, var(--primary), #C48A2B); color: #070614;
+    border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 13px;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px; }
+  .card {
+    background: linear-gradient(160deg, rgba(18,14,43,0.95), rgba(28,22,66,0.88));
+    border: 1px solid rgba(229,185,92,0.24); border-radius: 16px; padding: 18px;
+  }
+  .card h3 { color: var(--primary); font-size: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .kv { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 13px; }
+  .kv span { color: var(--muted); }
+  .kv b { color: var(--secondary); }
+  .narrative {
+    margin-top: 16px; background: rgba(166,107,255,0.1); border: 1px solid rgba(166,107,255,0.35);
+    border-radius: 16px; padding: 18px; line-height: 1.6; font-size: 14px;
+  }
+  .entry {
+    background: var(--surface); border-left: 3px solid var(--primary);
+    border-radius: 12px; padding: 14px; margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div id="splash">
+  <div class="splash-box">
+    <img src="/assets/icon_256.png" alt="SoulCodex">
+    <h1>ULTIMATE SOULCODEX</h1>
+    <p>35-System Personal Synthesis &amp; Sacred Geometry Workbench &bull; Windows Edition</p>
+    <div class="bar"><div id="sbar"></div></div>
+  </div>
+</div>
+
+<header>
+  <div class="brand">
+    <img src="/assets/icon_256.png" alt="Icon">
+    <h2>Ultimate SoulCodex</h2>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="openTab('codex', this)">Codex Synthesis</button>
+    <button class="tab" onclick="openTab('journal', this)">Reflection Journal</button>
+    <button class="tab" onclick="openTab('os', this)">Cross-OS Parity</button>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section id="tab-codex" class="panel active">
+      <div class="hero">
+        <div>
+          <span style="color:var(--secondary);font-size:12px;font-weight:800;letter-spacing:1px;">35+ MYSTICAL &amp; ARCHETYPAL SYSTEMS &bull; 100% LOCAL &amp; PRIVATE</span>
+          <h1 style="font-size:24px;margin-top:4px;color:var(--primary);">Generate Your Living SoulCodex Profile</h1>
+          <div class="form-row">
+            <input id="in-name" value="Bobby" placeholder="Full Name">
+            <input id="in-date" type="date" value="1992-07-14">
+            <input id="in-time" type="time" value="12:00">
+            <input id="in-place" value="New York, US" placeholder="Birth City">
+            <button class="btn" onclick="runSynth()">Synthesize</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid" id="codex-cards"></div>
+      <div class="narrative" id="codex-narrative"></div>
+    </section>
+
+    <section id="tab-journal" class="panel">
+      <div class="card">
+        <h3>Local Encrypted-Ready Reflection Journal</h3>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:10px;">
+          <input id="j-title" placeholder="Reflection title (e.g., Transit Insight)">
+          <select id="j-mood"><option>Aligned</option><option>Clarity</option><option>Breakthrough</option><option>Contemplative</option></select>
+        </div>
+        <textarea id="j-text" rows="4" placeholder="Write your reflection, pattern observation, or dream synthesis..."></textarea>
+        <div style="margin-top:10px;"><button class="btn" onclick="saveJournal()">Save Reflection</button></div>
+      </div>
+      <div id="j-list"></div>
+    </section>
+
+    <section id="tab-os" class="panel">
+      <div class="grid" id="os-cards"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+(function(){
+  let p = 15; const b = document.getElementById('sbar');
+  const iv = setInterval(()=>{ p = Math.min(100, p+22); b.style.width = p+'%'; if(p>=100){ clearInterval(iv); setTimeout(()=>document.getElementById('splash').classList.add('hide'), 320); }}, 140);
+})();
+
+function openTab(id, btn){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function runSynth(){
+  const body = {
+    name: document.getElementById('in-name').value,
+    birth_date: document.getElementById('in-date').value,
+    birth_time: document.getElementById('in-time').value,
+    birth_place: document.getElementById('in-place').value,
+  };
+  const d = await (await fetch('/api/synthesize', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })).json();
+  document.getElementById('codex-cards').innerHTML = `
+    <div class="card">
+      <h3>Celestial Astrology <span>${d.astrology.element}</span></h3>
+      <div class="kv"><span>Sun Sign</span><b>${d.astrology.sun}</b></div>
+      <div class="kv"><span>Moon Sign</span><b>${d.astrology.moon}</b></div>
+      <div class="kv"><span>Rising / Ascendant</span><b>${d.astrology.rising}</b></div>
+      <div class="kv"><span>Planetary Ruler</span><b>${d.astrology.ruler}</b></div>
+      <div class="kv"><span>Chinese Zodiac</span><b>${d.astrology.chinese}</b></div>
+    </div>
+    <div class="card">
+      <h3>Sacred Numerology <span>LP ${d.numerology.life_path}</span></h3>
+      <div class="kv"><span>Life Path</span><b>${d.numerology.life_path}</b></div>
+      <div class="kv"><span>Expression</span><b>${d.numerology.expression}</b></div>
+      <div class="kv"><span>Soul Urge</span><b>${d.numerology.soul_urge}</b></div>
+      <div class="kv"><span>Personal Year</span><b>${d.numerology.personal_year}</b></div>
+      <p style="font-size:12px;color:var(--muted);margin-top:8px;">${d.numerology.life_path_meaning}</p>
+    </div>
+    <div class="card">
+      <h3>Human Design <span>${d.human_design.type}</span></h3>
+      <div class="kv"><span>Type</span><b>${d.human_design.type}</b></div>
+      <div class="kv"><span>Strategy</span><b>${d.human_design.strategy}</b></div>
+      <div class="kv"><span>Profile</span><b>${d.human_design.profile}</b></div>
+      <div class="kv"><span>Signature</span><b>${d.human_design.signature}</b></div>
+      <div class="kv"><span>Active Gates</span><b>${d.human_design.active_gates.join(', ')}</b></div>
+    </div>
+    <div class="card">
+      <h3>Gene Keys Spectrum <span>Key ${d.gene_key.key}</span></h3>
+      <div class="kv"><span>Shadow Frequency</span><b style="color:#F87171">${d.gene_key.shadow}</b></div>
+      <div class="kv"><span>Gift Frequency</span><b style="color:var(--primary)">${d.gene_key.gift}</b></div>
+      <div class="kv"><span>Siddhi Frequency</span><b style="color:var(--accent)">${d.gene_key.siddhi}</b></div>
+      <div class="kv"><span>Active Systems</span><b>${d.systems_active} Unified</b></div>
+    </div>`;
+  document.getElementById('codex-narrative').innerHTML = `<strong style="color:var(--primary);">Integrated Codex Synthesis:</strong><br><br>${d.narrative}`;
+}
+
+async function loadJournal(){
+  const d = await (await fetch('/api/journal')).json();
+  document.getElementById('j-list').innerHTML = (d.entries||[]).map(e=>`
+    <div class="entry">
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);">
+        <strong style="color:var(--primary);font-size:14px;">${e.title}</strong>
+        <span>${e.mood} &bull; ${e.created}</span>
+      </div>
+      <p style="margin-top:6px;font-size:13px;line-height:1.5;">${e.text}</p>
+    </div>`).join('') || '<p style="color:var(--muted);margin-top:12px;">No journal entries saved yet.</p>';
+}
+
+async function saveJournal(){
+  const text = document.getElementById('j-text').value.trim();
+  if(!text) return;
+  await fetch('/api/journal', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+    title: document.getElementById('j-title').value, mood: document.getElementById('j-mood').value, text
+  })});
+  document.getElementById('j-title').value = ''; document.getElementById('j-text').value = '';
+  loadJournal();
+}
+
+async function loadOS(){
+  const p = await (await fetch('/api/platform')).json();
+  const caps = p.exclusive_capabilities || {};
+  document.getElementById('os-cards').innerHTML = ['windows','macos','linux'].map(k=>`
+    <div class="card">
+      <h3>${k.toUpperCase()} Edition <span>${p.os===k?'ACTIVE':'PARITY'}</span></h3>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">${(caps[k]||[]).map(c=>'&bull; '+c).join('<br>')}</p>
+    </div>`).join('');
+}
+
+runSynth(); loadJournal(); loadOS();
+</script>
+</body>
+</html>
