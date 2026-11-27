@@ -72,9 +72,11 @@ jobs:
         with:
           path: release_assets
           merge-multiple: true
-      - name: Generate SHA256SUMS-cross-os.txt
+      - name: Flatten artifacts & Generate SHA256SUMS-cross-os.txt
         run: |
-          cd release_assets
+          mkdir -p flat_assets
+          find release_assets -type f -exec cp {} flat_assets/ \;
+          cd flat_assets
           sha256sum * > SHA256SUMS-cross-os.txt
           cat SHA256SUMS-cross-os.txt
       - name: Upload Cross-OS Release Assets (Windows .exe + macOS .zip + Linux .tar.gz)
@@ -83,9 +85,9 @@ jobs:
           TAG: ${{ github.event.inputs.release_tag || github.ref_name }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" release_assets/* --clobber
+            gh release upload "$TAG" flat_assets/* --clobber
           else
-            gh release create "$TAG" release_assets/* --prerelease \
+            gh release create "$TAG" flat_assets/* --prerelease \
               --title "Cross-OS Desktop Release ($TAG) — Windows, macOS & Linux" \
               --notes-file REALITY_AUDIT.md
           fi
