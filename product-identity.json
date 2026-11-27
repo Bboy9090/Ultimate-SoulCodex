@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "repository": "Bboy9090/Ultimate-SoulCodex",
+  "status": "recorded",
+  "public_name": "Soul Codex",
+  "checks": [
+    {
+      "path": "desktop_suite/app_meta.json",
+      "format": "json",
+      "key": [
+        "title"
+      ],
+      "expected": "Soul Codex",
+      "role": "public_name"
+    },
+    {
+      "path": "desktop_suite/app_meta.json",
+      "format": "json",
+      "key": [
+        "slug"
+      ],
+      "expected": "ultimate-soulcodex",
+      "role": "internal_identifier"
+    },
+    {
+      "path": "desktop_suite/app_meta.json",
+      "format": "json",
+      "key": [
+        "exe_name"
+      ],
+      "expected": "UltimateSoulCodex",
+      "role": "internal_identifier"
+    }
+  ],
+  "evidence": "October 14 authority registry; desktop source at a0c02f7edafac96c7d9031d0a9e4ae74a6cfe989; public display correction only",
+  "release_verification": "not_performed"
+}
