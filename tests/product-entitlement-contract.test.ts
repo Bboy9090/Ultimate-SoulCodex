@@ -275,3 +275,27 @@ test("previously persisted Stripe grants without an expiration fail closed", asy
   } as unknown as NonNullable<Parameters<typeof grantAllowsPlus>[0]>;
   assert.equal(grantAllowsPlus(grant, new Date("2026-10-10T12:00:00Z")), false);
 });
+
+test("persisted verified billing result carries only reconciliation evidence", async () => {
+  const storage = new MemStorage();
+  const user = await testUser(storage, "workshop-bridge");
+  const first = await recordVerifiedBillingEvent(storage, event(user.id));
+  const retry = await recordVerifiedBillingEvent(storage, event(user.id));
+  assert.equal(first.financialEvidence.transactionRef, first.transaction.id);
+  assert.equal(first.financialEvidence.status, "SETTLEMENT_REQUIRED");
+  assert.equal(first.financialEvidence.settledRevenueCents, null);
+  assert.equal(first.financialEvidence.walletFundingAuthorized, false);
+  assert.equal(first.financialEvidence.spendingAuthorized, false);
+  assert.deepEqual(first.financialEvidence, retry.financialEvidence);
+  assert.equal((await resolveProductEntitlementForUser(storage,user.id,new Date("2026-10-03T12:00:00Z"))).tier,"plus");
+});
+
+test("sandbox persisted event does not become a funded wallet", async () => {
+  const storage = new MemStorage();
+  const user = await testUser(storage, "workshop-sandbox");
+  const recorded = await recordVerifiedBillingEvent(storage,event(user.id,{environment:"sandbox"}));
+  assert.equal(recorded.financialEvidence.status,"SANDBOX_ONLY");
+  assert.equal(recorded.financialEvidence.settledRevenueCents,null);
+  assert.equal(recorded.financialEvidence.spendingAuthorized,false);
+  assert.equal((await resolveProductEntitlementForUser(storage,user.id,new Date("2026-10-03T12:00:00Z"))).tier,"free");
+});
