@@ -71,3 +71,20 @@ test("all existing providers retain the reconciliation-only boundary",()=>{
     assert.equal(result.settledRevenueCents,null);
   }
 });
+
+test("actual TypeScript projection crosses the Python reconciliation boundary without funding", async()=>{
+  const {spawnSync}=await import("node:child_process");
+  const live=project();
+  const sandbox=project({...transaction,environment:"sandbox"});
+  const child=spawnSync("python3",["scripts/workshop_billing_reconciliation.py"],{
+    input:JSON.stringify([live,live,sandbox]),encoding:"utf8",timeout:10000
+  });
+  assert.equal(child.error,undefined);
+  assert.equal(child.status,0,child.stderr);
+  const result=JSON.parse(child.stdout);
+  assert.equal(result.productionEventsPending,1);
+  assert.equal(result.sandboxEventsExcluded,1);
+  assert.equal(result.settledRevenueCents,null);
+  assert.equal(result.walletFundingAuthorized,false);
+  assert.equal(result.spendingAuthorized,false);
+});
