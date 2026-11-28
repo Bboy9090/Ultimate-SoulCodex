@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { projectWorkshopBillingEvidence } from "./workshop-profit-evidence";
 import type { IStorage } from "../storage";
 import type { EntitlementGrant } from "@shared/schema";
 import type { SoulCodexTier } from "@shared/product-access";
@@ -192,7 +193,8 @@ export async function recordVerifiedBillingEvent(
     lastVerifiedAt: event.verifiedAt,
   });
 
-  return { subject, transaction, receipt, grant };
+  const financialEvidence = projectWorkshopBillingEvidence(transaction, receipt, grant);
+  return { subject, transaction, receipt, grant, financialEvidence };
 }
 
 export function grantAllowsPlus(
