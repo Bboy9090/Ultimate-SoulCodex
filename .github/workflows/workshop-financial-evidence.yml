@@ -15,3 +15,7 @@ jobs:
         with:
           node-version: '22'
       - run: node --experimental-strip-types --test tests/workshop-profit-evidence.test.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts -p 'test_workshop_billing_reconciliation.py' -v
